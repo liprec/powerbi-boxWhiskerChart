@@ -1,0 +1,177 @@
+{
+    "dataRoles": [{
+            "name": "Groups",
+            "kind": "Grouping",
+            "displayName": "Category"
+        },
+        {
+            "name": "Samples",
+            "kind": "Grouping",
+            "displayName": "Sampling"
+        },
+        {
+            "name": "Values",
+            "kind": "Measure",
+            "displayName": "Values"
+        }
+    ],
+    "dataViewMappings": [{
+        "conditions": [{
+            "Groups": {
+                "min": 0,
+                "max": 1
+            },
+            "Values": {
+                "min": 0,
+                "max": 1
+            }
+        }],
+        "matrix": {
+            "rows": {
+                "for": { "in": "Groups" },
+                "dataReductionAlgorithm": { "top": { "count": 100 } }
+            },
+            "columns": {
+                "for": { "in": "Samples" },
+                "dataReductionAlgorithm": { "top": { "count": 50000 } }
+            },
+            "values": {
+                "for": { "in": "Values" }
+            }
+        }
+    }],
+    "objects": {
+        "general": {
+            "displayName": "General",
+            "properties": {
+                "formatString": {
+                    "type": { "formatting": { "labelDisplayUnits": false } }
+                }
+            }
+        },
+        "chartOptions": {
+            "displayName": "Chart Options",
+            "properties": {
+                "whisker": {
+                    "displayName": "Chart type",
+                    "description": "Determines the type of box and whisker chart",
+                    "type": {
+                        "enumeration": [{
+                                "value": "MinMax",
+                                "displayName": "Min/Max"
+                            },
+                            {
+                                "value": "Tukey",
+                                "displayName": "Tukey"
+                            },
+                            {
+                                "value": "IQR",
+                                "displayName": "1.5 IQR"
+                            }
+                        ]
+                    }
+                },
+                "outliers": {
+                    "displayName": "Outliers",
+                    "description": "Show outliers",
+                    "type": { "bool": true }
+                },
+                "margin": {
+                    "displayName": "Chart margin",
+                    "description": "The margin between the different boxes.\nOnly used when no datalabels are shown",
+                    "type": {
+                        "enumeration": [{
+                                "value": "Small",
+                                "displayName": "Small"
+                            },
+                            {
+                                "value": "Medium",
+                                "displayName": "Medium"
+                            },
+                            {
+                                "value": "Large",
+                                "displayName": "Large"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "dataPoint": {
+            "displayName": "Data colors",
+            "properties": {
+                "fill": {
+                    "displayName": "Fill",
+                    "type": { "fill": { "solid": { "color": true } } }
+                }
+            }
+        },
+        "xAxis": {
+            "displayName": "X-Axis",
+            "properties": {
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "type": { "formatting": { "fontSize": true } }
+                }
+            }
+        },
+        "yAxis": {
+            "displayName": "Y-Axis",
+            "properties": {
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "type": { "formatting": { "fontSize": true } }
+                }
+            }
+        },
+        "gridLines": {
+            "displayName": "Gridlines",
+            "properties": {
+                "majorGrid": {
+                    "displayName": "Major grid",
+                    "description": "Display major gridlines",
+                    "type": { "bool": true }
+                },
+                "majorGridSize": {
+                    "displayName": "Thickness",
+                    "description": "Thickness of the major gridlines",
+                    "type": { "numeric": true }
+                },
+                "majorGridColor": {
+                    "displayName": "Color",
+                    "description": "Color of the major gridlines",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "minorGrid": {
+                    "displayName": "Minor grid",
+                    "description": "Display minor gridlines",
+                    "type": { "bool": true }
+                },
+                "minorGridSize": {
+                    "displayName": "Thickness",
+                    "description": "Thickness of the minor gridlines",
+                    "type": { "numeric": true }
+                },
+                "minorGridColor": {
+                    "displayName": "Color",
+                    "description": "Color of the minor gridlines",
+                    "type": { "fill": { "solid": { "color": true } } }
+                }
+            }
+        },
+        "labels": {
+            "displayName": "Data labels",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": { "bool": true }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "type": { "formatting": { "fontSize": true } },
+                    "description": "If datalabels are to big, the default size is used."
+                }
+            }
+        }
+    }
+}

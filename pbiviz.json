@@ -1,0 +1,36 @@
+{
+  "visual": {
+    "name": "BoxWhisker(JanPieter)",
+    "displayName": "BoxWhisker(JanPieter)",
+    "guid": "PBI_CV_FB59302E_FBE8_4487_8489_747B1774C5AF",
+    "visualClassName": "BoxWhiskerChart",
+    "version": "0.13.1",
+    "description": "Visualize a dataset as a box and whisker chart. A box and whisker chart shows basic statistical information of a dataset: the 1st and 3rd quartile (box),  the median (line), the mean (dot) and dependent of the type either the minimum and maximum value of all values or between the 1.5x interquartile range [IQR] (whiskers).",
+    "supportUrl": "http://azurebi.jppp.org/visualizations/",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "1.7.0",
+  "author": {
+    "name": "Jan Pieter Posthuma",
+    "email": "mail@jppp.org"
+  },
+  "assets": {
+    "icon": "assets/BoxWhisker.png",
+    "screenshots": "BoxWhisker-screenshot.jpg",
+    "thumbnail": "assets/BoxWhisker-thumbnail.png"
+  },
+  "externalJS": [
+    "node_modules/jquery/dist/jquery.min.js",
+    "node_modules/d3/d3.min.js",
+    "node_modules/lodash/lodash.js",
+    "node_modules/globalize/lib/globalize.js",
+    "node_modules/globalize/lib/cultures/globalize.culture.en-US.js",
+    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-typeutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-svgutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-formattingutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-interactivityutils/lib/index.js"
+  ],
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json"
+}
