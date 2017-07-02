@@ -1,28 +1,29 @@
 /*
- *  Power BI Visualizations
- *
- *  Copyright (c) Microsoft Corporation
- *  All rights reserved. 
- *  MIT License
- *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the ""Software""), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
- *   
- *  The above copyright notice and this permission notice shall be included in 
- *  all copies or substantial portions of the Software.
- *   
- *  THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
- */
+*
+* Copyright (c) 2017 Jan Pieter Posthuma / DataScenarios
+* 
+* All rights reserved.
+* 
+* MIT License.
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+*  of this software and associated documentation files (the "Software"), to deal
+*  in the Software without restriction, including without limitation the rights
+*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+*  copies of the Software, and to permit persons to whom the Software is
+*  furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in
+*  all copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+*  THE SOFTWARE.
+*/
 
 module powerbi.extensibility.visual {
     // utils.svg
@@ -44,8 +45,17 @@ module powerbi.extensibility.visual {
     // utils.dataview
     import DataViewObjectsModule = powerbi.extensibility.utils.dataview.DataViewObjects;
     
-    // powerbi 
+    // utils.color
+    import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
+
+    // powerbi.visuals
+    import ISelectionId = powerbi.visuals.ISelectionId
+
+    // powerbi.extensibility
+    import IColorPalette = powerbi.extensibility.IColorPalette;
     import TooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+
+    import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
 
     // d3
     import Selection = d3.Selection;
@@ -68,7 +78,7 @@ module powerbi.extensibility.visual {
         label?: string;
         outliers: number[];
         dataLabels: BoxWhiskerDataLabel[];
-        identity: ISelectionId;
+        selectionId: ISelectionId;
         tooltipInfo?: TooltipDataItem[];
         x: number;
         y: number;
@@ -89,22 +99,6 @@ module powerbi.extensibility.visual {
         min: number;
         ticks: number;
         tickSize: number;
-    }
-
-    export module BoxWhiskerTypeOptions {
-        export enum ChartType {
-            MinMax,
-            Standard,
-            IQR
-        }
-    }
-
-    export module BoxWhiskerTypeOptions {
-        export enum MarginType {
-            Small,
-            Medium,
-            Large
-        }
     }
 
     export class BoxWhiskerChart implements IVisual {
@@ -156,7 +150,7 @@ module powerbi.extensibility.visual {
         private svg: Selection<any>;
         private axis: Selection<any>;
         private chart: Selection<any>;
-
+        private settings: BoxWhiskerChartSettings;
         private axisX: Selection<any>;
         private axisY: Selection<any>;
         private axisMajorGrid: Selection<any>;
@@ -165,6 +159,7 @@ module powerbi.extensibility.visual {
 
         private mainGroupElement: Selection<any>;
         private colorPalette: IColorPalette;
+        private selectionIdBuilder: ISelectionIdBuilder;
         private selectionManager: ISelectionManager;
         private viewport: IViewport;
         private hostServices: IVisualHost;
@@ -181,6 +176,12 @@ module powerbi.extensibility.visual {
             right: 5,
             left: 5
         };
+
+        private static ColorProperties: DataViewObjectPropertyIdentifier = {
+            objectName: "dataPoint",
+            propertyName: "fill"
+        };
+
 
         private margin: IMargin;
         private defaultFormatY: string = "#,0";
@@ -205,6 +206,7 @@ module powerbi.extensibility.visual {
                 };
             }
             var categories = dataView.matrix.rows.root.children;
+            let category = dataView.categorical.categories[0];
 
             var dataPoints: BoxWhiskerChartDatapoint[][] = [];
 
@@ -230,6 +232,18 @@ module powerbi.extensibility.visual {
             this.dataType = ValueType.fromDescriptor(dataView.matrix.valueSources[0].type);
             var hasStaticColor = categories.length > 15;
             var staticColor = this.getStaticColor(this.dataView);
+            let defaultColor = "#7F7F7F";
+            let properties = {};
+            let colorHelper: ColorHelper = new ColorHelper(
+                colors,
+                BoxWhiskerChart.ColorProperties,
+                defaultColor
+            )
+
+            let queryName = (category
+                && category.source
+                && category.source.queryName)
+                || null
 
             for (var i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
                 var values = this.getValueArray(dataView.matrix.rows.root.children[i].values)
@@ -239,18 +253,12 @@ module powerbi.extensibility.visual {
                     break;
                 }
 
-                var selector, id;
-                let SelectionId: ISelectionIdBuilder = this.hostServices.createSelectionIdBuilder();
-
-                if (categories.length === 1) {
-                    id = SelectionId
-                            .withMeasure(dataView.matrix.valueSources[0].queryName)
-                            .createSelectionId();
-                }
-                else {
-                    selector = { data: [categories[i].identity], };
-                    //id = new ISelectionId(selector, false);
-                }
+                let selectonBuilder = this.selectionIdBuilder.withCategory(category, i)
+                //if (queryName) {
+                //    selectonBuilder.withMeasure(queryName);
+                //}
+                //let selectionId: ISelectionId = categories[i].identity as ISelectionId;
+                let selectionId: ISelectionId = ColorHelper.normalizeSelector({ data: [categories[i].identity] }, false) as ISelectionId;
 
                 var sortedValue = values.sort((n1, n2) => n1 - n2);
 
@@ -279,24 +287,24 @@ module powerbi.extensibility.visual {
                 var whiskerType = this.getWhiskerType(this.dataView);
 
                 if (!quartile1 || !quartile3) {
-                    whiskerType = BoxWhiskerTypeOptions.ChartType.MinMax;
+                    whiskerType = BoxWhiskerEnums.ChartType.MinMax;
                 }
 
                 switch (whiskerType) {
-                    case BoxWhiskerTypeOptions.ChartType.MinMax:
+                    case BoxWhiskerEnums.ChartType.MinMax:
                         minValue = sortedValue[0];
                         maxValue = sortedValue[sortedValue.length - 1];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
                         break;
-                    case BoxWhiskerTypeOptions.ChartType.Standard:
+                    case BoxWhiskerEnums.ChartType.Standard:
                         var IQR = quartile3 - quartile1;
                         minValue = sortedValue.filter((value) => value >= quartile1 - (1.5 * IQR))[0];
                         maxValue = sortedValue.filter((value) => value <= quartile3 + (1.5 * IQR)).reverse()[0];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
                         break;
-                    case BoxWhiskerTypeOptions.ChartType.IQR:
+                    case BoxWhiskerEnums.ChartType.IQR:
                         var IQR = quartile3 - quartile1;
                         minValue = quartile1 - (1.5 * IQR);
                         maxValue = quartile3 + (1.5 * IQR);
@@ -323,11 +331,14 @@ module powerbi.extensibility.visual {
                         .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                     : [];
 
-                let colorPalette: IColorPalette;
-                if (!hasStaticColor) {
-                     colorPalette = this.colorPalette;
-                }
+                let dataPointColor: string;
 
+                if (category.objects && category.objects[i]) {
+                    dataPointColor = colorHelper.getColorForMeasure(category.objects[i], "");
+                } else {
+                    dataPointColor = colors.getColor(i.toString()).value;
+                }
+                
                 dataPoints[i].push({
                     x:0,
                     y:0,
@@ -350,9 +361,10 @@ module powerbi.extensibility.visual {
                     label: categories[0].value === undefined
                         ? dataView.matrix.valueSources[0].displayName
                         : this.formatX.format(categories[i].value),
-                    identity: id,
-                    color: hasStaticColor ? staticColor : //colorHelper.getColorForSeriesValue(categories[i].objects, dataView.matrix.rows.root.childIdentityFields, categories[i].name),
-                        colorPalette.getColor(dataView.categorical.categories[0].values[i] + '').value,
+                    selectionId: //selectonBuilder.createSelectionId()
+                        selectionId,
+                    color: //hasStaticColor ? staticColor : //colorHelper.getColorForSeriesValue(categories[i].objects, dataView.matrix.rows.root.childIdentityFields, categories[i].name),
+                        dataPointColor,
                     tooltipInfo: [
                         {
                             displayName: 'Group',
@@ -403,6 +415,7 @@ module powerbi.extensibility.visual {
             var element = options.element;
             this.hostServices = options.host;
             this.colorPalette = options.host.colorPalette;
+            this.selectionIdBuilder = options.host.createSelectionIdBuilder();
             this.selectionManager = options.host.createSelectionManager();
             this.tooltipServiceWrapper = createTooltipServiceWrapper(this.hostServices.tooltipService, options.element);
             
@@ -442,14 +455,19 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions): void {
-            if (!options.dataViews || !options.dataViews[0]) {
-                this.chart.selectAll(BoxWhiskerChart.ChartNode.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisX.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisY.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisMajorGrid.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisMinorGrid.selectorName).remove();
+            if (!options ||
+                !options.dataViews ||
+                !options.dataViews[0] ||
+                !options.viewport) {
                 return;
-            };
+            }
+
+            this.dataView = options.dataViews ? options.dataViews[0] : undefined;
+            if (!this.dataView) {
+                return;
+            }
+
+            this.settings = BoxWhiskerChart.parseSettings(this.dataView);
 
             var dataView = this.dataView = options.dataViews[0],
                 data = this.data = this.converter(dataView, this.colorPalette),
@@ -731,13 +749,13 @@ module powerbi.extensibility.visual {
                 leftBoxMargin: number = 0.1;
             if (!this.getDataLabelShow(this.dataView)) {
                 switch (this.getMarginType(this.dataView)) {
-                    case BoxWhiskerTypeOptions.MarginType.Small:
+                    case BoxWhiskerEnums.MarginType.Small:
                         leftBoxMargin = 0.05;
                         break;
-                    case BoxWhiskerTypeOptions.MarginType.Medium:
+                    case BoxWhiskerEnums.MarginType.Medium:
                         leftBoxMargin = 0.1;
                         break;
-                    case BoxWhiskerTypeOptions.MarginType.Large:
+                    case BoxWhiskerEnums.MarginType.Large:
                         leftBoxMargin = 0.2;
                         break;
                     default:
@@ -843,7 +861,7 @@ module powerbi.extensibility.visual {
                 .attr('opacity', 1)
                 .on('click', function (d) {
                     let dp:BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
-                    sm.select(dp.identity).then((ids) => {
+                    sm.select(dp.selectionId).then((ids) => {
                         if (ids.length > 0) {
                             quartile.style('opacity', 0.5);
                             d3.select(this).transition()
@@ -1075,12 +1093,12 @@ module powerbi.extensibility.visual {
             };
         }
 
-        private getWhiskerType(dataView: DataView): BoxWhiskerTypeOptions.ChartType {
-            return DataViewObjectsModule.getValue(this.dataView.metadata.objects, BoxWhiskerChart.properties.whiskerType, BoxWhiskerTypeOptions.ChartType.MinMax);
+        private getWhiskerType(dataView: DataView): BoxWhiskerEnums.ChartType {
+            return DataViewObjectsModule.getValue(this.dataView.metadata.objects, BoxWhiskerChart.properties.whiskerType, BoxWhiskerEnums.ChartType.MinMax);
         }
 
-        private getMarginType(dataView: DataView): BoxWhiskerTypeOptions.MarginType {
-            return DataViewObjectsModule.getValue(this.dataView.metadata.objects, BoxWhiskerChart.properties.marginType, BoxWhiskerTypeOptions.MarginType.Medium);
+        private getMarginType(dataView: DataView): BoxWhiskerEnums.MarginType {
+            return DataViewObjectsModule.getValue(this.dataView.metadata.objects, BoxWhiskerChart.properties.marginType, BoxWhiskerEnums.MarginType.Medium);
         }
 
         private getShowOutliers(dataView: DataView): boolean {
@@ -1131,102 +1149,106 @@ module powerbi.extensibility.visual {
             return DataViewObjectsModule.getValue<number>(dataView.metadata.objects, BoxWhiskerChart.properties.dataLabelFontSize, 11);
         }
 
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
-            var instances: VisualObjectInstance[] = [];
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration{
+            const instanceEnumeration: VisualObjectInstanceEnumeration = BoxWhiskerChartSettings.enumerateObjectInstances(
+                this.settings || BoxWhiskerChartSettings.getDefault(),
+                options);
+            if (options.objectName === "general") {
+                return;
+            }
+            
+            let instances : VisualObjectInstance;
 
             switch (options.objectName) {
-                case "chartOptions":
-                    var chartOptions: VisualObjectInstance = {
-                        objectName: "chartOptions",
-                        displayName: "Chart Options",
-                        selector: null,
-                        properties: {
-                            whisker: this.getWhiskerType(this.dataView),
-                            outliers: this.getShowOutliers(this.dataView),
-                            margin: this.getMarginType(this.dataView),
-                        }
-                    };
-                    instances.push(chartOptions);
-                    break;
                 case "dataPoint":
-                    var categories = this.dataView.matrix.rows.root.children;
-                    if (categories.length > 25) {
-                        var dataPoint: VisualObjectInstance = {
+                    let dataPoint : VisualObjectInstance;
+                    let categories = this.dataView.matrix.rows.root.children;
+                    let dataPoints = this.data.dataPoints;
+                    dataPoints.forEach((dataPoint: BoxWhiskerChartDatapoint[], i: number) => {
+                        let selectionId: data.Selector = dataPoint[0].selectionId as data.Selector;
+                        this.addAnInstanceToEnumeration(instanceEnumeration, {
+                            displayName: dataPoint[0].label,
                             objectName: "dataPoint",
-                            displayName: "Fill color",
-                            selector: null,
+                            selector: selectionId,
                             properties: {
-                                fill: { solid: { color: this.getStaticColor(this.dataView) } }
+                                fill: { solid: { color: dataPoint[0].color } }
                             }
-                        };
-                        instances.push(dataPoint);
-                    } else {
-                        for (var i = 0; i < categories.length; i++) {
-                            var dataPoint: VisualObjectInstance = {
-                                objectName: "dataPoint",
-                                displayName: this.data.dataPoints[i][0].label,
-                                selector: this.data.dataPoints[i][0].identity,
-                                properties: {
-                                    fill: { solid: { color: this.data.dataPoints[i][0].color } }
-                                }
-                            };
-                            instances.push(dataPoint);
-                        }
-                    }
+                        }, false);
+                    });
+                    //if (categories.length > 25) {
+                        // dataPoint = {
+                        //     objectName: "dataPoint",
+                        //     displayName: "Fill color",
+                        //     selector: null,
+                        //     properties: {
+                        //         fill: { solid: { color: this.getStaticColor(this.dataView) } }
+                        //     }
+                        // };
+                        // this.addAnInstanceToEnumeration(instanceEnumeration, dataPoint, true);
+                    //} else {
+                    //     let overWrite = true;
+                    //     for (var i = 0; i < categories.length; i++) {
+                    //         const identity: ISelectionId = this.data.dataPoints[i][0].identity as ISelectionId
+                    //         dataPoint = {
+                    //             objectName: "dataPoint",
+                    //             displayName: this.data.dataPoints[i][0].label,
+                    //             selector: ColorHelper.normalizeSelector(identity.getSelector(), false),
+                    //             properties: {
+                    //                 fill: { solid: { color: this.data.dataPoints[i][0].color } }
+                    //             }
+                    //         };
+                    //         this.addAnInstanceToEnumeration(instanceEnumeration, dataPoint, overWrite);
+                    //         overWrite = !overWrite;
+                    //     }
+                    // //}
                     break;
-                case "xAxis":
-                    var xAxis: VisualObjectInstance = {
-                        objectName: "xAxis",
-                        displayName: "X-Axis",
-                        selector: null,
+                case "y1AxisReferenceLine":
+                    let refLine: VisualObjectInstance = {
+                        objectName: "y1AxisReferenceLine",
+                        selector: { id: "0" },
                         properties: {
-                            fontSize: this.getXAxisFontSize(this.dataView),
+                            show: false,
+                            value: '',
+                            color: { solid: { color: "#01b8aa" } },
+                            transparency: 50,
+                            style: 1,
+                            position: 1
                         }
                     };
-                    instances.push(xAxis);
-                    break;
-                case "yAxis":
-                    var yAxis: VisualObjectInstance = {
-                        objectName: "yAxis",
-                        displayName: "Y-Axis",
-                        selector: null,
-                        properties: {
-                            fontSize: this.getYAxisFontSize(this.dataView),
-                        }
-                    };
-                    instances.push(yAxis);
-                    break;
-                case "gridLines":
-                    var gridLines: VisualObjectInstance = {
-                        objectName: "gridLines",
-                        displayName: "Grid lines",
-                        selector: null,
-                        properties: {
-                            majorGrid: this.getShowMajorGridLines(this.dataView),
-                            majorGridSize: this.getSizeMajorGridLines(this.dataView),
-                            majorGridColor: { solid: { color: this.getColorMajorGridLines(this.dataView) } },
-                            minorGrid: this.getShowMinorGridLines(this.dataView),
-                            minorGridSize: this.getSizeMinorGridLines(this.dataView),
-                            minorGridColor: { solid: { color: this.getColorMinorGridLines(this.dataView) } },
-                        }
-                    };
-                    instances.push(gridLines);
-                    break;
-                case "labels":
-                    var labels: VisualObjectInstance = {
-                        objectName: "labels",
-                        displayName: "Data labels",
-                        selector: null,
-                        properties: {
-                            show: this.getDataLabelShow(this.dataView),
-                            fontSize: this.getDataLabelFontSize(this.dataView),
-                        }
-                    };
-                    instances.push(labels);
-                    break;
+                    this.addAnInstanceToEnumeration(instanceEnumeration, refLine, true);
             }
+            
+            return instanceEnumeration;
+        }
 
-            return instances;
+        private addAnInstanceToEnumeration(instanceEnumeration: VisualObjectInstanceEnumeration, instance: VisualObjectInstance, replace: Boolean): void {
+            if ((instanceEnumeration as VisualObjectInstanceEnumerationObject).instances) {
+                if (replace) { 
+                    (instanceEnumeration as VisualObjectInstanceEnumerationObject)
+                        .instances = [];
+                }
+                (instanceEnumeration as VisualObjectInstanceEnumerationObject)
+                    .instances.push(instance);
+            } else {
+                (instanceEnumeration as VisualObjectInstance[]).push(instance);
+            }
+        }
+
+        public destroy(): void {
+        }
+
+        private getColor(properties: DataViewObjectPropertyIdentifier, defaultColor: string, objects: DataViewObjects): string {
+            const colorHelper: ColorHelper = new ColorHelper(
+                this.colorPalette,
+                properties,
+                defaultColor);
+
+            return colorHelper.getColorForMeasure(objects, "");
+        }
+
+        private static parseSettings(dataView: DataView): BoxWhiskerChartSettings {
+            const settings: BoxWhiskerChartSettings = BoxWhiskerChartSettings.parse<BoxWhiskerChartSettings>(dataView);
+            return settings;
         }
     }
 }

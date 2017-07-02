@@ -5,7 +5,7 @@
     "experimentalDecorators": true,
     "target": "ES5",
     "sourceMap": true,
-    "out": "./.tmp/build/visual.js"
+    "out": "./.tmp/build/boxWhiskerChart.js"
   },
   "files": [
     ".api/v1.7.0/PowerBI-visuals.d.ts",
@@ -14,6 +14,10 @@
     "node_modules/powerbi-visuals-utils-typeutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-svgutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-interactivityutils/lib/index.d.ts",
+    "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
+    "src/objectEnumerationUtility.ts",
+    "src/enums.ts",
+    "src/settings.ts",
     "src/tooltipServiceWrapper.ts",
     "src/boxWhiskerChart.ts"
   ]

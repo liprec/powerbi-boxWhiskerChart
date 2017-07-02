@@ -12,6 +12,7 @@
         {
             "name": "Values",
             "kind": "Measure",
+            "cartesianKind": 1,
             "displayName": "Values"
         }
     ],
@@ -26,17 +27,23 @@
                 "max": 1
             }
         }],
-        "matrix": {
-            "rows": {
-                "for": { "in": "Groups" },
+        "categorical": {
+            "categories": {
+                "for": {
+                    "in": "Groups"
+                },
                 "dataReductionAlgorithm": { "top": { "count": 100 } }
             },
-            "columns": {
-                "for": { "in": "Samples" },
-                "dataReductionAlgorithm": { "top": { "count": 50000 } }
-            },
             "values": {
-                "for": { "in": "Values" }
+                "group": {
+                    "by": "Samples",
+                    "dataReductionAlgorithm": { "top": { "count": 50000 } },
+                    "select": [{
+                        "for": {
+                            "in": "Values"   
+                        }
+                    }]
+                }
             }
         }
     }],
@@ -170,6 +177,59 @@
                     "displayName": "Text Size",
                     "type": { "formatting": { "fontSize": true } },
                     "description": "If datalabels are to big, the default size is used."
+                }
+            }
+        },
+        "y1AxisReferenceLine" : {
+            "displayName": "Constant line",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": { "bool": true }
+                },
+                "value": {
+                    "displayName": "Value",
+                    "type": { "text": true}
+                },
+                "color" : {
+                    "displayName": "Color",
+                    "type" : { "fill": { "solid": { "color": true } } }
+                },
+                "transparency": {
+                    "displayName": "Transparency",
+                    "type" : { "numeric": true }
+                },
+                "style" : {
+                    "displayName" : "Style",
+                    "description": "Set reference line style",
+                    "type" : { "enumeration": [
+                        {
+                            "value": "dashed",
+                            "displayName": "Dashed"
+                        },
+                        {
+                            "value": "solid",
+                            "displayName": "Solid"
+                        },
+                        {
+                            "value": "dotted",
+                            "displayName": "Dotted"
+                        }
+                    ]}
+                },
+                "position" : {
+                    "displayName": "Position",
+                    "description": "Arrange relative to chart data points",
+                    "type" : { "enumeration": [
+                        {
+                            "value": "front",
+                            "displayName": "In Front"
+                        },
+                        {
+                            "value": "back",
+                            "displayName": "Behind"
+                        }
+                    ]}
                 }
             }
         }

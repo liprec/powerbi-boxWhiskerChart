@@ -23,6 +23,7 @@
         "jquery": "^3.1.1",
         "lodash": "^4.16.2",
         "powerbi-models": "^0.11.3",
+        "powerbi-visuals-utils-colorutils": "^1.0.0",
         "powerbi-visuals-utils-dataviewutils": "^1.2.0",
         "powerbi-visuals-utils-formattingutils": "^2.1.0",
         "powerbi-visuals-utils-interactivityutils": "^1.0.0",
@@ -35,6 +36,6 @@
         "powerbi-visuals-tools": "^1.7.0",
         "tslint": "5.4.3",
         "tslint-microsoft-contrib": "^5.0.0",
-        "typescript": "^2.5.0-dev.20170629"
+        "typescript": "^2.4.1"
     }
 }
