@@ -60,66 +60,7 @@ module powerbi.extensibility.visual {
     // d3
     import Selection = d3.Selection;
 
-    export interface BoxWhiskerChartConstructorOptions {
-        svg?: Selection<any>;
-        margin?: IMargin;
-    }
-
-    export interface BoxWhiskerChartDatapoint {
-        min: number;
-        max: number;
-        median: number;
-        quartile1: number;
-        quartile3: number;
-        average: number;
-        samples: number;
-        category: number;
-        color?: string;
-        label?: string;
-        outliers: number[];
-        dataLabels: BoxWhiskerDataLabel[];
-        selectionId: ISelectionId;
-        tooltipInfo?: TooltipDataItem[];
-        x: number;
-        y: number;
-    }
-
-    export interface BoxWhiskerChartData {
-        dataPoints: BoxWhiskerChartDatapoint[][];
-    }
-
-    export interface BoxWhiskerDataLabel {
-        value: number;
-        y: number;
-        x: number;
-    }
-
-    export interface BoxWhiskerAxisOptions {
-        max: number;
-        min: number;
-        ticks: number;
-        tickSize: number;
-    }
-
     export class BoxWhiskerChart implements IVisual {
-
-        private static properties = {
-            formatString: { objectName: "general", propertyName: "formatString" },
-            whiskerType: { objectName: "chartOptions", propertyName: "whisker" },
-            marginType: { objectName: "chartOptions", propertyName: "margin" },
-            fontSizeXAxis: { objectName: "xAxis", propertyName: "fontSize" },
-            fontSizeYAxis: { objectName: "yAxis", propertyName: "fontSize" },
-            showOutliers: { objectName: "chartOptions", propertyName: "outliers" },
-            showMajorGridLines: { objectName: "gridLines", propertyName: "majorGrid" },
-            sizeMajorGridLines: { objectName: "gridLines", propertyName: "majorGridSize" },
-            colorMajorGridLines: { objectName: "gridLines", propertyName: "majorGridColor" },
-            showMinorGridLines: { objectName: "gridLines", propertyName: "minorGrid" },
-            sizeMinorGridLines: { objectName: "gridLines", propertyName: "minorGridSize" },
-            colorMinorGridLines: { objectName: "gridLines", propertyName: "minorGridColor" },
-            fill: { objectName: "dataPoint", propertyName: "fill" },
-            dataLabelShow: { objectName: "labels", propertyName: "show" },
-            dataLabelFontSize: { objectName: "labels", propertyName: "fontSize" },
-        };
 
         private static LocalizationStrings: jsCommon.IStringResourceProvider = {
             get: (stringId: string) => stringId,
@@ -182,7 +123,6 @@ module powerbi.extensibility.visual {
             propertyName: "fill"
         };
 
-
         private margin: IMargin;
         private defaultFormatY: string = "#,0";
         private formatY: IValueFormatter;
@@ -202,13 +142,15 @@ module powerbi.extensibility.visual {
                 !dataView.matrix.valueSources ||
                 !dataView.matrix.valueSources[0]) {
                 return {
-                    dataPoints: []
+                    dataPoints: [],
+                    referenceLines: []
                 };
             }
-            var categories = dataView.matrix.rows.root.children;
+            let categories = dataView.matrix.rows.root.children;
             let category = dataView.categorical.categories[0];
 
-            var dataPoints: BoxWhiskerChartDatapoint[][] = [];
+            let dataPoints: BoxWhiskerChartDatapoint[][] = [];
+            let referenceLines: BoxWhiskerChartReferenceLine[] = refLineReadDataView(dataView.metadata.objects, colors);
 
             if (dataView.matrix.rows.levels.length > 0) {
                 this.formatX = valueFormatter.create({
@@ -230,8 +172,7 @@ module powerbi.extensibility.visual {
             });
 
             this.dataType = ValueType.fromDescriptor(dataView.matrix.valueSources[0].type);
-            var hasStaticColor = categories.length > 15;
-            var staticColor = this.getStaticColor(this.dataView);
+            let hasStaticColor = categories.length > 15;
             let defaultColor = "#7F7F7F";
             let properties = {};
             let colorHelper: ColorHelper = new ColorHelper(
@@ -280,11 +221,11 @@ module powerbi.extensibility.visual {
 
                 var quartile3 = sortedValue.length <= 2 ? null : q3LowValue + (((3 * q1) - Math.floor(3 * q1)) * (q3HighValue - q3LowValue));
 
-                var minValue;
-                var maxValue;
-                var minValueLabel;
-                var maxValueLabel;
-                var whiskerType = this.getWhiskerType(this.dataView);
+                let minValue;
+                let maxValue;
+                let minValueLabel;
+                let maxValueLabel;
+                let whiskerType: BoxWhiskerEnums.ChartType = this.settings.chartOptions.whisker;
 
                 if (!quartile1 || !quartile3) {
                     whiskerType = BoxWhiskerEnums.ChartType.MinMax;
@@ -325,7 +266,7 @@ module powerbi.extensibility.visual {
 
                 dataPoints.push([]);
 
-                var outliers = this.getShowOutliers(this.dataView) ?
+                let outliers = this.settings.chartOptions.outliers ?
                     sortedValue
                         .filter((value) => value < minValue || value > maxValue) // Filter outliers 
                         .filter((value, index, self) => self.indexOf(value) === index) // Make unique
@@ -351,7 +292,7 @@ module powerbi.extensibility.visual {
                     samples: sortedValue.length,
                     category: i + 1,
                     outliers: outliers,
-                    dataLabels: (this.getDataLabelShow(this.dataView)) ?
+                    dataLabels: (this.settings.labels.show) ?
                         [maxValue, minValue, avgvalue, median, quartile1, quartile3]
                             .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                             .filter((value) => { return value != null; }) // Remove empties
@@ -361,8 +302,7 @@ module powerbi.extensibility.visual {
                     label: categories[0].value === undefined
                         ? dataView.matrix.valueSources[0].displayName
                         : this.formatX.format(categories[i].value),
-                    selectionId: //selectonBuilder.createSelectionId()
-                        selectionId,
+                    selectionId: selectionId,
                     color: //hasStaticColor ? staticColor : //colorHelper.getColorForSeriesValue(categories[i].objects, dataView.matrix.rows.root.childIdentityFields, categories[i].name),
                         dataPointColor,
                     tooltipInfo: [
@@ -403,7 +343,8 @@ module powerbi.extensibility.visual {
                 });
             }
             return {
-                dataPoints: dataPoints
+                dataPoints: dataPoints,
+                referenceLines: referenceLines,
             };
         }
 
@@ -498,7 +439,7 @@ module powerbi.extensibility.visual {
             this.AxisSizeX = textMeasurementService.estimateSvgTextHeight({
                 text: "XXXX",
                 fontFamily: this.defaultFontFamily,
-                fontSize: PixelConverter.fromPoint(this.getXAxisFontSize(this.dataView)),
+                fontSize: PixelConverter.fromPoint(this.settings.xAxis.fontSize),
             });
 
             var mainGroup = this.chart;
@@ -525,20 +466,20 @@ module powerbi.extensibility.visual {
             this.AxisSizeY = textMeasurementService.measureSvgTextWidth({
                 text: this.formatY.format(this.axisOptions.max),
                 fontFamily: this.defaultFontFamily,
-                fontSize: PixelConverter.fromPoint(this.getYAxisFontSize(this.dataView)),
+                fontSize: PixelConverter.fromPoint(this.settings.yAxis.fontSize),
             });
 
             this.margin.top = textMeasurementService.measureSvgTextHeight({
                 text: this.formatY.format(this.axisOptions.max),
                 fontFamily: this.defaultFontFamily,
-                fontSize: PixelConverter.fromPoint(this.getYAxisFontSize(this.dataView)),
+                fontSize: PixelConverter.fromPoint(this.settings.yAxis.fontSize),
             }) / 2.;
 
-            if (this.getDataLabelShow(this.dataView) && this.data.dataPoints.length > 0) {
+            if (this.settings.labels.show && this.data.dataPoints.length > 0) {
                 var dataLabelTop = textMeasurementService.measureSvgTextHeight({
                     text: this.formatY.format(this.data.dataPoints[0][0].dataLabels[0].value),
                     fontFamily: this.defaultFontFamily,
-                    fontSize: PixelConverter.fromPoint(this.getYAxisFontSize(this.dataView)),
+                    fontSize: PixelConverter.fromPoint(this.settings.yAxis.fontSize),
                 }) / 2.;
             }
 
@@ -589,12 +530,12 @@ module powerbi.extensibility.visual {
             //     .text(this.formatY.format(this.axisOptions.max));
             let textXProperties: TextProperties = {
                 fontFamily: this.defaultFontFamily,
-                fontSize: this.getXAxisFontSize(this.dataView) + "px"
+                fontSize: this.settings.xAxis.fontSize + "px"
             }
 
             let textYProperties: TextProperties = {
                 fontFamily: this.defaultFontFamily,
-                fontSize: this.getYAxisFontSize(this.dataView) + "px"
+                fontSize: this.settings.yAxis.fontSize + "px"
             }
 
             let yAxisLabelHeight = textMeasurementService.measureSvgTextHeight(textYProperties, dataPoints[0][0].label);
@@ -683,13 +624,13 @@ module powerbi.extensibility.visual {
 
             this.axisX
                 .selectAll("text")
-                .style("font-size", this.getXAxisFontSize(this.dataView) + "px");
+                .style("font-size", this.settings.xAxis.fontSize + "px");
 
             this.axisY
                 .selectAll("text")
-                .style("font-size", this.getYAxisFontSize(this.dataView) + "px");
+                .style("font-size", this.settings.yAxis.fontSize + "px");
 
-            if (this.getShowMajorGridLines(this.dataView)) {
+            if (this.settings.gridLines.majorGrid) {
                 var yMajorGrid = d3.svg.axis()
                     .scale(ys)
                     .orient("left")
@@ -706,10 +647,10 @@ module powerbi.extensibility.visual {
 
                 this.axisMajorGrid
                     .selectAll("line")
-                    .style("stroke", this.getColorMajorGridLines(this.dataView))
-                    .style("stroke-width", this.getSizeMajorGridLines(this.dataView));
+                    .style("stroke", this.settings.gridLines.majorGridColor)
+                    .style("stroke-width", this.settings.gridLines.majorGridSize);
 
-                if (this.getShowMinorGridLines(this.dataView)) {
+                if (this.settings.gridLines.minorGrid) {
                     var yMinorGrid = d3.svg.axis()
                         .scale(ys)
                         .orient("left")
@@ -726,8 +667,8 @@ module powerbi.extensibility.visual {
 
                     this.axisMinorGrid
                         .selectAll("line")
-                        .style("stroke", this.getColorMinorGridLines(this.dataView))
-                        .style("stroke-width", this.getSizeMinorGridLines(this.dataView));
+                        .style("stroke", this.settings.gridLines.minorGridColor)
+                        .style("stroke-width", this.settings.gridLines.minorGridSize);
                 }
                 else {
 
@@ -747,8 +688,8 @@ module powerbi.extensibility.visual {
         private drawChart(dataPoints: BoxWhiskerChartDatapoint[][], xScale: d3.scale.Linear<any, any>, yScale: d3.scale.Linear<any, any>, duration: number): void {
             var dotRadius: number = 4,
                 leftBoxMargin: number = 0.1;
-            if (!this.getDataLabelShow(this.dataView)) {
-                switch (this.getMarginType(this.dataView)) {
+            if (!this.settings.labels.show) {
+                switch (this.settings.chartOptions.margin) {
                     case BoxWhiskerEnums.MarginType.Small:
                         leftBoxMargin = 0.05;
                         break;
@@ -783,8 +724,8 @@ module powerbi.extensibility.visual {
 
             this.svg.on('click', () => this.selectionManager.clear().then(() => quartile.style('opacity', 1)));
 
-            var fontSize = this.getDataLabelFontSize(this.dataView) + "px";
-            var dataLabelsShow = this.getDataLabelShow(this.dataView);
+            var fontSize = this.settings.labels.fontSize + "px";
+            var dataLabelsShow = this.settings.labels.show;
 
             var dataLabelwidth = xScale.invert(xScale(0) +
                 (Math.ceil(
@@ -794,7 +735,7 @@ module powerbi.extensibility.visual {
                                 return textMeasurementService.measureSvgTextWidth({
                                     text: this.formatY.format(dataLabel.value),
                                     fontFamily: this.defaultFontFamily,
-                                    fontSize: PixelConverter.fromPoint(this.getDataLabelFontSize(this.dataView)),
+                                    fontSize: PixelConverter.fromPoint(this.settings.labels.fontSize),
                                 });
                             });
                         });
@@ -966,7 +907,7 @@ module powerbi.extensibility.visual {
                     var textHeight = (textMeasurementService.measureSvgTextHeight({
                         text: "XXXX",
                         fontFamily: this.defaultFontFamily,
-                        fontSize: PixelConverter.fromPoint(this.getDataLabelFontSize(this.dataView)),
+                        fontSize: PixelConverter.fromPoint(this.settings.labels.fontSize),
                     }) / 2) + 1;
 
                     for (var i = 1; i < topLabels.length; i++) {
@@ -1093,62 +1034,6 @@ module powerbi.extensibility.visual {
             };
         }
 
-        private getWhiskerType(dataView: DataView): BoxWhiskerEnums.ChartType {
-            return DataViewObjectsModule.getValue(this.dataView.metadata.objects, BoxWhiskerChart.properties.whiskerType, BoxWhiskerEnums.ChartType.MinMax);
-        }
-
-        private getMarginType(dataView: DataView): BoxWhiskerEnums.MarginType {
-            return DataViewObjectsModule.getValue(this.dataView.metadata.objects, BoxWhiskerChart.properties.marginType, BoxWhiskerEnums.MarginType.Medium);
-        }
-
-        private getShowOutliers(dataView: DataView): boolean {
-            return dataView.metadata && DataViewObjectsModule.getValue<boolean>(dataView.metadata.objects, BoxWhiskerChart.properties.showOutliers, false);
-        }
-
-        private getStaticColor(dataView: DataView): string {
-            return DataViewObjectsModule.getFillColor(dataView.metadata.objects, BoxWhiskerChart.properties.fill, "#01b8aa");
-        }
-
-        private getXAxisFontSize(dataView: DataView): number {
-            return DataViewObjectsModule.getValue<number>(dataView.metadata.objects, BoxWhiskerChart.properties.fontSizeXAxis, 11);
-        }
-
-        private getYAxisFontSize(dataView: DataView): number {
-            return DataViewObjectsModule.getValue<number>(dataView.metadata.objects, BoxWhiskerChart.properties.fontSizeYAxis, 11);
-        }
-
-        private getShowMajorGridLines(dataView: DataView): boolean {
-            return dataView.metadata && DataViewObjectsModule.getValue<boolean>(dataView.metadata.objects, BoxWhiskerChart.properties.showMajorGridLines, true);
-        }
-
-        private getSizeMajorGridLines(dataView: DataView): number {
-            return DataViewObjectsModule.getValue<number>(dataView.metadata.objects, BoxWhiskerChart.properties.sizeMajorGridLines, 1);
-        }
-
-        private getColorMajorGridLines(dataView: DataView): string {
-            return DataViewObjectsModule.getFillColor(dataView.metadata.objects, BoxWhiskerChart.properties.colorMajorGridLines, "#666666");
-        }
-
-        private getShowMinorGridLines(dataView: DataView): boolean {
-            return dataView.metadata && DataViewObjectsModule.getValue<boolean>(dataView.metadata.objects, BoxWhiskerChart.properties.showMinorGridLines, false);
-        }
-
-        private getSizeMinorGridLines(dataView: DataView): number {
-            return DataViewObjectsModule.getValue<number>(dataView.metadata.objects, BoxWhiskerChart.properties.sizeMinorGridLines, 1);
-        }
-
-        private getColorMinorGridLines(dataView: DataView): string {
-            return DataViewObjectsModule.getFillColor(dataView.metadata.objects, BoxWhiskerChart.properties.colorMinorGridLines, "#9c9c9c");
-        }
-
-        private getDataLabelShow(dataView: DataView): boolean {
-            return DataViewObjectsModule.getValue<boolean>(this.dataView.metadata.objects, BoxWhiskerChart.properties.dataLabelShow, false);
-        }
-
-        private getDataLabelFontSize(dataView: DataView): number {
-            return DataViewObjectsModule.getValue<number>(dataView.metadata.objects, BoxWhiskerChart.properties.dataLabelFontSize, 11);
-        }
-
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration{
             const instanceEnumeration: VisualObjectInstanceEnumeration = BoxWhiskerChartSettings.enumerateObjectInstances(
                 this.settings || BoxWhiskerChartSettings.getDefault(),
@@ -1157,93 +1042,33 @@ module powerbi.extensibility.visual {
                 return;
             }
             
-            let instances : VisualObjectInstance;
+            let instances : VisualObjectInstance[] = [];
 
             switch (options.objectName) {
                 case "dataPoint":
-                    let dataPoint : VisualObjectInstance;
-                    let categories = this.dataView.matrix.rows.root.children;
-                    let dataPoints = this.data.dataPoints;
-                    dataPoints.forEach((dataPoint: BoxWhiskerChartDatapoint[], i: number) => {
-                        let selectionId: data.Selector = dataPoint[0].selectionId as data.Selector;
-                        this.addAnInstanceToEnumeration(instanceEnumeration, {
-                            displayName: dataPoint[0].label,
-                            objectName: "dataPoint",
-                            selector: selectionId,
-                            properties: {
-                                fill: { solid: { color: dataPoint[0].color } }
-                            }
-                        }, false);
-                    });
-                    //if (categories.length > 25) {
-                        // dataPoint = {
-                        //     objectName: "dataPoint",
-                        //     displayName: "Fill color",
-                        //     selector: null,
-                        //     properties: {
-                        //         fill: { solid: { color: this.getStaticColor(this.dataView) } }
-                        //     }
-                        // };
-                        // this.addAnInstanceToEnumeration(instanceEnumeration, dataPoint, true);
-                    //} else {
-                    //     let overWrite = true;
-                    //     for (var i = 0; i < categories.length; i++) {
-                    //         const identity: ISelectionId = this.data.dataPoints[i][0].identity as ISelectionId
-                    //         dataPoint = {
-                    //             objectName: "dataPoint",
-                    //             displayName: this.data.dataPoints[i][0].label,
-                    //             selector: ColorHelper.normalizeSelector(identity.getSelector(), false),
-                    //             properties: {
-                    //                 fill: { solid: { color: this.data.dataPoints[i][0].color } }
-                    //             }
-                    //         };
-                    //         this.addAnInstanceToEnumeration(instanceEnumeration, dataPoint, overWrite);
-                    //         overWrite = !overWrite;
-                    //     }
-                    // //}
+                    instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette);
                     break;
                 case "y1AxisReferenceLine":
-                    let refLine: VisualObjectInstance = {
-                        objectName: "y1AxisReferenceLine",
-                        selector: { id: "0" },
-                        properties: {
-                            show: false,
-                            value: '',
-                            color: { solid: { color: "#01b8aa" } },
-                            transparency: 50,
-                            style: 1,
-                            position: 1
-                        }
-                    };
-                    this.addAnInstanceToEnumeration(instanceEnumeration, refLine, true);
+                    instances = refLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);
+                    break;
             }
-            
+            instances.forEach((instance: VisualObjectInstance) => { this.addAnInstanceToEnumeration(instanceEnumeration, instance) })
             return instanceEnumeration;
         }
 
-        private addAnInstanceToEnumeration(instanceEnumeration: VisualObjectInstanceEnumeration, instance: VisualObjectInstance, replace: Boolean): void {
+        public addAnInstanceToEnumeration(instanceEnumeration: VisualObjectInstanceEnumeration, instance: VisualObjectInstance): void {
             if ((instanceEnumeration as VisualObjectInstanceEnumerationObject).instances) {
-                if (replace) { 
-                    (instanceEnumeration as VisualObjectInstanceEnumerationObject)
-                        .instances = [];
-                }
                 (instanceEnumeration as VisualObjectInstanceEnumerationObject)
-                    .instances.push(instance);
+                    .instances
+                    .push(instance);
             } else {
                 (instanceEnumeration as VisualObjectInstance[]).push(instance);
             }
         }
 
+        
+
         public destroy(): void {
-        }
-
-        private getColor(properties: DataViewObjectPropertyIdentifier, defaultColor: string, objects: DataViewObjects): string {
-            const colorHelper: ColorHelper = new ColorHelper(
-                this.colorPalette,
-                properties,
-                defaultColor);
-
-            return colorHelper.getColorForMeasure(objects, "");
         }
 
         private static parseSettings(dataView: DataView): BoxWhiskerChartSettings {

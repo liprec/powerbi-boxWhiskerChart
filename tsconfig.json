@@ -17,8 +17,11 @@
     "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
     "src/objectEnumerationUtility.ts",
     "src/enums.ts",
+    "src/interfaces.ts",
     "src/settings.ts",
     "src/tooltipServiceWrapper.ts",
+    "src/boxWhiskerRefLineHelper.ts",
+    "src/boxWhiskerDataPointHelper.ts",
     "src/boxWhiskerChart.ts"
   ]
 }

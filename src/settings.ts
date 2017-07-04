@@ -28,6 +28,7 @@
 module powerbi.extensibility.visual {
 
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
+    // utils.svg
     import IMargin = powerbi.extensibility.utils.svg.IMargin;
     
     export class BoxWhiskerChartSettings extends DataViewObjectsParser {
@@ -39,7 +40,6 @@ module powerbi.extensibility.visual {
         public yAxis: YAxisSettings = new YAxisSettings();
         public gridLines: GridLinesSettings = new GridLinesSettings();
         public labels: LabelsSettings = new LabelsSettings();
-        public y1AxisReferenceLine: Y1AxisReferenceLineSettings = new Y1AxisReferenceLineSettings();
     }
 
     
@@ -84,14 +84,5 @@ module powerbi.extensibility.visual {
         public show:boolean = false;
         public fontSize: number = 11;
 
-    }
-
-    class Y1AxisReferenceLineSettings {
-        public show : boolean = false;
-        public value : number = undefined;
-        public color : string = "";
-        public transparency : number = 50;
-        public style : BoxWhiskerEnums.ReferenceLine.Style = BoxWhiskerEnums.ReferenceLine.Style.dotted;
-        public position : BoxWhiskerEnums.ReferenceLine.Position = BoxWhiskerEnums.ReferenceLine.Position.front;
     }
 }

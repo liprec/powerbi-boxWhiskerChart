@@ -187,11 +187,16 @@
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
+                "displayName" : {
+                    "displayName": "Name",
+                    "description": "Set reference line name",
+                    "type": { "text": true }
+                },
                 "value": {
                     "displayName": "Value",
-                    "type": { "text": true}
+                    "type": { "text": true }
                 },
-                "color" : {
+                "lineColor" : {
                     "displayName": "Color",
                     "type" : { "fill": { "solid": { "color": true } } }
                 },
