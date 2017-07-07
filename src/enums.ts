@@ -28,7 +28,17 @@
 module powerbi.extensibility.visual {
 
     export module BoxWhiskerEnums {
-        export enum ChartType {
+        export enum ChartOrientation {
+            Horizontal,
+            Vertical
+        }
+
+        export enum QuartileType {
+            Exclusive,
+            Inclusive
+        }
+
+        export enum WhiskerType {
             MinMax,
             Standard,
             IQR

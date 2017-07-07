@@ -37,22 +37,25 @@ module powerbi.extensibility.visual {
         let referenceLines = [];
 
         if (objects) {
-            let refLines = DataViewObjectsModule.getObject(objects, "y1AxisReferenceLine").$instances;
-            for(let id in refLines) {
-                let refLine: BoxWhiskerChartReferenceLine = refLines[id] as BoxWhiskerChartReferenceLine;
-                let selector = { id: id, metadata: undefined };
-                let lineColor = colors.getColor("0").value;
-                referenceLines.push({
-                    selector: selector,
-                    type: "y1AxisReferenceLine",
-                    show: refLine.show || false,
-                    displayName: refLine.displayName || undefined,
-                    value: refLine.value || 0,
-                    lineColor: refLine.lineColor || lineColor,
-                    transparency: refLine.transparency || 50,
-                    style: refLine.style || BoxWhiskerEnums.ReferenceLine.Style.dashed,
-                    position: refLine.position || BoxWhiskerEnums.ReferenceLine.Position.front
-                });
+            let refLines = DataViewObjectsModule.getObject(objects, "y1AxisReferenceLine");
+            if (refLines) {
+                refLines = refLines.$instances;
+                for(let id in refLines) {
+                    let refLine: BoxWhiskerChartReferenceLine = refLines[id] as BoxWhiskerChartReferenceLine;
+                    let selector = { id: id, metadata: undefined };
+                    let lineColor = colors.getColor("0").value;
+                    referenceLines.push({
+                        selector: selector,
+                        type: "y1AxisReferenceLine",
+                        show: refLine.show || false,
+                        displayName: refLine.displayName || undefined,
+                        value: refLine.value || 0,
+                        lineColor: refLine.lineColor || lineColor,
+                        transparency: refLine.transparency || 50,
+                        style: refLine.style || BoxWhiskerEnums.ReferenceLine.Style.dashed,
+                        position: refLine.position || BoxWhiskerEnums.ReferenceLine.Position.front
+                    });
+                }
             }
         }
         return referenceLines;

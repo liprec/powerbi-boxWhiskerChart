@@ -225,27 +225,27 @@ module powerbi.extensibility.visual {
                 let maxValue;
                 let minValueLabel;
                 let maxValueLabel;
-                let whiskerType: BoxWhiskerEnums.ChartType = this.settings.chartOptions.whisker;
+                let whiskerType: BoxWhiskerEnums.WhiskerType = this.settings.chartOptions.whisker;
 
                 if (!quartile1 || !quartile3) {
-                    whiskerType = BoxWhiskerEnums.ChartType.MinMax;
+                    whiskerType = BoxWhiskerEnums.WhiskerType.MinMax;
                 }
 
                 switch (whiskerType) {
-                    case BoxWhiskerEnums.ChartType.MinMax:
+                    case BoxWhiskerEnums.WhiskerType.MinMax:
                         minValue = sortedValue[0];
                         maxValue = sortedValue[sortedValue.length - 1];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
                         break;
-                    case BoxWhiskerEnums.ChartType.Standard:
+                    case BoxWhiskerEnums.WhiskerType.Standard:
                         var IQR = quartile3 - quartile1;
                         minValue = sortedValue.filter((value) => value >= quartile1 - (1.5 * IQR))[0];
                         maxValue = sortedValue.filter((value) => value <= quartile3 + (1.5 * IQR)).reverse()[0];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
                         break;
-                    case BoxWhiskerEnums.ChartType.IQR:
+                    case BoxWhiskerEnums.WhiskerType.IQR:
                         var IQR = quartile3 - quartile1;
                         minValue = quartile1 - (1.5 * IQR);
                         maxValue = quartile3 + (1.5 * IQR);
@@ -274,12 +274,19 @@ module powerbi.extensibility.visual {
 
                 let dataPointColor: string;
 
-                if (category.objects && category.objects[i]) {
-                    dataPointColor = colorHelper.getColorForMeasure(category.objects[i], "");
+                if (this.settings.dataPoint.oneColor) {
+                    if (category.objects && category.objects[0]) {
+                        dataPointColor = colorHelper.getColorForMeasure(category.objects[0], "");
+                    } else {
+                        dataPointColor = colors.getColor("0").value;
+                    }
                 } else {
-                    dataPointColor = colors.getColor(i.toString()).value;
-                }
-                
+                    if (category.objects && category.objects[i]) {
+                        dataPointColor = colorHelper.getColorForMeasure(category.objects[i], "");
+                    } else {
+                        dataPointColor = colors.getColor(i.toString()).value;
+                    }
+                    }
                 dataPoints[i].push({
                     x:0,
                     y:0,
@@ -1045,8 +1052,26 @@ module powerbi.extensibility.visual {
             let instances : VisualObjectInstance[] = [];
 
             switch (options.objectName) {
+                case "xAxis":
+                    if (this.settings.chartOptions.orientation === BoxWhiskerEnums.ChartOrientation.Vertical) {
+                        this.removeEnumerateObject(instanceEnumeration, "labelDisplayUnits");
+                        this.removeEnumerateObject(instanceEnumeration, "labelPrecision");
+                    }
+                    if (!this.settings.xAxis.showTitle) {
+                            this.removeEnumerateObject(instanceEnumeration, "title");
+                    }
+                    break;
+                case "yAxis":
+                    if (this.settings.chartOptions.orientation === BoxWhiskerEnums.ChartOrientation.Horizontal) {
+                        this.removeEnumerateObject(instanceEnumeration, "labelDisplayUnits");
+                        this.removeEnumerateObject(instanceEnumeration, "labelPrecision");
+                    }
+                    if (!this.settings.yAxis.showTitle) {
+                        this.removeEnumerateObject(instanceEnumeration, "title");
+                    }
+                    break;                    
                 case "dataPoint":
-                    instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette);
+                    instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
                     break;
                 case "y1AxisReferenceLine":
                     instances = refLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);
@@ -1066,7 +1091,14 @@ module powerbi.extensibility.visual {
             }
         }
 
-        
+        public removeEnumerateObject(instanceEnumeration: VisualObjectInstanceEnumeration, objectName: string): void {
+            if ((instanceEnumeration as VisualObjectInstanceEnumerationObject).instances) {
+                delete (instanceEnumeration as VisualObjectInstanceEnumerationObject)
+                    .instances[0].properties[objectName]
+            } else {
+                delete (instanceEnumeration as VisualObjectInstance[])[0].properties[objectName]
+            }
+        }
 
         public destroy(): void {
         }

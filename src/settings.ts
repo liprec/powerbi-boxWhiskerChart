@@ -35,14 +35,13 @@ module powerbi.extensibility.visual {
 
         public general: GeneralSettings = new GeneralSettings();
         public chartOptions: ChartOptionsSettings = new ChartOptionsSettings();
-//        public dataPoint: DataPointSettings = new DataPointSettings();
         public xAxis: XAxisSettings = new XAxisSettings();
         public yAxis: YAxisSettings = new YAxisSettings();
+        public dataPoint: DataPointSettings = new DataPointSettings();
         public gridLines: GridLinesSettings = new GridLinesSettings();
         public labels: LabelsSettings = new LabelsSettings();
     }
 
-    
     class GeneralSettings {
         public formatString: string = "";
         public margin: IMargin = {
@@ -54,21 +53,39 @@ module powerbi.extensibility.visual {
     }
 
     class ChartOptionsSettings {
-        public whisker: BoxWhiskerEnums.ChartType = BoxWhiskerEnums.ChartType.MinMax;
+        public orientation: BoxWhiskerEnums.ChartOrientation = BoxWhiskerEnums.ChartOrientation.Vertical;
+        public quartile: BoxWhiskerEnums.QuartileType = BoxWhiskerEnums.QuartileType.Inclusive; // need to check
+        public whisker: BoxWhiskerEnums.WhiskerType = BoxWhiskerEnums.WhiskerType.MinMax;
         public outliers: boolean = false;
         public margin: BoxWhiskerEnums.MarginType = BoxWhiskerEnums.MarginType.Medium;
     }
 
-    // class DataPointSettings {
-    //     public fill: string = undefined;
-    // }
+    class DataPointSettings {
+        public meanColor: string = "#212121";
+        public medianColor: string = "#212121";
+        public oneColor: boolean = false;
+    }
 
     class XAxisSettings {
+        public show: boolean = true;
+        public fontColor: string = "#212121"
         public fontSize: number = 11;
+        public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public labelDisplayUnits: number = 0;
+        public labelPrecision: number = undefined;
+        public showTitle: boolean = false;
+        public title: string = undefined;
     }
 
     class YAxisSettings {
+        public show: boolean = true;
+        public fontColor: string = "#212121"
         public fontSize: number = 11;
+        public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public labelDisplayUnits: number = 0;
+        public labelPrecision: number = undefined;
+        public showTitle: boolean = false;
+        public title: string = undefined;
     }
 
     class GridLinesSettings {
@@ -82,7 +99,10 @@ module powerbi.extensibility.visual {
 
     class LabelsSettings {
         public show:boolean = false;
+        public fontColor: string = "#212121"
         public fontSize: number = 11;
-
+        public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public labelDisplayUnits: number = 0;
+        public labelPrecision: number = undefined;
     }
 }

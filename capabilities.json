@@ -59,20 +59,50 @@
         "chartOptions": {
             "displayName": "Chart Options",
             "properties": {
-                "whisker": {
-                    "displayName": "Chart type",
-                    "description": "Determines the type of box and whisker chart",
+                "orientation": {
+                    "displayName": "Orientation",
+                    "description": "Orientation of the chart, horizontal or viertical",
                     "type": {
                         "enumeration": [{
-                                "value": "MinMax",
+                                "value": "0",
+                                "displayName": "Horizontal"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Vertical"
+                            }
+                        ]
+                    }
+                },
+                "quartile": {
+                    "displayName": "Quartile",
+                    "description": "The way of how the quartiles are calculated, inclusive or exclusive",
+                    "type": {
+                        "enumeration": [{
+                                "value": "0",
+                                "displayName": "Exclusive"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Inclusive"
+                            }
+                        ]
+                    }
+                },
+                "whisker": {
+                    "displayName": "Whisker type",
+                    "description": "Determines the type of whiskers (min/max, Tukey or 1.5IQR)",
+                    "type": {
+                        "enumeration": [{
+                                "value": "0",
                                 "displayName": "Min/Max"
                             },
                             {
-                                "value": "Tukey",
+                                "value": "1",
                                 "displayName": "Tukey"
                             },
                             {
-                                "value": "IQR",
+                                "value": "2",
                                 "displayName": "1.5 IQR"
                             }
                         ]
@@ -88,15 +118,15 @@
                     "description": "The margin between the different boxes.\nOnly used when no datalabels are shown",
                     "type": {
                         "enumeration": [{
-                                "value": "Small",
+                                "value": "0",
                                 "displayName": "Small"
                             },
                             {
-                                "value": "Medium",
+                                "value": "1",
                                 "displayName": "Medium"
                             },
                             {
-                                "value": "Large",
+                                "value": "2",
                                 "displayName": "Large"
                             }
                         ]
@@ -104,30 +134,131 @@
                 }
             }
         },
-        "dataPoint": {
-            "displayName": "Data colors",
-            "properties": {
-                "fill": {
-                    "displayName": "Fill",
-                    "type": { "fill": { "solid": { "color": true } } }
-                }
-            }
-        },
         "xAxis": {
             "displayName": "X-Axis",
             "properties": {
+                "show": { 
+                    "displayName": "Show",
+                    "type": { "bool": true }
+                },
+                "fontColor": {
+                    "displayName": "Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
                 "fontSize": {
                     "displayName": "Text Size",
                     "type": { "formatting": { "fontSize": true } }
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelDisplayUnits": {
+                    "displayName": "Display units",
+                    "description": "Selects the unit (millions, billions, etc.)",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "labelPrecision": {
+                    "displayName": "Value decimal places",
+                    "description": "Select the number of decimal places to display",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    },
+                    "suppressFormatPainterCopy": true
+                },
+                "showTitle": {
+                    "displayName": "Show Title",
+                    "type": { "bool": true }
+                },
+                "title": {
+                    "displayName": "Title",
+                    "placeHolderText": "X-Axis Title",
+                    "type": { "text": true }
                 }
             }
         },
         "yAxis": {
             "displayName": "Y-Axis",
             "properties": {
+                "show": { 
+                    "displayName": "Show",
+                    "type": { "bool": true }
+                },
+                "fontColor": {
+                    "displayName": "Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
                 "fontSize": {
                     "displayName": "Text Size",
                     "type": { "formatting": { "fontSize": true } }
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelDisplayUnits": {
+                    "displayName": "Display units",
+                    "description": "Selects the unit (millions, billions, etc.)",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "labelPrecision": {
+                    "displayName": "Value decimal places",
+                    "description": "Select the number of decimal places to display",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    },
+                    "suppressFormatPainterCopy": true
+                },
+                "showTitle": {
+                    "displayName": "Show Title",
+                    "type": { "bool": true }
+                },
+                "title": {
+                    "displayName": "Title",
+                    "placeHolderText": "Y-Axis Title",
+                    "type": { "text": true }
+                }
+            }
+        },
+        "dataPoint": {
+            "displayName": "Data colors",
+            "properties": {
+                "meanColor": {
+                    "displayName": "Mean Color",
+                    "description": "Color of the mean dot",
+                    "type": { "fill": {"solid": { "color": true } } }
+                },
+                "medianColor": {
+                    "displayName": "Median Color",
+                    "description": "Color of the median line",
+                    "type": { "fill": {"solid": { "color": true } } }
+                },
+                "oneColor": {
+                    "displayName": "One Color",
+                    "description": "Enable one color for all Box and Whiskers",
+                    "type": { "bool": true }
+                },
+                "fill": {
+                    "displayName": "Fill",
+                    "type": { "fill": { "solid": { "color": true } } }
                 }
             }
         },
@@ -173,10 +304,40 @@
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
+                "fontColor": {
+                    "displayName": "Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
                 "fontSize": {
                     "displayName": "Text Size",
                     "type": { "formatting": { "fontSize": true } },
                     "description": "If datalabels are to big, the default size is used."
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelDisplayUnits": {
+                    "displayName": "Display units",
+                    "description": "Selects the unit (millions, billions, etc.)",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "labelPrecision": {
+                    "displayName": "Value decimal places",
+                    "description": "Select the number of decimal places to display",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    },
+                    "suppressFormatPainterCopy": true
                 }
             }
         },
@@ -209,15 +370,15 @@
                     "description": "Set reference line style",
                     "type" : { "enumeration": [
                         {
-                            "value": "dashed",
+                            "value": "0",
                             "displayName": "Dashed"
                         },
                         {
-                            "value": "solid",
+                            "value": "1",
                             "displayName": "Solid"
                         },
                         {
-                            "value": "dotted",
+                            "value": "2",
                             "displayName": "Dotted"
                         }
                     ]}
@@ -227,11 +388,11 @@
                     "description": "Arrange relative to chart data points",
                     "type" : { "enumeration": [
                         {
-                            "value": "front",
+                            "value": "0",
                             "displayName": "In Front"
                         },
                         {
-                            "value": "back",
+                            "value": "1",
                             "displayName": "Behind"
                         }
                     ]}
