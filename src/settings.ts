@@ -56,6 +56,7 @@ module powerbi.extensibility.visual {
             right: 5,
             left: 5
         };
+        public locale:string = undefined;
         public formatString: string = "";
         public duration: number = 0;
         public defaultColor: string = "#01B8AA"
@@ -88,53 +89,71 @@ module powerbi.extensibility.visual {
     }
 
     class DataPointSettings {
-        public meanColor: string = "#212121";
-        public medianColor: string = "#212121";
+        public meanColor: string = "#111";
+        public medianColor: string = "#111";
         public oneColor: boolean = false;
     }
 
     class XAxisSettings {
         public show: boolean = true;
-        public fontColor: string = "#212121"
+        public fontColor: string = "#777"
         public fontSize: number = 11;
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
         public showTitle: boolean = false;
         public title: string = undefined;
+        public defaultTitle: string = undefined;
+        public titleFontColor: string = "#777"
+        public titleFontSize: number = 11;
+        public titleFontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
             fontSize: this.fontSize + "px"
+        };
+        public titleTextProperties: TextProperties = {
+            fontFamily: this.titleFontFamily,
+            fontSize: this.titleFontSize + "px"
         };
     }
 
     class YAxisSettings {
         public show: boolean = true;
-        public fontColor: string = "#212121"
+        public fontColor: string = "#777"
         public fontSize: number = 11;
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
         public showTitle: boolean = false;
         public title: string = undefined;
+        public defaultTitle: string = undefined;
+        public titleFontColor: string = "#777"
+        public titleFontSize: number = 11;
+        public titleFontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
             fontSize: this.fontSize + "px"
+        };
+        public titleTextProperties: TextProperties = {
+            fontFamily: this.titleFontFamily,
+            fontSize: this.titleFontSize + "px"
         };
     }
 
     class GridLinesSettings {
         public show: boolean = true;
         public majorGridSize: number = 1;
-        public majorGridColor: string = "#666666";
+        public majorGridColor: string = "#DDD";
         public minorGrid: boolean = false;
         public minorGridSize: number = 1;
-        public minorGridColor: string = "#9c9c9c";
+        public minorGridColor: string = "#EEE";
     }
 
     class LabelsSettings {
         public show:boolean = false;
-        public fontColor: string = "#212121"
+        public fontColor: string = "#777"
         public fontSize: number = 11;
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
         public labelDisplayUnits: number = 0;

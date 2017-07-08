@@ -129,23 +129,36 @@ module powerbi.extensibility.visual {
                     .style("font-family", settings.xAxis.fontFamily)                
                     .style("font-size", settings.xAxis.fontSize + "px");
 
-                if (settings.xAxis.showTitle && (settings.xAxis.title!==undefined)) {
+                if (settings.xAxis.showTitle) {
                     let yTransform = settings.general.viewport.height - settings.general.margin.bottom;
                     let labelWidth = textMeasurementService.measureSvgTextWidth(
-                        settings.xAxis.axisTextProperties,
-                        settings.xAxis.title
+                        settings.xAxis.titleTextProperties,
+                        settings.xAxis.title || settings.xAxis.defaultTitle
                     );
-                    let xTransform = (((settings.general.viewport.width - settings.general.margin.left - 
-                        settings.general.margin.right - settings.axis.axisSizeY) / 2) +
-                        settings.general.margin.left + settings.axis.axisSizeY) -
-                        (labelWidth / 2);
+                    let xTransform;
+                    switch (settings.xAxis.titleAlignment) {
+                        case "left":
+                            xTransform = settings.general.margin.left + settings.axis.axisSizeY;
+                            break;
+                        case "right":
+                            xTransform = settings.general.viewport.width - settings.general.margin.left -
+                                labelWidth;
+                            break;
+                        case "center":
+                        default:
+                            xTransform = (((settings.general.viewport.width - settings.general.margin.left - 
+                                settings.general.margin.right - settings.axis.axisSizeY) / 2) +
+                                settings.general.margin.left + settings.axis.axisSizeY) -
+                                (labelWidth / 2);
+                            break;
+                    }
                     axisXLabel
                         .attr("transform", "translate(" + xTransform + ", " + yTransform + ")")
                         .attr("opacity", 1)
-                        .text(settings.xAxis.title)
-                        .style("fill", settings.xAxis.fontColor)
-                        .style("font-family", settings.xAxis.fontFamily)                
-                        .style("font-size", settings.xAxis.fontSize + "px")
+                        .text(settings.xAxis.title || settings.xAxis.defaultTitle)
+                        .style("fill", settings.xAxis.titleFontColor)
+                        .style("font-family", settings.xAxis.titleFontFamily)                
+                        .style("font-size", settings.xAxis.titleFontSize + "px")
                         .transition()
                         .duration(settings.general.duration);
                 } else {
@@ -175,24 +188,34 @@ module powerbi.extensibility.visual {
                     .style("font-family", settings.yAxis.fontFamily)
                     .style("font-size", settings.yAxis.fontSize + "px");
 
-                if (settings.yAxis.showTitle && (settings.yAxis.title!==undefined)) {
+                if (settings.yAxis.showTitle) {
                     let xTransform = settings.general.margin.left + (settings.axis.axisLabelSizeY / 2);
                     let labelWidth = textMeasurementService.measureSvgTextWidth(
                         settings.yAxis.axisTextProperties,
-                        settings.yAxis.title
+                        settings.yAxis.title || settings.yAxis.defaultTitle
                     );
-                    let centerX = settings.axis.axisLabelSizeY / 2;
-                    let centerY = labelWidth / 2;
-                    let yTransform = ((settings.general.viewport.height - settings.general.margin.bottom - 
-                        settings.general.margin.top - settings.axis.axisSizeX) / 2) +
-                        centerY;
+                    let yTransform;
+                    switch (settings.yAxis.titleAlignment) {
+                        case "left":
+                            yTransform = settings.general.viewport.height - settings.axis.axisSizeX;
+                            break;
+                        case "right":
+                            yTransform = settings.general.margin.top + labelWidth;
+                            break;
+                        case "center":
+                        default:
+                            yTransform = ((settings.general.viewport.height - settings.general.margin.bottom - 
+                                settings.general.margin.top - settings.axis.axisSizeX) / 2) +
+                                (labelWidth / 2);
+                            break;
+                    }
                     axisYLabel
                         .attr("transform", "translate(" + xTransform + ", " + yTransform + ") rotate(-90)")
                         .attr("opacity", 1)
-                        .text(settings.yAxis.title)
-                        .style("fill", settings.yAxis.fontColor)
-                        .style("font-family", settings.yAxis.fontFamily)                
-                        .style("font-size", settings.yAxis.fontSize + "px")
+                        .text(settings.yAxis.title || settings.yAxis.defaultTitle)
+                        .style("fill", settings.yAxis.titleFontColor)
+                        .style("font-family", settings.yAxis.titleFontFamily)                
+                        .style("font-size", settings.yAxis.titleFontSize + "px")
                         .transition()
                         .duration(settings.general.duration);
                 } else {

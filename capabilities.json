@@ -181,8 +181,32 @@
                 },
                 "title": {
                     "displayName": "Title",
-                    "placeHolderText": "X-Axis Title",
+                    "placeHolderText": "Auto",
                     "type": { "text": true }
+                },
+                "titleFontColor": {
+                    "displayName": "Title Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "titleFontSize": {
+                    "displayName": "Title Text Size",
+                    "type": { "formatting": { "fontSize": true } }
+                },
+                "titleFontFamily": {
+                    "displayName": "Title Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "titleAlignment": {
+                    "displayName": "Title Alignment",
+                    "type": {
+                        "formatting": {
+                            "alignment": true
+                        }
+                    }
                 }
             }
         },
@@ -233,8 +257,32 @@
                 },
                 "title": {
                     "displayName": "Title",
-                    "placeHolderText": "Y-Axis Title",
+                    "placeHolderText": "Auto",
                     "type": { "text": true }
+                },
+                "titleFontColor": {
+                    "displayName": "Title Color",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "titleFontSize": {
+                    "displayName": "Title Text Size",
+                    "type": { "formatting": { "fontSize": true } }
+                },
+                "titleFontFamily": {
+                    "displayName": "Title Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "titleAlignment": {
+                    "displayName": "Title Alignment",
+                    "type": {
+                        "formatting": {
+                            "alignment": true
+                        }
+                    }
                 }
             }
         },

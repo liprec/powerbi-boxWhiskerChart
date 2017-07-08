@@ -128,27 +128,40 @@ module powerbi.extensibility.visual {
             }
             let categories = dataView.matrix.rows.root.children;
             let category = dataView.categorical.categories[0];
-
+            let categoryValues = [];
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = refLineReadDataView(dataView.metadata.objects, colors);
-            let maxValue = 100 // TODO
+
+            this.settings.xAxis.defaultTitle = category.source.displayName;
+            this.settings.yAxis.defaultTitle = dataView.categorical.values[0].source.displayName;
+
+            for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
+                categoryValues.push(
+                    this.getValueArray(dataView.matrix.rows.root.children[i].values)
+                        .filter((value) => { return value != null; })
+                );
+            }
+            let maxValue = d3.max(categoryValues, (val) => d3.max(val));
 
             this.settings.formatting.valuesFormatter = valueFormatter.create({
                 format: valueFormatter.getFormatStringByColumn(dataView.categorical.values[0].source),
                 precision: this.settings.yAxis.labelPrecision,
-                value: this.settings.yAxis.labelDisplayUnits || maxValue
+                value: this.settings.yAxis.labelDisplayUnits || maxValue,
+                cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.categoryFormatter = valueFormatter.create({
                 format: valueFormatter.getFormatStringByColumn(dataView.categorical.categories[0].source),
                 precision: this.settings.xAxis.labelPrecision,
-                value: this.settings.xAxis.labelDisplayUnits || maxValue
+                value: this.settings.xAxis.labelDisplayUnits || maxValue,
+                cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.labelFormatter = valueFormatter.create({
                 format: valueFormatter.getFormatStringByColumn(dataView.categorical.values[0].source),
                 precision: this.settings.labels.labelPrecision,
-                value: this.settings.labels.labelDisplayUnits || maxValue
+                value: this.settings.labels.labelDisplayUnits || maxValue,
+                cultureSelector: this.settings.general.locale
             });
 
             this.dataType = ValueType.fromDescriptor(dataView.matrix.valueSources[0].type);
@@ -163,8 +176,7 @@ module powerbi.extensibility.visual {
             let queryName = (category && category.source) ? category.source.queryName : undefined;
 
             for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
-                let values = this.getValueArray(dataView.matrix.rows.root.children[i].values)
-                    .filter((value) => { return value != null; });
+                let values = categoryValues[i];
 
                 if (values.length === 0) {
                     break;
@@ -359,13 +371,16 @@ module powerbi.extensibility.visual {
                 this.root = $(options.element);
             }
             
-            var element = options.element;
+            let element = options.element;
             this.hostServices = options.host;
             this.colorPalette = options.host.colorPalette;
             this.selectionIdBuilder = options.host.createSelectionIdBuilder();
             this.selectionManager = options.host.createSelectionManager();
             this.tooltipServiceWrapper = createTooltipServiceWrapper(this.hostServices.tooltipService, options.element);
             
+            this.settings = BoxWhiskerChart.parseSettings(this.dataView);
+            this.settings.general.locale = options.host.locale;
+
             if (!this.svg) {
                 this.svg = d3.select(this.root.get(0))
                     .append('svg')
@@ -463,14 +478,14 @@ module powerbi.extensibility.visual {
                 this.settings.axis.axisSizeX = textMeasurementService.measureSvgTextHeight(
                     this.settings.xAxis.axisTextProperties,
                     "X"
-                )// + 5; // Axis height itself
+                );
 
-                if (this.settings.xAxis.showTitle && (this.settings.xAxis.title!==undefined)) {
+                if (this.settings.xAxis.showTitle) {
                     this.settings.axis.axisLabelSizeX = textMeasurementService.measureSvgTextHeight(
-                        this.settings.xAxis.axisTextProperties,
-                        this.settings.formatting.categoryFormatter.format(this.settings.xAxis.title)
+                        this.settings.xAxis.titleTextProperties,
+                        this.settings.formatting.categoryFormatter.format(this.settings.xAxis.title || this.settings.xAxis.defaultTitle)
                     );
-                    this.settings.axis.axisSizeX += this.settings.axis.axisLabelSizeX // + 5; // Margin
+                    this.settings.axis.axisSizeX += this.settings.axis.axisLabelSizeX;
                 }
             }
 
@@ -480,12 +495,12 @@ module powerbi.extensibility.visual {
                     this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max)
                 ) + 5; // Axis width itself
 
-                if (this.settings.yAxis.showTitle && (this.settings.yAxis.title!==undefined)) {
+                if (this.settings.yAxis.showTitle) {
                     this.settings.axis.axisLabelSizeY = textMeasurementService.measureSvgTextHeight(
-                        this.settings.yAxis.axisTextProperties,
-                        this.settings.formatting.valuesFormatter.format(this.settings.yAxis.title)
+                        this.settings.yAxis.titleTextProperties,
+                        this.settings.formatting.valuesFormatter.format(this.settings.yAxis.title || this.settings.yAxis.defaultTitle)
                     );
-                    this.settings.axis.axisSizeY += this.settings.axis.axisLabelSizeY; // + 5; // Margin
+                    this.settings.axis.axisSizeY += this.settings.axis.axisLabelSizeY;
                 }
             }
 
@@ -562,7 +577,11 @@ module powerbi.extensibility.visual {
                         this.removeEnumerateObject(instanceEnumeration, "labelPrecision");
                     }
                     if (!this.settings.xAxis.showTitle) {
-                            this.removeEnumerateObject(instanceEnumeration, "title");
+                        this.removeEnumerateObject(instanceEnumeration, "title");
+                        this.removeEnumerateObject(instanceEnumeration, "titleFontColor");
+                        this.removeEnumerateObject(instanceEnumeration, "titleFontSize");
+                        this.removeEnumerateObject(instanceEnumeration, "titleFontFamily");
+                        this.removeEnumerateObject(instanceEnumeration, "titleAlignment");
                     }
                     break;
                 case "yAxis":
@@ -572,6 +591,10 @@ module powerbi.extensibility.visual {
                     }
                     if (!this.settings.yAxis.showTitle) {
                         this.removeEnumerateObject(instanceEnumeration, "title");
+                        this.removeEnumerateObject(instanceEnumeration, "titleFontColor");
+                        this.removeEnumerateObject(instanceEnumeration, "titleFontSize");
+                        this.removeEnumerateObject(instanceEnumeration, "titleFontFamily");
+                        this.removeEnumerateObject(instanceEnumeration, "titleAlignment");
                     }
                     break;                    
                 case "dataPoint":
@@ -609,14 +632,21 @@ module powerbi.extensibility.visual {
 
         private static parseSettings(dataView: DataView): BoxWhiskerChartSettings {
             let settings: BoxWhiskerChartSettings = BoxWhiskerChartSettings.parse<BoxWhiskerChartSettings>(dataView);
-
             settings.yAxis.axisTextProperties = {
                 fontFamily: settings.yAxis.fontFamily,
                 fontSize: settings.yAxis.fontSize + "px"
             }
+            settings.yAxis.titleTextProperties = {
+                fontFamily: settings.yAxis.titleFontFamily,
+                fontSize: settings.yAxis.titleFontSize + "px"
+            }
             settings.xAxis.axisTextProperties = {
                 fontFamily: settings.xAxis.fontFamily,
                 fontSize: settings.xAxis.fontSize + "px"
+            }
+            settings.xAxis.titleTextProperties = {
+                fontFamily: settings.xAxis.titleFontFamily,
+                fontSize: settings.xAxis.titleFontSize + "px"
             }
             settings.labels.axisTextProperties = {
                 fontFamily: settings.labels.fontFamily,
