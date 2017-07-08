@@ -74,18 +74,20 @@ module powerbi.extensibility.visual {
 
         private static VisualClassName = "boxWhiskerChart";
 
-        private static Axis: ClassAndSelector = createClassAndSelector("axis");
-        private static AxisX: ClassAndSelector = createClassAndSelector("axisX")
-        private static AxisMajorGrid: ClassAndSelector = createClassAndSelector("axisMajorGrid");
-        private static AxisMinorGrid: ClassAndSelector = createClassAndSelector("axisMinorGrid");
-        private static AxisY: ClassAndSelector = createClassAndSelector("axisY");
-        private static Chart: ClassAndSelector = createClassAndSelector("chart");
-        private static ChartNode: ClassAndSelector = createClassAndSelector("chartNode");
-        private static ChartQuartileBox: ClassAndSelector = createClassAndSelector("chartQuartileBox");
-        private static ChartMedianLine: ClassAndSelector = createClassAndSelector("chartMedianLine");
-        private static ChartAverageDot: ClassAndSelector = createClassAndSelector("chartAverageDot");
-        private static ChartOutlierDot: ClassAndSelector = createClassAndSelector("chartOutlierDot");
-        private static ChartDataLabel: ClassAndSelector = createClassAndSelector("chartDataLabel");
+        public static Axis: ClassAndSelector = createClassAndSelector("axis");
+        public static AxisX: ClassAndSelector = createClassAndSelector("axisX")
+        public static AxisY: ClassAndSelector = createClassAndSelector("axisY");
+        public static AxisXLabel: ClassAndSelector = createClassAndSelector("axisXLabel")
+        public static AxisYLabel: ClassAndSelector = createClassAndSelector("axisYLabel");
+        public static AxisMajorGrid: ClassAndSelector = createClassAndSelector("axisMajorGrid");
+        public static AxisMinorGrid: ClassAndSelector = createClassAndSelector("axisMinorGrid");
+        public static Chart: ClassAndSelector = createClassAndSelector("chart");
+        public static ChartNode: ClassAndSelector = createClassAndSelector("chartNode");
+        public static ChartQuartileBox: ClassAndSelector = createClassAndSelector("chartQuartileBox");
+        public static ChartMedianLine: ClassAndSelector = createClassAndSelector("chartMedianLine");
+        public static ChartAverageDot: ClassAndSelector = createClassAndSelector("chartAverageDot");
+        public static ChartOutlierDot: ClassAndSelector = createClassAndSelector("chartOutlierDot");
+        public static ChartDataLabel: ClassAndSelector = createClassAndSelector("chartDataLabel");
 
         private root: JQuery;
         private svg: Selection<any>;
@@ -94,43 +96,21 @@ module powerbi.extensibility.visual {
         private settings: BoxWhiskerChartSettings;
         private axisX: Selection<any>;
         private axisY: Selection<any>;
+        private axisXLabel: Selection<any>;
+        private axisYLabel: Selection<any>;
         private axisMajorGrid: Selection<any>;
         private axisMinorGrid: Selection<any>;
-        private axisOptions: BoxWhiskerAxisOptions;
 
         private mainGroupElement: Selection<any>;
         private colorPalette: IColorPalette;
         private selectionIdBuilder: ISelectionIdBuilder;
         private selectionManager: ISelectionManager;
-        private viewport: IViewport;
         private hostServices: IVisualHost;
         private dataView: DataView;
         private data: BoxWhiskerChartData;
         private tooltipServiceWrapper: ITooltipServiceWrapper
 
-        private defaultFontFamily = "Segoe UI,wf_segoe-ui_normal,helvetica,arial,sans-serif";
-        private staticColor: string = "#707070";
-
-        private static DefaultMargin: IMargin = {
-            top: 5,
-            bottom: 5,
-            right: 5,
-            left: 5
-        };
-
-        private static ColorProperties: DataViewObjectPropertyIdentifier = {
-            objectName: "dataPoint",
-            propertyName: "fill"
-        };
-
-        private margin: IMargin;
-        private defaultFormatY: string = "#,0";
-        private formatY: IValueFormatter;
-        private formatX: IValueFormatter;
         private dataType: ValueType;
-
-        private AxisSizeY: number = 40;
-        private AxisSizeX: number = 20;
 
         public converter(dataView: DataView, colors: IColorPalette): BoxWhiskerChartData {
             if (!dataView ||
@@ -151,80 +131,87 @@ module powerbi.extensibility.visual {
 
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = refLineReadDataView(dataView.metadata.objects, colors);
+            let maxValue = 100 // TODO
 
-            if (dataView.matrix.rows.levels.length > 0) {
-                this.formatX = valueFormatter.create({
-                    format: dataView.matrix.rows.levels[0].sources[0].format,
-                    value: categories[0].value,
-                    value2: categories[categories.length - 1].value,
-                });
-            } else {
-                this.formatX = valueFormatter.createDefaultFormatter(null);
-            }
-            
-            this.formatY = valueFormatter.create({
-                format: dataView.matrix.valueSources[0].format
-                    ? dataView.matrix.valueSources[0].format
-                    : this.defaultFormatY,
-                value: 100, //d3.max(dataView.matrix.rows.root.children, (c) => d3.max([c.values])),
-                value2: -100, // d3.min(dataView.matrix.rows.root.children, (c) => d3.min([c.values])),
-                precision: 3,
+            this.settings.formatting.valuesFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatStringByColumn(dataView.categorical.values[0].source),
+                precision: this.settings.yAxis.labelPrecision,
+                value: this.settings.yAxis.labelDisplayUnits || maxValue
+            });
+
+            this.settings.formatting.categoryFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatStringByColumn(dataView.categorical.categories[0].source),
+                precision: this.settings.xAxis.labelPrecision,
+                value: this.settings.xAxis.labelDisplayUnits || maxValue
+            });
+
+            this.settings.formatting.labelFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatStringByColumn(dataView.categorical.values[0].source),
+                precision: this.settings.labels.labelPrecision,
+                value: this.settings.labels.labelDisplayUnits || maxValue
             });
 
             this.dataType = ValueType.fromDescriptor(dataView.matrix.valueSources[0].type);
             let hasStaticColor = categories.length > 15;
-            let defaultColor = "#7F7F7F";
             let properties = {};
             let colorHelper: ColorHelper = new ColorHelper(
                 colors,
-                BoxWhiskerChart.ColorProperties,
-                defaultColor
+                this.settings.general.ColorProperties,
+                this.settings.general.defaultColor
             )
 
-            let queryName = (category
-                && category.source
-                && category.source.queryName)
-                || null
+            let queryName = (category && category.source) ? category.source.queryName : undefined;
 
-            for (var i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
-                var values = this.getValueArray(dataView.matrix.rows.root.children[i].values)
+            for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
+                let values = this.getValueArray(dataView.matrix.rows.root.children[i].values)
                     .filter((value) => { return value != null; });
 
                 if (values.length === 0) {
                     break;
                 }
 
-                let selectonBuilder = this.selectionIdBuilder.withCategory(category, i)
-                //if (queryName) {
-                //    selectonBuilder.withMeasure(queryName);
-                //}
-                //let selectionId: ISelectionId = categories[i].identity as ISelectionId;
-                let selectionId: ISelectionId = ColorHelper.normalizeSelector({ data: [categories[i].identity] }, false) as ISelectionId;
+                let selector = { data: [categories[i].identity], };
+                let selectionId: ISelectionId = new SelectionId(selector, false) as ISelectionId;
+                let sortedValue = values.sort((n1, n2) => n1 - n2);
 
-                var sortedValue = values.sort((n1, n2) => n1 - n2);
+                let median
+                let lowerValues;
+                let higerValues;
 
-                var median = (
-                    sortedValue[Math.floor((sortedValue.length - 1) / 2)] +
-                    sortedValue[Math.ceil((sortedValue.length - 1) / 2)]) / 2;
+                if ((this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive) && (sortedValue.length % 2)) { // Exclusive and odd values
+                    let medianValue = (sortedValue.length - 1) / 2;
+                    median = sortedValue[medianValue];
+                    lowerValues = $.extend(true, [], sortedValue);  // Copy values
+                    lowerValues.splice(medianValue, 1);             // Remove median value
+                    higerValues = lowerValues.splice(medianValue);  // Split lower and higer part
+                } else {
+                    let medianValue = (sortedValue.length - 1) / 2; // Easy median
+                    median = (sortedValue[Math.floor(medianValue)] +
+                             sortedValue[Math.ceil(medianValue)]) /2;
+                    lowerValues = $.extend(true, [], sortedValue);  // Copy values
+                    higerValues = $.extend(true, [], sortedValue);  // Copy values
+                    lowerValues.splice(Math.floor(medianValue) + 1);
+                    higerValues = higerValues.splice(Math.ceil(medianValue));
+                }
 
-                var q1 = sortedValue.length === 3 ? 0 : (sortedValue.length - 1) / 4;
+                let qValue = (lowerValues.length - 1) / 2;
+                let quartile1 = sortedValue.length <= 2 ? null :
+                            (lowerValues[Math.floor(qValue)] +
+                            lowerValues[Math.ceil(qValue)]) / 2;
+                let quartile3 = sortedValue.length <= 2 ? null :
+                            (higerValues[Math.floor(qValue)] +
+                            higerValues[Math.ceil(qValue)]) / 2;
 
-                var q1LowValue = sortedValue[Math.floor(q1)];
-                var q1HighValue = sortedValue[Math.ceil(q1)];
-
-                var quartile1 = sortedValue.length <= 2 ? null : q1LowValue + ((q1 - Math.floor(q1)) * (q1HighValue - q1LowValue));
-
-                var q3 = sortedValue.length === 3 ? 2 : 3 * q1;
-
-                var q3LowValue = sortedValue[Math.floor(q3)];
-                var q3HighValue = sortedValue[Math.ceil(q3)];
-
-                var quartile3 = sortedValue.length <= 2 ? null : q3LowValue + (((3 * q1) - Math.floor(3 * q1)) * (q3HighValue - q3LowValue));
+                let ttl: number = 0;
+                sortedValue.forEach(value => { ttl += value; });
+                let avgvalue = ttl / sortedValue.length;
 
                 let minValue;
                 let maxValue;
                 let minValueLabel;
                 let maxValueLabel;
+                let quartileValue;
+                let whiskerValue;
                 let whiskerType: BoxWhiskerEnums.WhiskerType = this.settings.chartOptions.whisker;
 
                 if (!quartile1 || !quartile3) {
@@ -237,6 +224,8 @@ module powerbi.extensibility.visual {
                         maxValue = sortedValue[sortedValue.length - 1];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
+                        quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
+                        whiskerValue = "Min/Max";
                         break;
                     case BoxWhiskerEnums.WhiskerType.Standard:
                         var IQR = quartile3 - quartile1;
@@ -244,6 +233,8 @@ module powerbi.extensibility.visual {
                         maxValue = sortedValue.filter((value) => value <= quartile3 + (1.5 * IQR)).reverse()[0];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
+                        quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
+                        whiskerValue = "< 1.5IQR";
                         break;
                     case BoxWhiskerEnums.WhiskerType.IQR:
                         var IQR = quartile3 - quartile1;
@@ -251,18 +242,18 @@ module powerbi.extensibility.visual {
                         maxValue = quartile3 + (1.5 * IQR);
                         minValueLabel = "Q1 - 1.5 x IQR";
                         maxValueLabel = "Q3 + 1.5 x IQR";
+                        quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
+                        whiskerValue = "= 1.5IQR";
                         break;
                     default:
                         minValue = sortedValue[0];
                         maxValue = sortedValue[sortedValue.length - 1];
                         minValueLabel = "Minimum";
                         maxValueLabel = "Maximum";
+                        quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
+                        whiskerValue = "Min/Max";
                         break;
                 }
-
-                var ttl: number = 0;
-                sortedValue.forEach(value => { ttl += value; });
-                var avgvalue = ttl / sortedValue.length;
 
                 dataPoints.push([]);
 
@@ -286,7 +277,8 @@ module powerbi.extensibility.visual {
                     } else {
                         dataPointColor = colors.getColor(i.toString()).value;
                     }
-                    }
+                }
+                
                 dataPoints[i].push({
                     x:0,
                     y:0,
@@ -308,44 +300,51 @@ module powerbi.extensibility.visual {
                         : [],
                     label: categories[0].value === undefined
                         ? dataView.matrix.valueSources[0].displayName
-                        : this.formatX.format(categories[i].value),
+                        : this.settings.formatting.categoryFormatter.format(categories[i].value),
                     selectionId: selectionId,
-                    color: //hasStaticColor ? staticColor : //colorHelper.getColorForSeriesValue(categories[i].objects, dataView.matrix.rows.root.childIdentityFields, categories[i].name),
-                        dataPointColor,
+                    color: dataPointColor,
                     tooltipInfo: [
                         {
-                            displayName: 'Group',
+                            displayName: "Category",
                             value: categories[0].value === undefined
                                 ? dataView.matrix.valueSources[0].displayName
-                                : this.formatX.format(categories[i].value),
+                                : this.settings.formatting.categoryFormatter.format(categories[i].value),
                         },
                         {
-                            displayName: '# Samples',
+                            displayName: "Quartile Calculation",
+                            value: quartileValue
+                        },
+                        {
+                            displayName: "Whisker Type",
+                            value: whiskerValue
+                        },
+                        {
+                            displayName: "# Samples",
                             value: valueFormatter.format(sortedValue.length, 'd', false),
                         },
                         {
                             displayName: maxValueLabel,
-                            value: this.formatY.format(maxValue),
+                            value: this.settings.formatting.valuesFormatter.format(maxValue),
                         },
                         {
-                            displayName: 'Quartile 3',
-                            value: this.formatY.format(quartile3),
+                            displayName: "Quartile 3",
+                            value: this.settings.formatting.valuesFormatter.format(quartile3),
                         },
                         {
-                            displayName: 'Median',
-                            value: this.formatY.format(median),
+                            displayName: "Median",
+                            value: this.settings.formatting.valuesFormatter.format(median),
                         },
                         {
-                            displayName: 'Average',
-                            value: this.formatY.format(avgvalue),
+                            displayName: "Average",
+                            value: this.settings.formatting.valuesFormatter.format(avgvalue),
                         },
                         {
-                            displayName: 'Quartile 1',
-                            value: this.formatY.format(quartile1),
+                            displayName: "Quartile 1",
+                            value: this.settings.formatting.valuesFormatter.format(quartile1),
                         },
                         {
                             displayName: minValueLabel,
-                            value: this.formatY.format(minValue),
+                            value: this.settings.formatting.valuesFormatter.format(minValue),
                         }]
                 });
             }
@@ -371,10 +370,8 @@ module powerbi.extensibility.visual {
                 this.svg = d3.select(this.root.get(0))
                     .append('svg')
                     .classed(BoxWhiskerChart.VisualClassName, true);
-                console.log("3");
             }
             
-            this.margin = BoxWhiskerChart.DefaultMargin;
             this.mainGroupElement = this.svg.append("g");
 
             this.axis = this.mainGroupElement
@@ -397,6 +394,14 @@ module powerbi.extensibility.visual {
                 .append("g")
                 .classed(BoxWhiskerChart.AxisY.className, true);
 
+            this.axisXLabel = this.axis
+                .append("text")
+                .classed(BoxWhiskerChart.AxisXLabel.className, true);
+
+            this.axisYLabel = this.axis
+                .append("text")
+                .classed(BoxWhiskerChart.AxisYLabel.className, true);
+
             this.chart = this.mainGroupElement
                 .append("g")
                 .classed(BoxWhiskerChart.Chart.className, true);
@@ -417,46 +422,29 @@ module powerbi.extensibility.visual {
 
             this.settings = BoxWhiskerChart.parseSettings(this.dataView);
 
-            var dataView = this.dataView = options.dataViews[0],
+            let dataView = this.dataView = options.dataViews[0],
                 data = this.data = this.converter(dataView, this.colorPalette),
-                dataPoints = data.dataPoints,
-                duration = 250;
+                dataPoints = data.dataPoints;
 
-            this.viewport = {
+            this.settings.general.viewport = {
                 height: options.viewport.height > 0 ? options.viewport.height : 0,
                 width: options.viewport.width > 0 ? options.viewport.width : 0
-            };
+            };    
 
             this.svg
                 .attr({
-                    'height': this.viewport.height,
-                    'width': this.viewport.width
+                    'height': this.settings.general.viewport.height,
+                    'width': this.settings.general.viewport.width
                 });
 
-            if (dataPoints.length === 0) {
-                this.chart.selectAll(BoxWhiskerChart.ChartNode.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisX.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisY.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisMajorGrid.selectorName).remove();
-                this.axis.selectAll(BoxWhiskerChart.AxisMinorGrid.selectorName).remove();
-                return;
-            }
-
-            // calculate AxisSizeX, AxisSizeY
-            this.AxisSizeX = textMeasurementService.estimateSvgTextHeight({
-                text: "XXXX",
-                fontFamily: this.defaultFontFamily,
-                fontSize: PixelConverter.fromPoint(this.settings.xAxis.fontSize),
-            });
-
             var mainGroup = this.chart;
-            mainGroup.attr('transform', 'scale(1, -1)' + translate(0, -(this.viewport.height - this.AxisSizeX)));
+            mainGroup.attr('transform', 'scale(1, -1)' + translate(0, -(this.settings.general.viewport.height - this.settings.axis.axisSizeX)));
 
             // calculate scalefactor
-            var stack = d3.layout.stack();
-            var layers = stack(dataPoints);
+            let stack = d3.layout.stack();
+            let layers = stack(dataPoints);
 
-            this.axisOptions = this.getAxisOptions(
+            this.settings.axis.axisOptions = BoxWhiskerChartAxis.getAxisOptions(
                 d3.min(layers, (layer) => {
                     return d3.min(layer, (point) => {
                         return  d3.min([(<BoxWhiskerChartDatapoint>point).min, 
@@ -470,526 +458,70 @@ module powerbi.extensibility.visual {
                     });
                 }));
 
-            this.AxisSizeY = textMeasurementService.measureSvgTextWidth({
-                text: this.formatY.format(this.axisOptions.max),
-                fontFamily: this.defaultFontFamily,
-                fontSize: PixelConverter.fromPoint(this.settings.yAxis.fontSize),
-            });
+            // calculate AxisSizeX, AxisSizeY
+            if (this.settings.xAxis.show) {
+                this.settings.axis.axisSizeX = textMeasurementService.measureSvgTextHeight(
+                    this.settings.xAxis.axisTextProperties,
+                    "X"
+                )// + 5; // Axis height itself
 
-            this.margin.top = textMeasurementService.measureSvgTextHeight({
-                text: this.formatY.format(this.axisOptions.max),
-                fontFamily: this.defaultFontFamily,
-                fontSize: PixelConverter.fromPoint(this.settings.yAxis.fontSize),
-            }) / 2.;
+                if (this.settings.xAxis.showTitle && (this.settings.xAxis.title!==undefined)) {
+                    this.settings.axis.axisLabelSizeX = textMeasurementService.measureSvgTextHeight(
+                        this.settings.xAxis.axisTextProperties,
+                        this.settings.formatting.categoryFormatter.format(this.settings.xAxis.title)
+                    );
+                    this.settings.axis.axisSizeX += this.settings.axis.axisLabelSizeX // + 5; // Margin
+                }
+            }
+
+            if (this.settings.yAxis.show) {
+                this.settings.axis.axisSizeY = textMeasurementService.measureSvgTextWidth(
+                    this.settings.yAxis.axisTextProperties,
+                    this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max)
+                ) + 5; // Axis width itself
+
+                if (this.settings.yAxis.showTitle && (this.settings.yAxis.title!==undefined)) {
+                    this.settings.axis.axisLabelSizeY = textMeasurementService.measureSvgTextHeight(
+                        this.settings.yAxis.axisTextProperties,
+                        this.settings.formatting.valuesFormatter.format(this.settings.yAxis.title)
+                    );
+                    this.settings.axis.axisSizeY += this.settings.axis.axisLabelSizeY; // + 5; // Margin
+                }
+            }
+
+            this.settings.general.margin.top = textMeasurementService.measureSvgTextHeight(
+                this.settings.yAxis.axisTextProperties,
+                this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max)
+            ) / 2.;
 
             if (this.settings.labels.show && this.data.dataPoints.length > 0) {
-                var dataLabelTop = textMeasurementService.measureSvgTextHeight({
-                    text: this.formatY.format(this.data.dataPoints[0][0].dataLabels[0].value),
-                    fontFamily: this.defaultFontFamily,
-                    fontSize: PixelConverter.fromPoint(this.settings.yAxis.fontSize),
-                }) / 2.;
+                let dataLabelTop = textMeasurementService.measureSvgTextHeight(
+                    this.settings.yAxis.axisTextProperties,
+                    this.settings.formatting.valuesFormatter.format(this.data.dataPoints[0][0].dataLabels[0].value)
+                ) / 2.;
             }
 
             var yScale = d3.scale.linear()
-                .domain([this.axisOptions.min, this.axisOptions.max])
-                .range([this.margin.bottom, this.viewport.height - this.AxisSizeX - this.margin.top]);
+                .domain([this.settings.axis.axisOptions.min, this.settings.axis.axisOptions.max])
+                .range([this.settings.general.margin.bottom + this.settings.axis.axisSizeX, this.settings.general.viewport.height - this.settings.general.margin.top]);
 
             var xScale = d3.scale.linear()
                 .domain([1, dataPoints.length + 1])
-                .range([this.margin.left + this.AxisSizeY, this.viewport.width - this.margin.right]);
-
-            this.drawChart(dataPoints, xScale, yScale, duration);
-            this.drawAxis(dataPoints, yScale, duration);
-        }
-
-        private drawAxis(dataPoints: BoxWhiskerChartDatapoint[][], yScale: d3.scale.Linear<any, any>, duration: number) {
-            if ((this.axis.selectAll(BoxWhiskerChart.AxisX.selectorName)[0].length === 0) ||
-                (this.axis.selectAll(BoxWhiskerChart.AxisY.selectorName)[0].length === 0) ||
-                (this.axis.selectAll(BoxWhiskerChart.AxisMajorGrid.selectorName)[0].length === 0) ||
-                (this.axis.selectAll(BoxWhiskerChart.AxisMinorGrid.selectorName)[0].length === 0)) {
-                this.axisMajorGrid = this.axis
-                    .append("g")
-                    .classed(BoxWhiskerChart.AxisMajorGrid.className, true);
-
-                this.axisMinorGrid = this.axis
-                    .append("g")
-                    .classed(BoxWhiskerChart.AxisMinorGrid.className, true);
-
-                this.axisX = this.axis
-                    .append("g")
-                    .classed(BoxWhiskerChart.AxisX.className, true);
-
-                this.axisY = this.axis
-                    .append("g")
-                    .classed(BoxWhiskerChart.AxisY.className, true);
-            }
-
-            // var textHelperX = this.axisX.append("text")
-            //     .classed("helperX", true)
-            //     .style("visibility", "hidden")
-            //     .style("font-size", this.getXAxisFontSize(this.dataView) + "px")
-            //     .text(dataPoints[0][0].label);
-
-            // var textHelperY = this.axisY.append("text")
-            //     .classed("helperY", true)
-            //     .style("visibility", "hidden")
-            //     .style("font-size", this.getYAxisFontSize(this.dataView) + "px")
-            //     .text(this.formatY.format(this.axisOptions.max));
-            let textXProperties: TextProperties = {
-                fontFamily: this.defaultFontFamily,
-                fontSize: this.settings.xAxis.fontSize + "px"
-            }
-
-            let textYProperties: TextProperties = {
-                fontFamily: this.defaultFontFamily,
-                fontSize: this.settings.yAxis.fontSize + "px"
-            }
-
-            let yAxisLabelHeight = textMeasurementService.measureSvgTextHeight(textYProperties, dataPoints[0][0].label);
-            
-            let xAxisLabelWidth = textMeasurementService.measureSvgTextWidth(textXProperties, this.formatY.format(this.axisOptions.max));
-
-            var xs = d3.scale.ordinal();
-            // Can we draw at least one X-axis label?
-            if (xAxisLabelWidth < (this.viewport.width - this.margin.right - this.margin.left - this.AxisSizeY)) {
-                var overSamplingX = 1;
-                var visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
-                var totalXAxisWidth = d3.max(visibleDataPoints
-                    .map((d) =>
-                        textMeasurementService.measureSvgTextWidth(
-                            textYProperties,
-                            d[0].label) + 2 //margin
-                    )) * visibleDataPoints.length;
-
-                while (totalXAxisWidth > (this.viewport.width - this.margin.right - this.margin.left - this.AxisSizeY)) {
-                    overSamplingX += 1;
-                    visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
-                    var totalXAxisWidth = d3.max(visibleDataPoints
-                        .map((d) =>
-                            textMeasurementService.measureSvgTextWidth(
-                                textYProperties,
-                                d[0].label) + 2 //margin
-                        )) * visibleDataPoints.length;
-                }
-
-                xs.domain(dataPoints.map((values, index) => { return (index % overSamplingX === 0) ? values[0].label : null; })
-                    .filter((d) => d !== null)
-                )
-                    .rangeBands([this.margin.left + this.AxisSizeY, this.viewport.width - this.margin.right]);
-            } else {
-                xs.domain([])
-                    .rangeBands([this.margin.left + this.AxisSizeY, this.viewport.width - this.margin.right]);
-            }
-
-            var ys = yScale.range([this.viewport.height - this.AxisSizeX - this.margin.bottom, this.margin.top]);
-            var yAxisTicks = this.axisOptions.ticks;
-
-            if (yAxisLabelHeight < (this.viewport.height - this.AxisSizeX - this.margin.bottom - this.margin.top)) {
-                var totalYAxisHeight = yAxisTicks * yAxisLabelHeight;
-
-                // Calculate minimal ticks that fits the height
-                while (totalYAxisHeight > this.viewport.height - this.AxisSizeX - this.margin.bottom - this.margin.top) {
-                    yAxisTicks /= 2;
-                    totalYAxisHeight = yAxisTicks * yAxisLabelHeight;
-                }
-            } else {
-                yAxisTicks = 0;
-            }
-
-            var xAxisTransform =
-                this.axisOptions.min > 0 ?
-                    ys(this.axisOptions.min) :
-                    this.axisOptions.max < 0 ?
-                        ys(this.axisOptions.min) :
-                        ys(0);
-
-            var xAxis = d3.svg.axis()
-                .scale(xs)
-                .orient("bottom")
-                .tickSize(0)
-                .innerTickSize(8 + ((this.viewport.height - this.margin.top - this.AxisSizeX) - xAxisTransform));
-
-            var getValueFn: (index: number, type: ValueType) => any;
-            getValueFn = data => data;
-            var yAxis = d3.svg.axis()
-                .scale(ys)
-                .orient("left")
-                .tickFormat(d => this.formatY.format(getValueFn(d, this.dataType)))
-                .ticks(yAxisTicks);
-
-            this.axisX
-                .attr("transform", "translate(0, " + xAxisTransform + ")")
-                .transition()
-                .duration(duration)
-                .call(xAxis);
-
-            this.axisY
-                .attr("transform", "translate(" + (this.AxisSizeY + this.margin.left) + ", 0)")
-                .transition()
-                .duration(duration)
-                .call(yAxis);
-
-            this.axisX
-                .selectAll("text")
-                .style("font-size", this.settings.xAxis.fontSize + "px");
-
-            this.axisY
-                .selectAll("text")
-                .style("font-size", this.settings.yAxis.fontSize + "px");
-
-            if (this.settings.gridLines.majorGrid) {
-                var yMajorGrid = d3.svg.axis()
-                    .scale(ys)
-                    .orient("left")
-                    .ticks(yAxisTicks)
-                    .outerTickSize(0)
-                    .innerTickSize(-(this.viewport.width - this.AxisSizeY - this.margin.right - this.margin.left));
-
-                this.axisMajorGrid
-                    .attr("transform", "translate(" + (this.AxisSizeY + this.margin.left) + ", 0)")
-                    .attr("opacity", 1)
-                    .transition()
-                    .duration(duration)
-                    .call(yMajorGrid);
-
-                this.axisMajorGrid
-                    .selectAll("line")
-                    .style("stroke", this.settings.gridLines.majorGridColor)
-                    .style("stroke-width", this.settings.gridLines.majorGridSize);
-
-                if (this.settings.gridLines.minorGrid) {
-                    var yMinorGrid = d3.svg.axis()
-                        .scale(ys)
-                        .orient("left")
-                        .ticks(yAxisTicks * 5)
-                        .outerTickSize(0)
-                        .innerTickSize(-(this.viewport.width - this.AxisSizeY - this.margin.right + this.margin.left));
-
-                    this.axisMinorGrid
-                        .attr("transform", "translate(" + (this.AxisSizeY + this.margin.left) + ", 0)")
-                        .attr("opacity", 1)
-                        .transition()
-                        .duration(duration)
-                        .call(yMinorGrid);
-
-                    this.axisMinorGrid
-                        .selectAll("line")
-                        .style("stroke", this.settings.gridLines.minorGridColor)
-                        .style("stroke-width", this.settings.gridLines.minorGridSize);
-                }
-                else {
-
-                    this.axisMinorGrid.attr("opacity", 0);
-                }
-            }
-            else {
-                this.axisMajorGrid.attr("opacity", 0);
-                this.axisMinorGrid.attr("opacity", 0);
-            }
-
-            //Cleanup labelhelpers
-            this.axisX.selectAll(".helperX").remove();
-            this.axisY.selectAll(".helperY").remove();
-        }
-
-        private drawChart(dataPoints: BoxWhiskerChartDatapoint[][], xScale: d3.scale.Linear<any, any>, yScale: d3.scale.Linear<any, any>, duration: number): void {
-            var dotRadius: number = 4,
-                leftBoxMargin: number = 0.1;
-            if (!this.settings.labels.show) {
-                switch (this.settings.chartOptions.margin) {
-                    case BoxWhiskerEnums.MarginType.Small:
-                        leftBoxMargin = 0.05;
-                        break;
-                    case BoxWhiskerEnums.MarginType.Medium:
-                        leftBoxMargin = 0.1;
-                        break;
-                    case BoxWhiskerEnums.MarginType.Large:
-                        leftBoxMargin = 0.2;
-                        break;
-                    default:
-                        leftBoxMargin = 0.1;
-                        break;
-                }
-            }
-
-            var stack = d3.layout.stack();
-            var layers = stack(dataPoints);
-
-            var sm = this.selectionManager;
-
-            var selection = this.chart.selectAll(BoxWhiskerChart.ChartNode.selectorName).data(layers);
-
-            selection
-                .enter()
-                .append('g')
-                .classed(BoxWhiskerChart.ChartNode.className, true);
-
-                var quartile = selection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
-                if (d && d.length > 0) { return [d]; }
-                return [];
-            });
-
-            this.svg.on('click', () => this.selectionManager.clear().then(() => quartile.style('opacity', 1)));
-
-            var fontSize = this.settings.labels.fontSize + "px";
-            var dataLabelsShow = this.settings.labels.show;
-
-            var dataLabelwidth = xScale.invert(xScale(0) +
-                (Math.ceil(
-                    d3.max(dataPoints, (value) => {
-                        return d3.max(value, (point) => {
-                            return d3.max((point.dataLabels), (dataLabel) => {
-                                return textMeasurementService.measureSvgTextWidth({
-                                    text: this.formatY.format(dataLabel.value),
-                                    fontFamily: this.defaultFontFamily,
-                                    fontSize: PixelConverter.fromPoint(this.settings.labels.fontSize),
-                                });
-                            });
-                        });
-                    })
-                    * 10) / 10.));
-
-            if (dataLabelwidth > 0.8) {
-                dataLabelsShow = false;
-            }
-
-            var rightBoxMargin = 1. - (dataLabelsShow && (dataLabelwidth > leftBoxMargin) ? dataLabelwidth : leftBoxMargin);
-            var boxMiddle = dataLabelsShow ? leftBoxMargin + ((rightBoxMargin - leftBoxMargin) / 2.) : 0.5;
-
-            var quartileData = (points) => {
-                return points.map((value) => {
-                    var x1 = xScale(value.category + leftBoxMargin);
-                    var x2 = xScale(value.category + boxMiddle);
-                    var x3 = xScale(value.category + rightBoxMargin);
-                    var y1 = yScale(value.min);
-                    var y2 = value.samples <= 3 ? yScale(value.min) : yScale(value.quartile1);
-                    var y3 = value.samples <= 3 ? yScale(value.max) : yScale(value.quartile3);
-                    var y4 = yScale(value.max);
-                    return `M ${x1},${y1}L${x3},${y1}L${x2},${y1}L${x2},${y2} L${x1},${y2}L${x1},${y3}L${x2},${y3} L${x2},${y4}L${x1},${y4}L${x3},${y4}L${x2},${y4}L${x2},${y3} L${x3},${y3}L${x3},${y2}L${x2},${y2}L${x2},${y1}`;
-                }).join(' ');
-            };
-
-            var medianData = (points) => {
-                return points.map((value) => {
-                    var x1 = xScale(value.category + leftBoxMargin);
-                    var y1 = yScale(value.median);
-                    var x2 = xScale(value.category + rightBoxMargin);
-                    var y2 = yScale(value.median);
-                    return `M ${x1},${y1} L${x2},${y2}`;
-                }).join(' ');
-            };
-
-            var avgData = (points) => {
-                return points.map((value) => {
-                    var x1 = xScale(value.category + boxMiddle);
-                    var y1 = yScale(value.average);
-                    var r = dotRadius;
-                    var r2 = 2 * r;
-                    return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
-                }).join(' ');
-            };
-
-            var outlierData = (points) => {
-                return points.map((value) => {
-                    var x1 = xScale(value.category + boxMiddle);
-                    var y1 = yScale(value.value);
-                    var r = dotRadius;
-                    var r2 = 2 * r;
-                    return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
-                }).join(' ');
-            };
-
-            quartile
-                .enter()
-                .append('path')
-                .classed(BoxWhiskerChart.ChartQuartileBox.className, true);
-
-            quartile
-                .style('fill', value => (<BoxWhiskerChartDatapoint>value[0]).color)
-                .attr('opacity', 1)
-                .on('click', function (d) {
-                    let dp:BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
-                    sm.select(dp.selectionId).then((ids) => {
-                        if (ids.length > 0) {
-                            quartile.style('opacity', 0.5);
-                            d3.select(this).transition()
-                                .duration(duration)
-                                .style('opacity', 1);
-                        } else {
-                            quartile.style('opacity', 1);
-                        }
-                    });
-                    (<Event>d3.event).stopPropagation();
-                })
-                .style('stroke', value => (<BoxWhiskerChartDatapoint>value[0]).color)
-                .style('stroke-width', 2)
-                .transition()
-                .duration(duration)
-                .attr('d', quartileData);
-
-            quartile.exit().remove();
-
-            var average = selection.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName).data(d => {
-                if (d && d.length > 0) { return [d]; }
-                return [];
-            });
-
-            average
-                .enter()
-                .append('path')
-                .classed(BoxWhiskerChart.ChartAverageDot.className, true);
-
-            average
-                .style('fill', 'black')
-                .transition()
-                .duration(duration)
-                .attr('d', avgData);
-
-            average.exit().remove();
-
-            var median = selection.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName).data(d => {
-                if (d && d.length > 0) { return [d]; }
-                return [];
-            });
-
-            median
-                .enter()
-                .append('path')
-                .classed(BoxWhiskerChart.ChartMedianLine.className, true);
-
-            median
-                .style('stroke', 'black')
-                .style('stroke-width', 2)
-                .transition()
-                .duration(duration)
-                .attr('d', medianData);
-
-            median.exit().remove();
-
-            var outliers = selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
-                let dp: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
-                if (dp.outliers && dp.outliers.length > 0) {
-                    return dp.outliers.map((dataPoint) => {
-                        return [{
-                            category: dp.category,
-                            color: dp.color,
-                            value: dataPoint
-                        }
-                        ];
-                    });
-                }
-                return [];
-            });
-
-            outliers
-                .enter()
-                .append('path')
-                .classed(BoxWhiskerChart.ChartOutlierDot.className, true);
-
-            outliers
-                .style('fill', value => value[0].color)
-                .transition()
-                .duration(duration)
-                .attr('d', outlierData);
-
-            outliers.exit().remove();
-
-            var dataLabels = selection.selectAll(BoxWhiskerChart.ChartDataLabel.selectorName).data(d => {
-                let dp: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
-                if (dp.dataLabels && dp.dataLabels.length > 0 && dataLabelsShow) {
-                    var topLabels = dp.dataLabels
-                        .filter((dataLabel) => dataLabel.value >= dp.median) // Higher half of data labels
-                        .sort((dataLabel1, dataLabel2) => dataLabel1.value - dataLabel2.value); // Sort: median index 0
-                    var lowerLabels = dp.dataLabels
-                        .filter((dataLabel) => dataLabel.value <= dp.median) // Lower half of data labels
-                        .sort((dataLabel1, dataLabel2) => dataLabel2.value - dataLabel1.value); // Sort: median index 0
-                    var x = xScale(dp.category + rightBoxMargin + 0.02);
-
-                    topLabels[0].y = yScale(dp.median) - 4;
-                    topLabels[0].x = xScale(dp.category + rightBoxMargin + 0.02);
-                    lowerLabels[0].y = yScale(dp.median) - 4;
-                    lowerLabels[0].x = xScale(dp.category + rightBoxMargin + 0.02);
-
-                    var adjustment = 0;
-                    var textHeight = (textMeasurementService.measureSvgTextHeight({
-                        text: "XXXX",
-                        fontFamily: this.defaultFontFamily,
-                        fontSize: PixelConverter.fromPoint(this.settings.labels.fontSize),
-                    }) / 2) + 1;
-
-                    for (var i = 1; i < topLabels.length; i++) {
-                        topLabels[i].y = yScale(topLabels[i].value) - 4;
-                        topLabels[i].x = x;
-                        var diff = Math.abs((topLabels[i].y + adjustment) - (topLabels[i - 1].y));
-                        if (diff < textHeight) {
-                            adjustment += (textHeight - diff);
-                        }
-                        topLabels[i].y += adjustment;
-                        if (diff >= textHeight) {
-                            adjustment = 0;
-                        }
-                    }
-                    adjustment = 0;
-                    for (var i = 1; i < lowerLabels.length; i++) {
-                        lowerLabels[i].y = yScale(lowerLabels[i].value) - 4;
-                        lowerLabels[i].x = x;
-                        var diff = Math.abs((lowerLabels[i].y + adjustment) - lowerLabels[i - 1].y);
-                        if (diff < textHeight) {
-                            adjustment -= (textHeight - diff);
-                        }
-                        lowerLabels[i].y += adjustment;
-                        if (diff >= textHeight) {
-                            adjustment = 0;
-                        }
-                    }
-                    var dataLabels = lowerLabels.concat(topLabels.filter((dataLabel) => dataLabel.value > dp.median)).filter((dataLabel) => dataLabel.x > 0);
-                    return dataLabels.map((dataPoint) => {
-                        return dataPoint;
-                    });
-
-                }
-                return [];
-            });
-
-            dataLabels
-                .enter()
-                .append("text")
-                .classed(BoxWhiskerChart.ChartDataLabel.className, true);
-
-            var y0 = this.viewport.height + this.AxisSizeX;
-
-            dataLabels
-                .attr("transform", dataLabel => `translate(0 ${y0}) scale(1, -1)`)
-                .transition()
-                .duration(duration)
-                .text(dataLabel => this.formatY.format(dataLabel.value))
-                .attr("x", dataLabel => dataLabel.x)
-                .attr("y", dataLabel => y0 - dataLabel.y)
-                .attr("fill", "black");
-
-            this.chart
-                .selectAll("text")
-                .style("font-size", fontSize);
-
-            dataLabels.exit().remove();
-
-            this.tooltipServiceWrapper.addTooltip(this.svg.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
-                (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-                (tooltipEvent: TooltipEventArgs<number>) => null);
-
-            this.tooltipServiceWrapper.addTooltip(this.svg.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName),
-                (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-                (tooltipEvent: TooltipEventArgs<number>) => null);
-
-            this.tooltipServiceWrapper.addTooltip(this.svg.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName),
-                (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-                (tooltipEvent: TooltipEventArgs<number>) => null);
-
-            this.tooltipServiceWrapper.addTooltip(this.svg.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName),
-                (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-                (tooltipEvent: TooltipEventArgs<number>) => null);
-
-            selection.exit().remove();
+                .range([this.settings.general.margin.left + this.settings.axis.axisSizeY, this.settings.general.viewport.width - this.settings.general.margin.right]);
+
+            BoxWhiskerChartDraw.drawChart(
+                this.svg, 
+                this.settings, 
+                this.selectionManager, 
+                this.tooltipServiceWrapper, 
+                dataPoints, 
+                xScale, 
+                yScale);
+            BoxWhiskerChartAxis.drawAxis(
+                this.axis, 
+                this.settings, 
+                dataPoints, 
+                yScale);
         }
 
         private static getTooltipData(value: any): VisualTooltipDataItem[] { 
@@ -1011,34 +543,6 @@ module powerbi.extensibility.visual {
             }
 
             return rArray;
-        }
-
-        private getAxisOptions(min: number, max: number): BoxWhiskerAxisOptions {
-            var min1 = min === 0 ? 0 : min > 0 ? (min * .99) - ((max - min) / 100) : (min * 1.01) - ((max - min) / 100);
-            var max1 = max === 0 ? min === 0 ? 1 : 0 : max < 0 ? (max * .99) + ((max - min) / 100) : (max * 1.01) + ((max - min) / 100);
-
-            var p = Math.log(max1 - min1) / Math.log(10);
-            var f = Math.pow(10, p - Math.floor(p));
-
-            var scale = 0.2;
-
-            if (f <= 1.2) scale = 0.2;
-            else if (f <= 2.5) scale = 0.2;
-            else if (f <= 5) scale = 0.5;
-            else if (f <= 10) scale = 1;
-            else scale = 2;
-
-            var tickSize = scale * Math.pow(10, Math.floor(p));
-            var maxValue = tickSize * (Math.floor(max1 / tickSize) + 1);
-            var minValue = tickSize * Math.floor(min1 / tickSize);
-            var ticks = ((maxValue - minValue) / tickSize) + 1;
-
-            return {
-                tickSize: tickSize,
-                max: maxValue,
-                min: minValue,
-                ticks: ticks,
-            };
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration{
@@ -1104,7 +608,20 @@ module powerbi.extensibility.visual {
         }
 
         private static parseSettings(dataView: DataView): BoxWhiskerChartSettings {
-            const settings: BoxWhiskerChartSettings = BoxWhiskerChartSettings.parse<BoxWhiskerChartSettings>(dataView);
+            let settings: BoxWhiskerChartSettings = BoxWhiskerChartSettings.parse<BoxWhiskerChartSettings>(dataView);
+
+            settings.yAxis.axisTextProperties = {
+                fontFamily: settings.yAxis.fontFamily,
+                fontSize: settings.yAxis.fontSize + "px"
+            }
+            settings.xAxis.axisTextProperties = {
+                fontFamily: settings.xAxis.fontFamily,
+                fontSize: settings.xAxis.fontSize + "px"
+            }
+            settings.labels.axisTextProperties = {
+                fontFamily: settings.labels.fontFamily,
+                fontSize: settings.labels.fontSize + "px"
+            }
             return settings;
         }
     }

@@ -99,11 +99,11 @@
                             },
                             {
                                 "value": "1",
-                                "displayName": "Tukey"
+                                "displayName": "< 1.5 IQR"
                             },
                             {
                                 "value": "2",
-                                "displayName": "1.5 IQR"
+                                "displayName": "= 1.5 IQR"
                             }
                         ]
                     }
@@ -265,8 +265,8 @@
         "gridLines": {
             "displayName": "Gridlines",
             "properties": {
-                "majorGrid": {
-                    "displayName": "Major grid",
+                "show": {
+                    "displayName": "Show (Major) gridlines",
                     "description": "Display major gridlines",
                     "type": { "bool": true }
                 },
@@ -281,7 +281,7 @@
                     "type": { "fill": { "solid": { "color": true } } }
                 },
                 "minorGrid": {
-                    "displayName": "Minor grid",
+                    "displayName": "Minor gridlines",
                     "description": "Display minor gridlines",
                     "type": { "bool": true }
                 },

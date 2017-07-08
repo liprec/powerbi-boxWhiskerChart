@@ -26,7 +26,11 @@
 */
 
 module powerbi.extensibility.visual {
-
+ 
+    // utils.formatting
+    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
+    import TextProperties = powerbi.extensibility.utils.formatting.TextProperties;
+    // utils.dataview
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
     // utils.svg
     import IMargin = powerbi.extensibility.utils.svg.IMargin;
@@ -34,6 +38,8 @@ module powerbi.extensibility.visual {
     export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 
         public general: GeneralSettings = new GeneralSettings();
+        public axis: AxisSettings = new AxisSettings();
+        public formatting: FormattingSettings = new FormattingSettings();
         public chartOptions: ChartOptionsSettings = new ChartOptionsSettings();
         public xAxis: XAxisSettings = new XAxisSettings();
         public yAxis: YAxisSettings = new YAxisSettings();
@@ -43,18 +49,39 @@ module powerbi.extensibility.visual {
     }
 
     class GeneralSettings {
-        public formatString: string = "";
+        public viewport: IViewport;
         public margin: IMargin = {
             top: 5,
             bottom: 5,
             right: 5,
             left: 5
         };
+        public formatString: string = "";
+        public duration: number = 0;
+        public defaultColor: string = "#01B8AA"
+        public ColorProperties: DataViewObjectPropertyIdentifier = {
+            objectName: "dataPoint",
+            propertyName: "fill"
+        };
+    }
+
+    class AxisSettings {
+        public axisSizeY: number = 0;
+        public axisSizeX: number = 0;
+        public axisLabelSizeY: number = 0;
+        public axisLabelSizeX: number = 0;
+        public axisOptions: BoxWhiskerAxisOptions;
+    }
+
+    class FormattingSettings {
+        public valuesFormatter: IValueFormatter;
+        public categoryFormatter: IValueFormatter;
+        public labelFormatter: IValueFormatter;
     }
 
     class ChartOptionsSettings {
         public orientation: BoxWhiskerEnums.ChartOrientation = BoxWhiskerEnums.ChartOrientation.Vertical;
-        public quartile: BoxWhiskerEnums.QuartileType = BoxWhiskerEnums.QuartileType.Inclusive; // need to check
+        public quartile: BoxWhiskerEnums.QuartileType = BoxWhiskerEnums.QuartileType.Inclusive;
         public whisker: BoxWhiskerEnums.WhiskerType = BoxWhiskerEnums.WhiskerType.MinMax;
         public outliers: boolean = false;
         public margin: BoxWhiskerEnums.MarginType = BoxWhiskerEnums.MarginType.Medium;
@@ -75,6 +102,10 @@ module powerbi.extensibility.visual {
         public labelPrecision: number = undefined;
         public showTitle: boolean = false;
         public title: string = undefined;
+        public axisTextProperties: TextProperties = {
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize + "px"
+        };
     }
 
     class YAxisSettings {
@@ -86,10 +117,14 @@ module powerbi.extensibility.visual {
         public labelPrecision: number = undefined;
         public showTitle: boolean = false;
         public title: string = undefined;
+        public axisTextProperties: TextProperties = {
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize + "px"
+        };
     }
 
     class GridLinesSettings {
-        public majorGrid: boolean = true;
+        public show: boolean = true;
         public majorGridSize: number = 1;
         public majorGridColor: string = "#666666";
         public minorGrid: boolean = false;
@@ -104,5 +139,9 @@ module powerbi.extensibility.visual {
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
+        public axisTextProperties: TextProperties = {
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize + "px"
+        };
     }
 }
