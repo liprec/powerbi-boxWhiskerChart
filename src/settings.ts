@@ -44,6 +44,7 @@ module powerbi.extensibility.visual {
         public xAxis: XAxisSettings = new XAxisSettings();
         public yAxis: YAxisSettings = new YAxisSettings();
         public dataPoint: DataPointSettings = new DataPointSettings();
+        public shapes: ShapeSettings = new ShapeSettings();
         public gridLines: GridLinesSettings = new GridLinesSettings();
         public labels: LabelsSettings = new LabelsSettings();
     }
@@ -84,14 +85,10 @@ module powerbi.extensibility.visual {
         public orientation: BoxWhiskerEnums.ChartOrientation = BoxWhiskerEnums.ChartOrientation.Vertical;
         public quartile: BoxWhiskerEnums.QuartileType = BoxWhiskerEnums.QuartileType.Inclusive;
         public whisker: BoxWhiskerEnums.WhiskerType = BoxWhiskerEnums.WhiskerType.MinMax;
+        public lower: number = undefined;
+        public higher: number = undefined;
         public outliers: boolean = false;
         public margin: BoxWhiskerEnums.MarginType = BoxWhiskerEnums.MarginType.Medium;
-    }
-
-    class DataPointSettings {
-        public meanColor: string = "#111";
-        public medianColor: string = "#111";
-        public oneColor: boolean = false;
     }
 
     class XAxisSettings {
@@ -120,6 +117,8 @@ module powerbi.extensibility.visual {
 
     class YAxisSettings {
         public show: boolean = true;
+        public start: number = undefined;
+        public end: number = undefined;
         public fontColor: string = "#777"
         public fontSize: number = 11;
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
@@ -142,13 +141,10 @@ module powerbi.extensibility.visual {
         };
     }
 
-    class GridLinesSettings {
-        public show: boolean = true;
-        public majorGridSize: number = 1;
-        public majorGridColor: string = "#DDD";
-        public minorGrid: boolean = false;
-        public minorGridSize: number = 1;
-        public minorGridColor: string = "#EEE";
+    class DataPointSettings {
+        public meanColor: string = "#111";
+        public medianColor: string = "#111";
+        public oneColor: boolean = false;
     }
 
     class LabelsSettings {
@@ -163,4 +159,19 @@ module powerbi.extensibility.visual {
             fontSize: this.fontSize + "px"
         };
     }
+
+    class ShapeSettings {
+        public showMean: boolean = true;
+        public showMedian: boolean = true;
+    }
+
+    class GridLinesSettings {
+        public show: boolean = true;
+        public majorGridSize: number = 1;
+        public majorGridColor: string = "#DDD";
+        public minorGrid: boolean = false;
+        public minorGridSize: number = 1;
+        public minorGridColor: string = "#EEE";
+    }
+
 }

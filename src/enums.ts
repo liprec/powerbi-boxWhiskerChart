@@ -41,7 +41,8 @@ module powerbi.extensibility.visual {
         export enum WhiskerType {
             MinMax,
             Standard,
-            IQR
+            IQR,
+            Custom
         }
     
         export enum MarginType {
@@ -59,6 +60,19 @@ module powerbi.extensibility.visual {
             export enum Position {
                 front,
                 back
+            }
+            export enum LabelType {
+                value,
+                name,
+                valueName,
+            }
+            export enum HPosition {
+                left,
+                right
+            }
+            export enum VPosition {
+                above,
+                under
             }
         }
     }

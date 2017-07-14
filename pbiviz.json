@@ -1,13 +1,13 @@
 {
   "visual": {
     "name": "BoxWhisker(JanPieter)",
-    "displayName": "BoxWhisker(JanPieter)",
-    "guid": "PBI_CV_FB59302E_FBE8_4487_8489_747B1774C5AF",
+    "displayName": "Box and Whisker chart",
+    "guid": "BoxWhiskerChart1455240051538",
     "visualClassName": "BoxWhiskerChart",
-    "version": "0.13.1",
+    "version": "2.0.0",
     "description": "Visualize a dataset as a box and whisker chart. A box and whisker chart shows basic statistical information of a dataset: the 1st and 3rd quartile (box),  the median (line), the mean (dot) and dependent of the type either the minimum and maximum value of all values or between the 1.5x interquartile range [IQR] (whiskers).",
-    "supportUrl": "http://azurebi.jppp.org/visualizations/",
-    "gitHubUrl": ""
+    "supportUrl": "https://azurebi.jppp.org/box-and-whisker-chart/",
+    "gitHubUrl": "https://github.com/liprec/powerbi-boxWhiskerChart"
   },
   "apiVersion": "1.7.0",
   "author": {

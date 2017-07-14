@@ -81,6 +81,7 @@ module powerbi.extensibility.visual {
         public static AxisYLabel: ClassAndSelector = createClassAndSelector("axisYLabel");
         public static AxisMajorGrid: ClassAndSelector = createClassAndSelector("axisMajorGrid");
         public static AxisMinorGrid: ClassAndSelector = createClassAndSelector("axisMinorGrid");
+        public static ChartMain: ClassAndSelector = createClassAndSelector("chartMain");
         public static Chart: ClassAndSelector = createClassAndSelector("chart");
         public static ChartNode: ClassAndSelector = createClassAndSelector("chartNode");
         public static ChartQuartileBox: ClassAndSelector = createClassAndSelector("chartQuartileBox");
@@ -88,11 +89,15 @@ module powerbi.extensibility.visual {
         public static ChartAverageDot: ClassAndSelector = createClassAndSelector("chartAverageDot");
         public static ChartOutlierDot: ClassAndSelector = createClassAndSelector("chartOutlierDot");
         public static ChartDataLabel: ClassAndSelector = createClassAndSelector("chartDataLabel");
+        public static ChartReferenceLineBackNode: ClassAndSelector = createClassAndSelector("chartReferenceLineBackNode");
+        public static ChartReferenceLineFrontNode: ClassAndSelector = createClassAndSelector("chartReferenceLineFrontNode");
+        public static ChartReferenceLine: ClassAndSelector = createClassAndSelector("chartReferenceLine");
+        public static ChartReferenceLineLabel: ClassAndSelector = createClassAndSelector("chartReferenceLineLabel");
 
         private root: JQuery;
         private svg: Selection<any>;
         private axis: Selection<any>;
-        private chart: Selection<any>;
+        private chartMain: Selection<any>;
         private settings: BoxWhiskerChartSettings;
         private axisX: Selection<any>;
         private axisY: Selection<any>;
@@ -130,7 +135,7 @@ module powerbi.extensibility.visual {
             let category = dataView.categorical.categories[0];
             let categoryValues = [];
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
-            let referenceLines: BoxWhiskerChartReferenceLine[] = refLineReadDataView(dataView.metadata.objects, colors);
+            let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
 
             this.settings.xAxis.defaultTitle = category.source.displayName;
             this.settings.yAxis.defaultTitle = dataView.categorical.values[0].source.displayName;
@@ -153,7 +158,7 @@ module powerbi.extensibility.visual {
             this.settings.formatting.categoryFormatter = valueFormatter.create({
                 format: valueFormatter.getFormatStringByColumn(dataView.categorical.categories[0].source),
                 precision: this.settings.xAxis.labelPrecision,
-                value: this.settings.xAxis.labelDisplayUnits || maxValue,
+                value: this.settings.xAxis.labelDisplayUnits || categories[0].value,
                 cultureSelector: this.settings.general.locale
             });
 
@@ -231,14 +236,6 @@ module powerbi.extensibility.visual {
                 }
 
                 switch (whiskerType) {
-                    case BoxWhiskerEnums.WhiskerType.MinMax:
-                        minValue = sortedValue[0];
-                        maxValue = sortedValue[sortedValue.length - 1];
-                        minValueLabel = "Minimum";
-                        maxValueLabel = "Maximum";
-                        quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
-                        whiskerValue = "Min/Max";
-                        break;
                     case BoxWhiskerEnums.WhiskerType.Standard:
                         var IQR = quartile3 - quartile1;
                         minValue = sortedValue.filter((value) => value >= quartile1 - (1.5 * IQR))[0];
@@ -257,6 +254,23 @@ module powerbi.extensibility.visual {
                         quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
                         whiskerValue = "= 1.5IQR";
                         break;
+                    case BoxWhiskerEnums.WhiskerType.Custom:
+                        this.settings.chartOptions.lower = Math.max(this.settings.chartOptions.lower, Math.ceil(100/(sortedValue.length + 1)));
+                        this.settings.chartOptions.higher = Math.min(this.settings.chartOptions.higher, Math.floor(100-(100/(sortedValue.length + 1))));
+                        var xl = (this.settings.chartOptions.lower / 100.) * (sortedValue.length + 1);
+                        var xh = (this.settings.chartOptions.higher / 100.) * (sortedValue.length + 1);
+                        var il = Math.floor(xl);
+                        var ih = Math.floor(xh);
+                        var high = sortedValue[ih-1] + (xh-ih)*(sortedValue[ih] - sortedValue[ih-1]);
+                        var low = sortedValue[il-1] + (xl-il)*(sortedValue[il] - sortedValue[il-1]);
+                        minValue = low;
+                        maxValue = high;
+                        minValueLabel = "Lower: " + this.settings.chartOptions.lower.toString() + "%";
+                        maxValueLabel = "Higher: " + this.settings.chartOptions.higher.toString() + "%";
+                        quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
+                        whiskerValue = "Custom";
+                        break;
+                    case BoxWhiskerEnums.WhiskerType.MinMax:
                     default:
                         minValue = sortedValue[0];
                         maxValue = sortedValue[sortedValue.length - 1];
@@ -268,12 +282,6 @@ module powerbi.extensibility.visual {
                 }
 
                 dataPoints.push([]);
-
-                let outliers = this.settings.chartOptions.outliers ?
-                    sortedValue
-                        .filter((value) => value < minValue || value > maxValue) // Filter outliers 
-                        .filter((value, index, self) => self.indexOf(value) === index) // Make unique
-                    : [];
 
                 let dataPointColor: string;
 
@@ -291,6 +299,31 @@ module powerbi.extensibility.visual {
                     }
                 }
                 
+                let outliers: BoxWhiskerChartOutlier[] = this.settings.chartOptions.outliers ?
+                    sortedValue
+                        .filter((value) => value < minValue || value > maxValue) // Filter outliers 
+                        .filter((value, index, self) => self.indexOf(value) === index) // Make unique
+                        .map((value) => { 
+                            return { 
+                                category: i + 1,
+                                color: dataPointColor, 
+                                value: value, 
+                                tooltipInfo: [
+                                    {
+                                        displayName: "Category",
+                                        value: categories[0].value === undefined
+                                            ? dataView.matrix.valueSources[0].displayName
+                                            : this.settings.formatting.categoryFormatter.format(categories[i].value),
+                                    },
+                                    {
+                                        displayName: "Value",
+                                        value: value
+                                    }
+                                ]
+                            }
+                        })
+                    : [];
+
                 dataPoints[i].push({
                     x:0,
                     y:0,
@@ -308,7 +341,7 @@ module powerbi.extensibility.visual {
                             .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                             .filter((value) => { return value != null; }) // Remove empties
                             .map((dataPoint) => { return { value: dataPoint, x: 0, y: 0 }; })
-                            .concat(outliers.map((outlier) => { return { value: outlier, x: 0, y: 0 }; }))
+                            .concat(outliers.map((outlier) => { return { value: outlier.value, x: 0, y: 0 }; }))
                         : [],
                     label: categories[0].value === undefined
                         ? dataView.matrix.valueSources[0].displayName
@@ -417,10 +450,23 @@ module powerbi.extensibility.visual {
                 .append("text")
                 .classed(BoxWhiskerChart.AxisYLabel.className, true);
 
-            this.chart = this.mainGroupElement
+            this.chartMain = this.mainGroupElement
+                .append("g")
+                .classed(BoxWhiskerChart.ChartMain.className, true);
+            
+            let backRefLine = this.chartMain
+                .append("g")
+                .classed(BoxWhiskerChart.ChartReferenceLineBackNode.className, true);
+
+            let chart = this.chartMain
                 .append("g")
                 .classed(BoxWhiskerChart.Chart.className, true);
-        }
+
+            let frontRefLine = this.chartMain
+                .append("g")
+                .classed(BoxWhiskerChart.ChartReferenceLineFrontNode.className, true);
+
+            }
 
         public update(options: VisualUpdateOptions): void {
             if (!options ||
@@ -452,79 +498,109 @@ module powerbi.extensibility.visual {
                     'width': this.settings.general.viewport.width
                 });
 
-            var mainGroup = this.chart;
-            mainGroup.attr('transform', 'scale(1, -1)' + translate(0, -(this.settings.general.viewport.height - this.settings.axis.axisSizeX)));
+            this.chartMain.attr('transform', 'scale(1, -1)' + translate(0, -(this.settings.general.viewport.height - this.settings.axis.axisSizeX)));
 
             // calculate scalefactor
             let stack = d3.layout.stack();
             let layers = stack(dataPoints);
+            let refLines = this.data.referenceLines;
 
-            this.settings.axis.axisOptions = BoxWhiskerChartAxis.getAxisOptions(
-                d3.min(layers, (layer) => {
-                    return d3.min(layer, (point) => {
-                        return  d3.min([(<BoxWhiskerChartDatapoint>point).min, 
-                                d3.min((<BoxWhiskerChartDatapoint>point).outliers)]);
-                    });
-                }),
-                d3.max(layers, (layer) => {
-                    return d3.max(layer, (point) => {
-                        return  d3.max([(<BoxWhiskerChartDatapoint>point).max, 
-                                d3.max((<BoxWhiskerChartDatapoint>point).outliers)]);
-                    });
-                }));
+            this.settings.axis.axisOptions = getAxisOptions(
+                d3.min([
+                    d3.min(refLines, (refLine) => refLine.value),
+                    d3.min(layers, (layer) => {
+                        return d3.min(layer, (point) => {
+                            return  d3.min([(<BoxWhiskerChartDatapoint>point).min, 
+                                    d3.min((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
+                        });
+                    })
+                ]),
+                d3.max([
+                    d3.max(refLines, (refLine) => refLine.value),
+                    d3.max(layers, (layer) => {
+                        return d3.max(layer, (point) => {
+                            return  d3.max([(<BoxWhiskerChartDatapoint>point).max, 
+                                    d3.max((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
+                        });
+                    })
+                ]));
 
-            // calculate AxisSizeX, AxisSizeY
-            if (this.settings.xAxis.show) {
-                this.settings.axis.axisSizeX = textMeasurementService.measureSvgTextHeight(
-                    this.settings.xAxis.axisTextProperties,
-                    "X"
-                );
-
-                if (this.settings.xAxis.showTitle) {
-                    this.settings.axis.axisLabelSizeX = textMeasurementService.measureSvgTextHeight(
-                        this.settings.xAxis.titleTextProperties,
-                        this.settings.formatting.categoryFormatter.format(this.settings.xAxis.title || this.settings.xAxis.defaultTitle)
-                    );
-                    this.settings.axis.axisSizeX += this.settings.axis.axisLabelSizeX;
+            if (this.settings.yAxis.start !== undefined) {
+                if (this.settings.yAxis.start <= this.settings.axis.axisOptions.min) {
+                    this.settings.axis.axisOptions.min = this.settings.yAxis.start;
+                } else {
+                    this.settings.yAxis.start = this.settings.axis.axisOptions.min;
                 }
             }
 
-            if (this.settings.yAxis.show) {
-                this.settings.axis.axisSizeY = textMeasurementService.measureSvgTextWidth(
-                    this.settings.yAxis.axisTextProperties,
-                    this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max)
-                ) + 5; // Axis width itself
-
-                if (this.settings.yAxis.showTitle) {
-                    this.settings.axis.axisLabelSizeY = textMeasurementService.measureSvgTextHeight(
-                        this.settings.yAxis.titleTextProperties,
-                        this.settings.formatting.valuesFormatter.format(this.settings.yAxis.title || this.settings.yAxis.defaultTitle)
-                    );
-                    this.settings.axis.axisSizeY += this.settings.axis.axisLabelSizeY;
+            if (this.settings.yAxis.end !== undefined) {
+                if (this.settings.yAxis.end >= this.settings.axis.axisOptions.max) {
+                    this.settings.axis.axisOptions.max = this.settings.yAxis.end;
+                } else {
+                    this.settings.yAxis.end = this.settings.axis.axisOptions.max;
                 }
             }
 
-            this.settings.general.margin.top = textMeasurementService.measureSvgTextHeight(
-                this.settings.yAxis.axisTextProperties,
-                this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max)
-            ) / 2.;
+            if (this.data.dataPoints.length > 0) {
+                // calculate AxisSizeX, AxisSizeY
+                if (this.settings.xAxis.show) {
+                    this.settings.axis.axisSizeX = textMeasurementService.measureSvgTextHeight(
+                        this.settings.xAxis.axisTextProperties,
+                        "X"
+                    );
 
-            if (this.settings.labels.show && this.data.dataPoints.length > 0) {
-                let dataLabelTop = textMeasurementService.measureSvgTextHeight(
+                    if (this.settings.xAxis.showTitle) {
+                        this.settings.axis.axisLabelSizeX = textMeasurementService.measureSvgTextHeight(
+                            this.settings.xAxis.titleTextProperties,
+                            this.settings.formatting.categoryFormatter.format(this.settings.xAxis.title || this.settings.xAxis.defaultTitle)
+                        );
+                        this.settings.axis.axisSizeX += this.settings.axis.axisLabelSizeX;
+                    }
+                }
+
+                if (this.settings.yAxis.show) {
+                    this.settings.axis.axisSizeY = textMeasurementService.measureSvgTextWidth(
+                        this.settings.yAxis.axisTextProperties,
+                        this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max || 0)
+                    ) + 5; // Axis width itself
+
+                    if (this.settings.yAxis.showTitle) {
+                        this.settings.axis.axisLabelSizeY = textMeasurementService.measureSvgTextHeight(
+                            this.settings.yAxis.titleTextProperties,
+                            this.settings.formatting.valuesFormatter.format(this.settings.yAxis.title || this.settings.yAxis.defaultTitle)
+                        );
+                        this.settings.axis.axisSizeY += this.settings.axis.axisLabelSizeY;
+                    }
+                }
+
+                this.settings.general.margin.top = textMeasurementService.measureSvgTextHeight(
                     this.settings.yAxis.axisTextProperties,
-                    this.settings.formatting.valuesFormatter.format(this.data.dataPoints[0][0].dataLabels[0].value)
+                    this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max || 0)
                 ) / 2.;
+
+                if (this.settings.labels.show && this.data.dataPoints.length > 0) {
+                    let dataLabelTop = textMeasurementService.measureSvgTextHeight(
+                        this.settings.yAxis.axisTextProperties,
+                        this.settings.formatting.valuesFormatter.format(this.data.dataPoints[0][0].dataLabels[0].value)
+                    ) / 2.;
+                }
             }
 
             var yScale = d3.scale.linear()
-                .domain([this.settings.axis.axisOptions.min, this.settings.axis.axisOptions.max])
+                .domain([this.settings.axis.axisOptions.min || 0, this.settings.axis.axisOptions.max || 0])
                 .range([this.settings.general.margin.bottom + this.settings.axis.axisSizeX, this.settings.general.viewport.height - this.settings.general.margin.top]);
 
             var xScale = d3.scale.linear()
                 .domain([1, dataPoints.length + 1])
                 .range([this.settings.general.margin.left + this.settings.axis.axisSizeY, this.settings.general.viewport.width - this.settings.general.margin.right]);
 
-            BoxWhiskerChartDraw.drawChart(
+            drawReferenceLines(
+                this.svg, 
+                this.settings, 
+                this.data.referenceLines,
+                yScale,
+                false);
+            drawChart(
                 this.svg, 
                 this.settings, 
                 this.selectionManager, 
@@ -532,7 +608,13 @@ module powerbi.extensibility.visual {
                 dataPoints, 
                 xScale, 
                 yScale);
-            BoxWhiskerChartAxis.drawAxis(
+            drawReferenceLines(
+                this.svg, 
+                this.settings, 
+                this.data.referenceLines,
+                yScale,
+                true);
+            drawAxis(
                 this.axis, 
                 this.settings, 
                 dataPoints, 
@@ -571,6 +653,11 @@ module powerbi.extensibility.visual {
             let instances : VisualObjectInstance[] = [];
 
             switch (options.objectName) {
+                case "chartOptions":
+                    if (this.settings.chartOptions.whisker !== BoxWhiskerEnums.WhiskerType.Custom) {
+                        this.removeEnumerateObject(instanceEnumeration, "lower");
+                        this.removeEnumerateObject(instanceEnumeration, "higher");
+                    }
                 case "xAxis":
                     if (this.settings.chartOptions.orientation === BoxWhiskerEnums.ChartOrientation.Vertical) {
                         this.removeEnumerateObject(instanceEnumeration, "labelDisplayUnits");
@@ -601,7 +688,7 @@ module powerbi.extensibility.visual {
                     instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
                     break;
                 case "y1AxisReferenceLine":
-                    instances = refLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);
+                    instances = referenceLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);
                     break;
             }
             instances.forEach((instance: VisualObjectInstance) => { this.addAnInstanceToEnumeration(instanceEnumeration, instance) })
@@ -652,6 +739,11 @@ module powerbi.extensibility.visual {
                 fontFamily: settings.labels.fontFamily,
                 fontSize: settings.labels.fontSize + "px"
             }
+
+            if (settings.chartOptions.higher > 100) { settings.chartOptions.higher = 100; }
+            if (settings.chartOptions.higher < 75) { settings.chartOptions.higher = 75; }
+            if (settings.chartOptions.lower > 25) { settings.chartOptions.lower = 25; }
+            if (settings.chartOptions.lower < 0) { settings.chartOptions.lower = 0; }
             return settings;
         }
     }

@@ -104,9 +104,25 @@
                             {
                                 "value": "2",
                                 "displayName": "= 1.5 IQR"
+                            },
+                            {
+                                "value": "3",
+                                "displayName": "Custom"
                             }
                         ]
                     }
+                },
+                "lower": {
+                    "displayName": "Lower %",
+                    "description": "Lower % Whisker value",
+                    "placeHolderText": "Auto",
+                    "type": { "numeric": true }
+                },
+                "higher": {
+                    "displayName": "Higher %",
+                    "description": "Higher % Whisker value",
+                    "placeHolderText": "Auto",
+                    "type": { "numeric": true }
                 },
                 "outliers": {
                     "displayName": "Outliers",
@@ -217,6 +233,18 @@
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
+                "start": {
+                    "displayName": "Start",
+                    "description": "Start value of the axis",
+                    "placeHolderText": "Auto",
+                    "type": { "numeric": true }
+                },
+                "end": {
+                    "displayName": "End",
+                    "description": "End value of the axis",
+                    "placeHolderText": "Auto",
+                    "type": { "numeric": true }
+                },
                 "fontColor": {
                     "displayName": "Color",
                     "type": { "fill": { "solid": { "color": true } } }
@@ -310,41 +338,6 @@
                 }
             }
         },
-        "gridLines": {
-            "displayName": "Gridlines",
-            "properties": {
-                "show": {
-                    "displayName": "Show (Major) gridlines",
-                    "description": "Display major gridlines",
-                    "type": { "bool": true }
-                },
-                "majorGridSize": {
-                    "displayName": "Thickness",
-                    "description": "Thickness of the major gridlines",
-                    "type": { "numeric": true }
-                },
-                "majorGridColor": {
-                    "displayName": "Color",
-                    "description": "Color of the major gridlines",
-                    "type": { "fill": { "solid": { "color": true } } }
-                },
-                "minorGrid": {
-                    "displayName": "Minor gridlines",
-                    "description": "Display minor gridlines",
-                    "type": { "bool": true }
-                },
-                "minorGridSize": {
-                    "displayName": "Thickness",
-                    "description": "Thickness of the minor gridlines",
-                    "type": { "numeric": true }
-                },
-                "minorGridColor": {
-                    "displayName": "Color",
-                    "description": "Color of the minor gridlines",
-                    "type": { "fill": { "solid": { "color": true } } }
-                }
-            }
-        },
         "labels": {
             "displayName": "Data labels",
             "properties": {
@@ -389,6 +382,56 @@
                 }
             }
         },
+        "shapes" :{
+            "displayName": "Shapes",
+            "properties": {
+                "showMean": {
+                    "displayName": "Mean",
+                    "description": "Display Mean dot",
+                    "type": { "bool": true }
+                },
+                "showMedian": {
+                    "displayName": "Median",
+                    "description": "Display Median line",
+                    "type": { "bool": true }
+                }                
+            }
+        },
+        "gridLines": {
+            "displayName": "Gridlines",
+            "properties": {
+                "show": {
+                    "displayName": "Show (Major) gridlines",
+                    "description": "Display major gridlines",
+                    "type": { "bool": true }
+                },
+                "majorGridSize": {
+                    "displayName": "Thickness",
+                    "description": "Thickness of the major gridlines",
+                    "type": { "numeric": true }
+                },
+                "majorGridColor": {
+                    "displayName": "Color",
+                    "description": "Color of the major gridlines",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "minorGrid": {
+                    "displayName": "Minor gridlines",
+                    "description": "Display minor gridlines",
+                    "type": { "bool": true }
+                },
+                "minorGridSize": {
+                    "displayName": "Thickness",
+                    "description": "Thickness of the minor gridlines",
+                    "type": { "numeric": true }
+                },
+                "minorGridColor": {
+                    "displayName": "Color",
+                    "description": "Color of the minor gridlines",
+                    "type": { "fill": { "solid": { "color": true } } }
+                }
+            }
+        },
         "y1AxisReferenceLine" : {
             "displayName": "Constant line",
             "properties": {
@@ -403,7 +446,7 @@
                 },
                 "value": {
                     "displayName": "Value",
-                    "type": { "text": true }
+                    "type": { "numeric": true }
                 },
                 "lineColor" : {
                     "displayName": "Color",
@@ -442,6 +485,87 @@
                         {
                             "value": "1",
                             "displayName": "Behind"
+                        }
+                    ]}
+                },
+                "showLabel": {
+                    "displayName": "Data Label",
+                    "type": { "bool": true }
+                },
+                "labelColor": {
+                    "displayName": "Color",
+                    "type" : { "fill": { "solid": { "color": true } } }
+                },
+                "labelType": {
+                    "displayName": "Text",
+                    "type" : { "enumeration": [
+                        {
+                            "value": "0",
+                            "displayName": "Value"
+                        },
+                        {
+                            "value": "1",
+                            "displayName": "Name"
+                        },
+                        {
+                            "value": "2",
+                            "displayName": "Name and Value"
+                        }
+                    ]}
+                },
+                "labelFontSize": {
+                    "displayName": "Label Text Size",
+                    "type": { "formatting": { "fontSize": true } }
+                },
+                "labelFontFamily": {
+                    "displayName": "Label Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelDisplayUnits": {
+                    "displayName": "Display units",
+                    "description": "Selects the unit (millions, billions, etc.)",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "labelPrecision": {
+                    "displayName": "Value decimal places",
+                    "description": "Select the number of decimal places to display",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    },
+                    "suppressFormatPainterCopy": true
+                },
+                "hPosition": {
+                    "displayName": "Horizontal Position",
+                    "type" : { "enumeration": [
+                        {
+                            "value": "0",
+                            "displayName": "Left"
+                        },
+                        {
+                            "value": "1",
+                            "displayName": "Right"
+                        }
+                    ]}
+                },
+                "vPosition": {
+                    "displayName": "Vertical Position",
+                    "type" : { "enumeration": [
+                        {
+                            "value": "0",
+                            "displayName": "Above"
+                        },
+                        {
+                            "value": "1",
+                            "displayName": "Under"
                         }
                     ]}
                 }
