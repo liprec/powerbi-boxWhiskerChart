@@ -45,12 +45,10 @@ module powerbi.extensibility.visual {
                 case BoxWhiskerEnums.MarginType.Small:
                     leftBoxMargin = 0.05;
                     break;
-                case BoxWhiskerEnums.MarginType.Medium:
-                    leftBoxMargin = 0.1;
-                    break;
                 case BoxWhiskerEnums.MarginType.Large:
                     leftBoxMargin = 0.2;
                     break;
+                case BoxWhiskerEnums.MarginType.Medium:
                 default:
                     leftBoxMargin = 0.1;
                     break;

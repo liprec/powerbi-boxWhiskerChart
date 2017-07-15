@@ -15,9 +15,7 @@
     "email": "mail@jppp.org"
   },
   "assets": {
-    "icon": "assets/BoxWhisker.png",
-    "screenshots": "BoxWhisker-screenshot.jpg",
-    "thumbnail": "assets/BoxWhisker-thumbnail.png"
+    "icon": "assets/BoxWhisker.png"
   },
   "externalJS": [
     "node_modules/jquery/dist/jquery.min.js",

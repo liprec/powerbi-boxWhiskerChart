@@ -73,7 +73,7 @@ module powerbi.extensibility.visual {
             while (totalXAxisWidth > (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - settings.axis.axisSizeY)) {
                 overSamplingX += 1;
                 visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
-                let totalXAxisWidth = d3.max(visibleDataPoints
+                totalXAxisWidth = d3.max(visibleDataPoints
                     .map((d) =>
                         textMeasurementService.measureSvgTextWidth(
                             settings.yAxis.axisTextProperties,

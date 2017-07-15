@@ -255,8 +255,8 @@ module powerbi.extensibility.visual {
                         whiskerValue = "= 1.5IQR";
                         break;
                     case BoxWhiskerEnums.WhiskerType.Custom:
-                        this.settings.chartOptions.lower = Math.max(this.settings.chartOptions.lower, Math.ceil(100/(sortedValue.length + 1)));
-                        this.settings.chartOptions.higher = Math.min(this.settings.chartOptions.higher, Math.floor(100-(100/(sortedValue.length + 1))));
+                        this.settings.chartOptions.lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100/(sortedValue.length + 1)));
+                        this.settings.chartOptions.higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100-(100/(sortedValue.length + 1))));
                         var xl = (this.settings.chartOptions.lower / 100.) * (sortedValue.length + 1);
                         var xh = (this.settings.chartOptions.higher / 100.) * (sortedValue.length + 1);
                         var il = Math.floor(xl);
@@ -559,10 +559,13 @@ module powerbi.extensibility.visual {
                 }
 
                 if (this.settings.yAxis.show) {
-                    this.settings.axis.axisSizeY = textMeasurementService.measureSvgTextWidth(
-                        this.settings.yAxis.axisTextProperties,
-                        this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max || 0)
-                    ) + 5; // Axis width itself
+                    for (let i = this.settings.axis.axisOptions.min; i < this.settings.axis.axisOptions.max; i += this.settings.axis.axisOptions.tickSize) {
+                        let tempSize = textMeasurementService.measureSvgTextWidth(
+                            this.settings.yAxis.axisTextProperties,
+                            this.settings.formatting.valuesFormatter.format(i));
+                        this.settings.axis.axisSizeY = tempSize > this.settings.axis.axisSizeY ? tempSize : this.settings.axis.axisSizeY
+                    }
+                    this.settings.axis.axisSizeY += + 5; // Axis width itself
 
                     if (this.settings.yAxis.showTitle) {
                         this.settings.axis.axisLabelSizeY = textMeasurementService.measureSvgTextHeight(
@@ -654,9 +657,14 @@ module powerbi.extensibility.visual {
 
             switch (options.objectName) {
                 case "chartOptions":
-                    if (this.settings.chartOptions.whisker !== BoxWhiskerEnums.WhiskerType.Custom) {
-                        this.removeEnumerateObject(instanceEnumeration, "lower");
-                        this.removeEnumerateObject(instanceEnumeration, "higher");
+                    this.removeEnumerateObject(instanceEnumeration, "orientation");
+                    switch (this.settings.chartOptions.whisker) {
+                        case BoxWhiskerEnums.WhiskerType.MinMax:
+                            this.removeEnumerateObject(instanceEnumeration, "outliers");
+                        case BoxWhiskerEnums.WhiskerType.IQR:
+                        case BoxWhiskerEnums.WhiskerType.Standard:
+                            this.removeEnumerateObject(instanceEnumeration, "lower");
+                            this.removeEnumerateObject(instanceEnumeration, "higher");
                     }
                 case "xAxis":
                     if (this.settings.chartOptions.orientation === BoxWhiskerEnums.ChartOrientation.Vertical) {
