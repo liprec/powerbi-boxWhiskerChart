@@ -34,8 +34,8 @@
         "@types/jquery": "^2.0.41",
         "@types/lodash": "^4.14.55",
         "powerbi-visuals-tools": "^1.7.0",
-        "tslint": "5.4.3",
-        "tslint-microsoft-contrib": "^5.0.0",
+        "tslint": "^5.4.3",
+        "tslint-microsoft-contrib": "^5.0.1",
         "typescript": "^2.4.1"
     }
 }
