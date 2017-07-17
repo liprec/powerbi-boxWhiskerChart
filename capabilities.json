@@ -16,6 +16,11 @@
             "displayName": "Values"
         }
     ],
+    "drilldown": {
+        "roles": [
+            "Groups"
+        ]
+    },
     "dataViewMappings": [{
         "conditions": [{
             "Groups": {

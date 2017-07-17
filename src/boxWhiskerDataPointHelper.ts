@@ -46,7 +46,7 @@ module powerbi.extensibility.visual {
             });
         } else {
             dataPoints.forEach((dataPoint: BoxWhiskerChartDatapoint[]) => {
-                let selectionId: data.Selector = dataPoint[0].selectionId as data.Selector;
+                let selectionId = dataPoint[0].selectionId.getSelector();
                 instances.push({
                     displayName: dataPoint[0].label,
                     objectName: "dataPoint",

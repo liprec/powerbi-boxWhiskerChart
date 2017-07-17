@@ -188,7 +188,9 @@ module powerbi.extensibility.visual {
                 }
 
                 let selector = { data: [categories[i].identity], };
-                let selectionId: ISelectionId = new SelectionId(selector, false) as ISelectionId;
+                let selectionId: ISelectionId = this.hostServices.createSelectionIdBuilder()
+                        .withCategory(category, i)
+                        .createSelectionId();
                 let sortedValue = values.sort((n1, n2) => n1 - n2);
 
                 let median
