@@ -188,7 +188,10 @@ module powerbi.extensibility.visual {
                 }
 
                 let selector = { data: [categories[i].identity], };
-                let selectionId: ISelectionId = new SelectionId(selector, false) as ISelectionId;
+                let selectionId = new SelectionId(selector, false);
+                let identityId = this.selectionIdBuilder
+                    .withCategory(category, i)
+                    .createSelectionId();
                 let sortedValue = values.sort((n1, n2) => n1 - n2);
 
                 let median
@@ -286,11 +289,10 @@ module powerbi.extensibility.visual {
                 let dataPointColor: string;
 
                 if (this.settings.dataPoint.oneColor) {
-                    if (category.objects && category.objects[0]) {
-                        dataPointColor = colorHelper.getColorForMeasure(category.objects[0], "");
-                    } else {
-                        dataPointColor = colors.getColor("0").value;
+                    if (this.settings.dataPoint.oneFill === undefined) {
+                        this.settings.dataPoint.oneFill = colors.getColor("0").value;
                     }
+                    dataPointColor = this.settings.dataPoint.oneFill;
                 } else {
                     if (category.objects && category.objects[i]) {
                         dataPointColor = colorHelper.getColorForMeasure(category.objects[i], "");
@@ -347,6 +349,7 @@ module powerbi.extensibility.visual {
                         ? dataView.matrix.valueSources[0].displayName
                         : this.settings.formatting.categoryFormatter.format(categories[i].value),
                     selectionId: selectionId,
+                    identifyId: identityId,
                     color: dataPointColor,
                     tooltipInfo: [
                         {
@@ -693,7 +696,10 @@ module powerbi.extensibility.visual {
                     }
                     break;                    
                 case "dataPoint":
-                    instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
+                    if (!this.settings.dataPoint.oneColor) {
+                        this.removeEnumerateObject(instanceEnumeration, "oneFill");
+                        instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette);
+                    }
                     break;
                 case "y1AxisReferenceLine":
                     instances = referenceLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);

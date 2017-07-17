@@ -54,7 +54,8 @@ module powerbi.extensibility.visual {
         label?: string;
         outliers: BoxWhiskerChartOutlier[];
         dataLabels: BoxWhiskerDataLabel[];
-        selectionId: ISelectionId;
+        selectionId: SelectionId;
+        identifyId: powerbi.visuals.ISelectionId;
         tooltipInfo?: TooltipDataItem[];
         x: number;
         y: number;

@@ -332,6 +332,10 @@
                     "description": "Enable one color for all Box and Whiskers",
                     "type": { "bool": true }
                 },
+                "oneFill": {
+                    "displayName": "Fill",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
                 "fill": {
                     "displayName": "Fill",
                     "type": { "fill": { "solid": { "color": true } } }

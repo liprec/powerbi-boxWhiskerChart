@@ -145,6 +145,7 @@ module powerbi.extensibility.visual {
         public meanColor: string = "#111";
         public medianColor: string = "#111";
         public oneColor: boolean = false;
+        public oneFill: string = undefined;
     }
 
     class LabelsSettings {
