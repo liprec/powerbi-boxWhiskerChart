@@ -131,6 +131,9 @@ module powerbi.extensibility.visual {
                     referenceLines: []
                 };
             }
+            // Initialize gpu.js object
+            let gpu = new GPU();
+
             let categories = dataView.matrix.rows.root.children;
             let category = dataView.categorical.categories[0];
             let categoryValues = [];

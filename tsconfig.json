@@ -15,6 +15,7 @@
     "node_modules/powerbi-visuals-utils-svgutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-interactivityutils/lib/index.d.ts",
     "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
+    "external/gpu.d.ts",
     "src/selectionId.ts",
     "src/objectEnumerationUtility.ts",
     "src/enums.ts",
