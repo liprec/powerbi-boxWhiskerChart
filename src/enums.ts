@@ -25,19 +25,55 @@
 *  THE SOFTWARE.
 */
 
-.boxWhiskerChart .axis .axisMajorGrid text,
-.boxWhiskerChart .axis .axisMinorGrid text {
-  visibility: hidden;
-}
-.boxWhiskerChart .axis .axisMajorGrid .domain,
-.boxWhiskerChart .axis .axisMinorGrid .domain {
-  visibility: hidden;
-} 
-.boxWhiskerChart .axis path,
-.boxWhiskerChart .axis line {
-  fill: none;
-  shape-rendering: crispEdges;
-}
-.boxWhiskerChart .axis .axisX line {
-  stroke-width: 0px; 
+module powerbi.extensibility.visual {
+
+    export module BoxWhiskerEnums {
+        export enum ChartOrientation {
+            Horizontal,
+            Vertical
+        }
+
+        export enum QuartileType {
+            Exclusive,
+            Inclusive
+        }
+
+        export enum WhiskerType {
+            MinMax,
+            Standard,
+            IQR,
+            Custom
+        }
+    
+        export enum MarginType {
+            Small,
+            Medium,
+            Large
+        }
+
+        export module ReferenceLine {
+            export enum Style {
+                dashed,
+                solid,
+                dotted
+            }
+            export enum Position {
+                front,
+                back
+            }
+            export enum LabelType {
+                value,
+                name,
+                valueName,
+            }
+            export enum HPosition {
+                left,
+                right
+            }
+            export enum VPosition {
+                above,
+                under
+            }
+        }
+    }
 }

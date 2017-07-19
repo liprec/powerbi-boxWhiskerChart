@@ -25,19 +25,25 @@
 *  THE SOFTWARE.
 */
 
-.boxWhiskerChart .axis .axisMajorGrid text,
-.boxWhiskerChart .axis .axisMinorGrid text {
-  visibility: hidden;
-}
-.boxWhiskerChart .axis .axisMajorGrid .domain,
-.boxWhiskerChart .axis .axisMinorGrid .domain {
-  visibility: hidden;
-} 
-.boxWhiskerChart .axis path,
-.boxWhiskerChart .axis line {
-  fill: none;
-  shape-rendering: crispEdges;
-}
-.boxWhiskerChart .axis .axisX line {
-  stroke-width: 0px; 
+module powerbi.extensibility.visual {
+ 
+    // utils.dataview
+    import DataViewObjectsModule = powerbi.extensibility.utils.dataview.DataViewObjects;
+    // powerbi.extensibility
+    import IColorPalette = powerbi.extensibility.IColorPalette;
+
+    export function dataPointEnumerateObjectInstances(dataPoints: BoxWhiskerChartDatapoint[][], colorPalette: IColorPalette): VisualObjectInstance[] {
+        let instances: VisualObjectInstance[] = []; 
+        dataPoints.forEach((dataPoint: BoxWhiskerChartDatapoint[]) => {
+            instances.push({
+                displayName: dataPoint[0].label,
+                objectName: "dataPoint",
+                selector: dataPoint[0].identifyId.getSelector(),
+                properties: {
+                    fill: { solid: { color: dataPoint[0].color } }
+                }
+            });
+        });
+        return instances;
+    }
 }
