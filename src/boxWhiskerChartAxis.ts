@@ -169,6 +169,7 @@ module powerbi.extensibility.visual {
             }
         } else {
             axisX.style("opacity", 0);
+            axisXLabel.style("opacity", 0);
         }
 
         if (settings.yAxis.show) {
@@ -226,6 +227,7 @@ module powerbi.extensibility.visual {
             }
         } else {
             axisY.style("opacity", 0);
+            axisYLabel.style("opacity", 0);
         }
 
         if (settings.gridLines.show) {

@@ -236,12 +236,13 @@ module powerbi.extensibility.visual {
                 var lowerLabels = dp.dataLabels
                     .filter((dataLabel) => dataLabel.value <= dp.median) // Lower half of data labels
                     .sort((dataLabel1, dataLabel2) => dataLabel2.value - dataLabel1.value); // Sort: median index 0
-                var x = xScale(dp.category + rightBoxMargin + 0.02);
+                    var x = xScale(dp.category + rightBoxMargin + 0.02);
 
                 topLabels[0].y = yScale(dp.median) - 4;
                 topLabels[0].x = xScale(dp.category + rightBoxMargin + 0.02);
                 lowerLabels[0].y = yScale(dp.median) - 4;
                 lowerLabels[0].x = xScale(dp.category + rightBoxMargin + 0.02);
+                if ((topLabels[0].value === dp.median) && (!settings.shapes.showMedian)) { topLabels[0].visible = 0}
 
                 var adjustment = 0;
                 var textHeight = (textMeasurementService.measureSvgTextHeight(
@@ -250,6 +251,7 @@ module powerbi.extensibility.visual {
                 ) / 2) + 1;
 
                 for (var i = 1; i < topLabels.length; i++) {
+                    if ((topLabels[i].value === dp.average) && (!settings.shapes.showMean)) { topLabels[i].visible = 0}
                     topLabels[i].y = yScale(topLabels[i].value) - 4;
                     topLabels[i].x = x;
                     var diff = Math.abs((topLabels[i].y + adjustment) - (topLabels[i - 1].y));
@@ -263,6 +265,7 @@ module powerbi.extensibility.visual {
                 }
                 adjustment = 0;
                 for (var i = 1; i < lowerLabels.length; i++) {
+                    if ((lowerLabels[i].value === dp.average) && (!settings.shapes.showMean)) { lowerLabels[i].visible = 0}
                     lowerLabels[i].y = yScale(lowerLabels[i].value) - 4;
                     lowerLabels[i].x = x;
                     var diff = Math.abs((lowerLabels[i].y + adjustment) - lowerLabels[i - 1].y);
@@ -297,7 +300,8 @@ module powerbi.extensibility.visual {
             .text(dataLabel => settings.formatting.labelFormatter.format(dataLabel.value))
             .attr("x", dataLabel => dataLabel.x)
             .attr("y", dataLabel => y0 - dataLabel.y)
-            .attr("fill", settings.labels.fontColor);
+            .attr("fill", settings.labels.fontColor)
+            .style("opacity", dataLabel => dataLabel.visible);
 
         chart
             .selectAll("text")

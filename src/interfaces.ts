@@ -99,6 +99,7 @@ module powerbi.extensibility.visual {
         value: number;
         y: number;
         x: number;
+        visible: number;
     }
 
     export interface BoxWhiskerAxisOptions {

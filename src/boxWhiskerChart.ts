@@ -342,8 +342,8 @@ module powerbi.extensibility.visual {
                         [maxValue, minValue, avgvalue, median, quartile1, quartile3]
                             .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                             .filter((value) => { return value != null; }) // Remove empties
-                            .map((dataPoint) => { return { value: dataPoint, x: 0, y: 0 }; })
-                            .concat(outliers.map((outlier) => { return { value: outlier.value, x: 0, y: 0 }; }))
+                            .map((dataPoint) => { return { value: dataPoint, x: 0, y: 0, visible: 1 }; })
+                            .concat(outliers.map((outlier) => { return { value: outlier.value, x: 0, y: 0, visible: 1 }; }))
                         : [],
                     label: categories[0].value === undefined
                         ? dataView.matrix.valueSources[0].displayName
