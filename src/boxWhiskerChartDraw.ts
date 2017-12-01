@@ -129,15 +129,16 @@ module powerbi.extensibility.visual {
             }).join(' ');
         };
 
-        let outlierData = (points) => {
-            return points.map((value) => {
+        let outlierData = //(points) => {
+            //return points.map(
+                (value) => {
                 var x1 = xScale(value.category + boxMiddle);
                 var y1 = yScale(value.value);
                 var r = dotRadius;
                 var r2 = 2 * r;
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
-            }).join(' ');
-        };
+            } //).join(' ');
+        //};
 
         quartile
             .enter()
@@ -208,19 +209,25 @@ module powerbi.extensibility.visual {
 
         median.exit().remove();
 
-        let outliers = selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
+        let outliersData = [];
+        selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
             let dp: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
-            if (dp.outliers && dp.outliers.length > 0) { return [dp.outliers]; }
+            if (dp.outliers && dp.outliers.length > 0) { 
+                dp.outliers.forEach(outlier => {
+                    outliersData.push(outlier);                     
+                });
+            }
             return [];
         });
+        let outliers = selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(outliersData);
 
         outliers
             .enter()
             .append('path')
             .classed(BoxWhiskerChart.ChartOutlierDot.className, true);
-
+            
         outliers
-            .style('fill', value => (<BoxWhiskerChartOutlier>value[0]).color)
+            .style('fill', value => value.color)
             .transition()
             .duration(settings.general.duration)
             .attr('d', outlierData);
@@ -312,20 +319,20 @@ module powerbi.extensibility.visual {
         dataLabels.exit().remove();
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
-            (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<number>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data.tooltipInfo,
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName),
-            (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<number>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName),
-            (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartDatapoint>tooltipEvent.data[0]).tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<number>) => null);
-
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);       
+       
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName),
-            (tooltipEvent: TooltipEventArgs<number>) => (<BoxWhiskerChartOutlier>tooltipEvent.data[0]).tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<number>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data.tooltipInfo,
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => null)
 
         selection.exit().remove();
     }

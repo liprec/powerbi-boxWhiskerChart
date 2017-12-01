@@ -60,6 +60,10 @@ module powerbi.extensibility.visual {
     // d3
     import Selection = d3.Selection;
 
+    export interface ISQExpr extends powerbi.data.ISQExpr {
+        ref: string
+    }
+
     export class BoxWhiskerChart implements IVisual {
 
         private static LocalizationStrings: jsCommon.IStringResourceProvider = {
@@ -132,8 +136,10 @@ module powerbi.extensibility.visual {
                 };
             }
             let categories = dataView.matrix.rows.root.children;
+            let samples = dataView.matrix.columns.root.childIdentityFields;
             let category = dataView.categorical.categories[0];
             let categoryValues = [];
+            let sampleValues = [];
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
 
@@ -146,6 +152,10 @@ module powerbi.extensibility.visual {
                         .filter((value) => { return value != null; })
                 );
             }
+            for (let i = 0; i < samples.length; i++) {
+                sampleValues.push((samples[i] as ISQExpr).ref);
+            }
+
             let maxValue = d3.max(categoryValues, (val) => d3.max(val));
 
             this.settings.formatting.valuesFormatter = valueFormatter.create({
@@ -368,6 +378,10 @@ module powerbi.extensibility.visual {
                         {
                             displayName: "# Samples",
                             value: valueFormatter.format(sortedValue.length, 'd', false),
+                        },
+                        {
+                            displayName: "Sampling",
+                            value: sampleValues.join(',\n')
                         },
                         {
                             displayName: maxValueLabel,
