@@ -48,6 +48,10 @@ module powerbi.extensibility.visual {
     // utils.color
     import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
 
+    // utils.tooltip
+    import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
+    import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
+    
     // powerbi.visuals
     import ISelectionId = powerbi.visuals.ISelectionId
 

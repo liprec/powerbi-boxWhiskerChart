@@ -31,6 +31,9 @@ module powerbi.extensibility.visual {
     import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
     // utils.formatting
     import textMeasurementService = powerbi.extensibility.utils.formatting.textMeasurementService;
+    // utils.tooltip
+    import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
+    import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
     // d3
     import Selection = d3.Selection;
 
