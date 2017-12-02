@@ -203,33 +203,18 @@ module powerbi.extensibility.visual {
                         .createSelectionId();
                 let sortedValue = values.sort((n1, n2) => n1 - n2);
 
-                let median
-                let lowerValues;
-                let higerValues;
-
-                if ((this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive) && (sortedValue.length % 2)) { // Exclusive and odd values
-                    let medianValue = (sortedValue.length - 1) / 2;
-                    median = sortedValue[medianValue];
-                    lowerValues = $.extend(true, [], sortedValue);  // Copy values
-                    lowerValues.splice(medianValue, 1);             // Remove median value
-                    higerValues = lowerValues.splice(medianValue);  // Split lower and higer part
-                } else {
-                    let medianValue = (sortedValue.length - 1) / 2; // Easy median
-                    median = (sortedValue[Math.floor(medianValue)] +
-                             sortedValue[Math.ceil(medianValue)]) /2;
-                    lowerValues = $.extend(true, [], sortedValue);  // Copy values
-                    higerValues = $.extend(true, [], sortedValue);  // Copy values
-                    lowerValues.splice(Math.floor(medianValue) + 1);
-                    higerValues = higerValues.splice(Math.ceil(medianValue));
-                }
-
-                let qValue = (lowerValues.length - 1) / 2;
-                let quartile1 = sortedValue.length <= 2 ? null :
-                            (lowerValues[Math.floor(qValue)] +
-                            lowerValues[Math.ceil(qValue)]) / 2;
-                let quartile3 = sortedValue.length <= 2 ? null :
-                            (higerValues[Math.floor(qValue)] +
-                            higerValues[Math.ceil(qValue)]) / 2;
+                // Exclusive / Inclusive array correction
+                let corr = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? 1 : -1;
+                let corr1 = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? 0 : 1;
+                let q1 = (0.25 * (sortedValue.length + corr)) + corr1;
+                let m  = (0.50 * (sortedValue.length + corr)) + corr1;
+                let q3 = (0.75 * (sortedValue.length + corr)) + corr1;
+                let q1l = Math.floor(q1);
+                let ml  = Math.floor(m);
+                let q3l = Math.floor(q3);
+                let quartile1 = sortedValue[q1l-1] + (q1-q1l)*(sortedValue[q1l] - sortedValue[q1l-1]);
+                let median    = sortedValue[ml-1] + (m-ml)*(sortedValue[ml] - sortedValue[ml-1]);
+                let quartile3 = sortedValue[q3l-1] + (q3-q3l)*(sortedValue[q3l] - sortedValue[q3l-1]);
 
                 let ttl: number = 0;
                 sortedValue.forEach(value => { ttl += value; });
@@ -267,18 +252,18 @@ module powerbi.extensibility.visual {
                         whiskerValue = "= 1.5IQR";
                         break;
                     case BoxWhiskerEnums.WhiskerType.Custom:
-                        this.settings.chartOptions.lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100/(sortedValue.length + 1)));
-                        this.settings.chartOptions.higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100-(100/(sortedValue.length + 1))));
-                        var xl = (this.settings.chartOptions.lower / 100.) * (sortedValue.length + 1);
-                        var xh = (this.settings.chartOptions.higher / 100.) * (sortedValue.length + 1);
+                        var lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100/(sortedValue.length + 1)));
+                        var higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100-(100/(sortedValue.length + 1))));
+                        var xl = ((lower / 100.) * (sortedValue.length + corr)) + corr1;
+                        var xh = ((higher / 100.) * (sortedValue.length + corr)) + corr1;
                         var il = Math.floor(xl);
                         var ih = Math.floor(xh);
-                        var high = sortedValue[ih-1] + (xh-ih)*(sortedValue[ih] - sortedValue[ih-1]);
-                        var low = sortedValue[il-1] + (xl-il)*(sortedValue[il] - sortedValue[il-1]);
+                        var high = sortedValue[ih-1] + (xh-ih)*(sortedValue[ih] || 0 - sortedValue[ih-1]); // Escape index out of bound
+                        var low = sortedValue[il-1] + (xl-il)*(sortedValue[il] || 0 - sortedValue[il-1]);  // Escape index out of bound
                         minValue = low;
                         maxValue = high;
-                        minValueLabel = "Lower: " + this.settings.chartOptions.lower.toString() + "%";
-                        maxValueLabel = "Higher: " + this.settings.chartOptions.higher.toString() + "%";
+                        minValueLabel = "Lower: " + lower.toString() + "%";
+                        maxValueLabel = "Higher: " + higher.toString() + "%";
                         quartileValue = this.settings.chartOptions.quartile === BoxWhiskerEnums.QuartileType.Exclusive ? "Exclusive" : "Inclusive" ;
                         whiskerValue = "Custom";
                         break;

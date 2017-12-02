@@ -319,7 +319,7 @@ module powerbi.extensibility.visual {
         dataLabels.exit().remove();
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
-            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data.tooltipInfo,
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName),
