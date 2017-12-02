@@ -65,6 +65,7 @@ module powerbi.extensibility.visual {
             objectName: "dataPoint",
             propertyName: "fill"
         };
+        public telemetry:boolean = false;
     }
 
     class AxisSettings {

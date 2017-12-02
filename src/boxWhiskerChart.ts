@@ -58,9 +58,9 @@ module powerbi.extensibility.visual {
     // powerbi.extensibility
     import IColorPalette = powerbi.extensibility.IColorPalette;
     import TooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
-
     import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
 
+    import telemetry = powerbi.extensibility.utils.telemetry;
     // d3
     import Selection = d3.Selection;
 
@@ -79,6 +79,14 @@ module powerbi.extensibility.visual {
             objectName: "general",
             propertyName: "formatString",
         };
+
+        // Trace messages
+        private traceEvents = {
+            convertor: 'BoxWhiskerChart1455240051538: Convertor method',
+            update: 'BoxWhiskerChart1455240051538: Update method',
+            drawChart: 'BoxWhiskerChart1455240051538: DrawChart method',
+            drawAxis: 'BoxWhiskerChart1455240051538: DrawAxis method'
+        }
 
         private static VisualClassName = "boxWhiskerChart";
 
@@ -126,6 +134,7 @@ module powerbi.extensibility.visual {
         private dataType: ValueType;
 
         public converter(dataView: DataView, colors: IColorPalette): BoxWhiskerChartData {
+            let timer = telemetry.PerfTimer.start(this.traceEvents.convertor, this.settings.general.telemetry);
             if (!dataView ||
                 !dataView.matrix ||
                 !dataView.matrix.columns ||
@@ -398,6 +407,7 @@ module powerbi.extensibility.visual {
                         }]
                 });
             }
+            timer();
             return {
                 dataPoints: dataPoints,
                 referenceLines: referenceLines,
@@ -474,13 +484,13 @@ module powerbi.extensibility.visual {
             }
 
         public update(options: VisualUpdateOptions): void {
+            let timer = telemetry.PerfTimer.start(this.traceEvents.update, this.settings.general.telemetry);
             if (!options ||
                 !options.dataViews ||
                 !options.dataViews[0] ||
                 !options.viewport) {
                 return;
             }
-
             this.dataView = options.dataViews ? options.dataViews[0] : undefined;
             if (!this.dataView) {
                 return;
@@ -608,6 +618,7 @@ module powerbi.extensibility.visual {
                 this.data.referenceLines,
                 yScale,
                 false);
+            let timerChart = telemetry.PerfTimer.start(this.traceEvents.drawChart, this.settings.general.telemetry);
             drawChart(
                 this.svg, 
                 this.settings, 
@@ -616,17 +627,21 @@ module powerbi.extensibility.visual {
                 dataPoints, 
                 xScale, 
                 yScale);
+            timerChart();
             drawReferenceLines(
                 this.svg, 
                 this.settings, 
                 this.data.referenceLines,
                 yScale,
                 true);
+            let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
             drawAxis(
                 this.axis, 
                 this.settings, 
                 dataPoints, 
                 yScale);
+            timerAxis();
+            timer();
         }
 
         private static getTooltipData(value: any): VisualTooltipDataItem[] { 
@@ -655,7 +670,7 @@ module powerbi.extensibility.visual {
                 this.settings || BoxWhiskerChartSettings.getDefault(),
                 options);
             if (options.objectName === "general") {
-                return;
+                //return;
             }
             
             let instances : VisualObjectInstance[] = [];

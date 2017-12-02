@@ -21,6 +21,7 @@
     "src/enums.ts",
     "src/interfaces.ts",
     "src/settings.ts",
+    "src/perfTimer.ts",
     "src/boxWhiskerRefLineHelper.ts",
     "src/boxWhiskerDataPointHelper.ts",
     "src/boxWhiskerChartAxis.ts",

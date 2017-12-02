@@ -58,6 +58,12 @@
             "properties": {
                 "formatString": {
                     "type": { "formatting": { "labelDisplayUnits": false } }
+                },
+                "telemetry": {
+                    "displayName": "Telemetry",
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },
