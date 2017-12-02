@@ -258,8 +258,8 @@ module powerbi.extensibility.visual {
                         var xh = ((higher / 100.) * (sortedValue.length + corr)) + corr1;
                         var il = Math.floor(xl);
                         var ih = Math.floor(xh);
-                        var high = sortedValue[ih-1] + (xh-ih)*(sortedValue[ih] || 0 - sortedValue[ih-1]); // Escape index out of bound
-                        var low = sortedValue[il-1] + (xl-il)*(sortedValue[il] || 0 - sortedValue[il-1]);  // Escape index out of bound
+                        var high = sortedValue[ih-1] + (xh-ih)*((sortedValue[ih] || 0) - sortedValue[ih-1]); // Escape index out of bound
+                        var low = sortedValue[il-1] + (xl-il)*((sortedValue[il] || 0) - sortedValue[il-1]);  // Escape index out of bound
                         minValue = low;
                         maxValue = high;
                         minValueLabel = "Lower: " + lower.toString() + "%";
