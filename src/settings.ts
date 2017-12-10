@@ -66,6 +66,7 @@ module powerbi.extensibility.visual {
             propertyName: "fill"
         };
         public telemetry:boolean = false;
+        public maxPoints:number = 30000;
     }
 
     class AxisSettings {

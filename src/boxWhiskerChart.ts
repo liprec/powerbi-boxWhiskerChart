@@ -162,7 +162,7 @@ module powerbi.extensibility.visual {
             let sampleValues = [];
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
-            let maxPoints = 30000;
+            let maxPoints = this.settings.general.maxPoints;
 
             this.settings.xAxis.defaultTitle = dataView.matrix.rows.levels[0].sources[0].displayName;
             this.settings.yAxis.defaultTitle = valueSources[0].displayName;
@@ -301,7 +301,7 @@ module powerbi.extensibility.visual {
                 let dataPointColor: string;
 
                 if (this.settings.dataPoint.oneColor) {
-                    if (this.settings.dataPoint.oneColor === undefined) {
+                    if (this.settings.dataPoint.oneFill === undefined) {
                         this.settings.dataPoint.oneFill = colors.getColor("0").value;
                     }
                     dataPointColor = this.settings.dataPoint.oneFill;
