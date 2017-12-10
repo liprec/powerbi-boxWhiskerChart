@@ -32,10 +32,12 @@ module powerbi.extensibility.visual {
     // powerbi.extensibility
     import IColorPalette = powerbi.extensibility.IColorPalette;
 
+    import Selector = powerbi.data.Selector;
+                    
     export function dataPointEnumerateObjectInstances(dataPoints: BoxWhiskerChartDatapoint[][], colorPalette: IColorPalette, oneColor: boolean): VisualObjectInstance[] {
         let instances: VisualObjectInstance[] = [];
         if (oneColor) {
-            let selectionId: data.Selector = dataPoints[0][0].selectionId as data.Selector;
+            let selectionId: Selector = dataPoints[0][0].selectionId as Selector;
             instances.push({
                 displayName: "Fill Color",
                 objectName: "dataPoint",
@@ -46,11 +48,11 @@ module powerbi.extensibility.visual {
             });
         } else {
             dataPoints.forEach((dataPoint: BoxWhiskerChartDatapoint[]) => {
-                let selectionId = dataPoint[0].selectionId.getSelector();
+                let selector: Selector = dataPoint[0].selectionId.getSelector();
                 instances.push({
                     displayName: dataPoint[0].label,
                     objectName: "dataPoint",
-                    selector: selectionId,
+                    selector: { data: selector.data },
                     properties: {
                         fill: { solid: { color: dataPoint[0].color } }
                     }

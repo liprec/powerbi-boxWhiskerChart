@@ -34,7 +34,7 @@ module powerbi.extensibility.utils.telemetry {
                 return _.noop;
             if (console.time)
                 console.time(name);
-            var startMark: string = 'Begin ' + name;
+            let startMark: string = 'Begin ' + name;
             performance.mark(startMark);
             return function () {
                 let end: string = 'End ' + name;
@@ -55,35 +55,3 @@ module powerbi.extensibility.utils.telemetry {
         }
     }
 }
-
-// var PerfTimer;
-//     (function (PerfTimer) {
-//         /** Begins a perf marker that can be completed by invoking the returned function. */
-//         function start(name) {
-//             var performance = window.performance;
-//             if (!performance || !performance.mark)
-//                 return _.noop;
-//             if (console.time)
-//                 console.time(name);
-//             var startMark = 'Begin ' + name;
-//             performance.mark(startMark);
-//             return function () {
-//                 var end = 'End ' + name;
-//                 performance.mark(end);
-//                 // NOTE: Chromium supports performance.mark but not performance.measure.
-//                 if (performance.measure)
-//                     performance.measure(name, startMark, end);
-//                 if (console.timeEnd)
-//                     console.timeEnd(name);
-//             };
-//         }
-//         PerfTimer.start = start;
-//         /** Logs time using Date.now() and returns the duration to execute the action in ms */
-//         function logTime(action) {
-//             // Desktop's old Chromium doesn't support use of Performance Markers yet  
-//             var start = Date.now();
-//             action();
-//             return Date.now() - start;
-//         }
-//         PerfTimer.logTime = logTime;
-//     })(PerfTimer = jsCommon.PerfTimer || (jsCommon.PerfTimer = {}));

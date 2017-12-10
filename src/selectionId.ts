@@ -27,12 +27,14 @@
 
 // Temp module/interface/class to get a correct selectionId based on only the category
 
-module powerbi.extensibility.visual {
+module powerbi.extensibility.data {
 
     import Selector = powerbi.data.Selector;
+    import SQExpr = powerbi.data.ISQExpr;
+    import DataRepetitionSelector = powerbi.data.DataRepetitionSelector;
 
     export interface SelectorForColumn {
-        [queryName: string]: data.DataRepetitionSelector;
+        [queryName: string]: DataRepetitionSelector;
     }
 
     export interface SelectorsByColumn {
@@ -121,7 +123,7 @@ module powerbi.extensibility.visual {
                     return false;
                 if (thisData.length > 0) {
                     for (let i = 0, ilen = thisData.length; i < ilen; i++) {
-                        var thisValue = <DataViewScopeIdentity>thisData[i];
+                        let thisValue = <DataViewScopeIdentity>thisData[i];
                     }
                 }
             }
@@ -130,6 +132,10 @@ module powerbi.extensibility.visual {
 
         public getKey(): string {
             return this.key;
+        }
+
+        public getKeyWithoutHighlight(): string {
+            return this.keyWithoutHighlight;
         }
 
         public hasIdentity(): boolean {
@@ -142,6 +148,124 @@ module powerbi.extensibility.visual {
 
         public getSelectorsByColumn(): Selector {
             return this.selectorsByColumn;
+        }
+
+        public static createNull(highlight: boolean = false): SelectionId {
+            return new SelectionId(null, highlight);
+        }
+
+        public static createWithId(id: DataViewScopeIdentity, highlight: boolean = false): SelectionId {
+            let selector: Selector = null;
+            if (id) {
+                selector = {
+                    data: [id]
+                };
+            }
+            return new SelectionId(selector, highlight);
+        }
+
+        public static createWithMeasure(measureId: string, highlight: boolean = false): SelectionId {
+            let selector: Selector = {
+                metadata: measureId
+            };
+
+            let selectionId = new SelectionId(selector, highlight);
+            selectionId.selectorsByColumn = { metadata: measureId };
+            return selectionId;
+        }
+
+        public static createWithIdAndMeasure(id: DataViewScopeIdentity, measureId: string, highlight: boolean = false): SelectionId {
+            let selector: powerbi.data.Selector = {};
+            if (id) {
+                selector.data = [id];
+            }
+            if (measureId)
+                selector.metadata = measureId;
+            if (!id && !measureId)
+                selector = null;
+
+            let selectionId = new SelectionId(selector, highlight);
+
+            return selectionId;
+        }
+
+        public static createWithIdAndMeasureAndCategory(id: DataViewScopeIdentity, measureId: string, queryName: string, highlight: boolean = false): SelectionId {
+            let selectionId = this.createWithIdAndMeasure(id, measureId, highlight);
+
+            if (selectionId.selector) {
+                selectionId.selectorsByColumn = {};
+                if (id && queryName) {
+                    selectionId.selectorsByColumn.dataMap = {};
+                    selectionId.selectorsByColumn.dataMap[queryName] = id;
+                }
+                if (measureId)
+                    selectionId.selectorsByColumn.metadata = measureId;
+            }
+
+            return selectionId;
+        }
+        public static createWithIds(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, highlight: boolean = false): SelectionId {
+            let selector: Selector = null;
+            let selectorData = SelectionId.idArray(id1, id2);
+            if (selectorData)
+                selector = { data: selectorData };
+            
+            return new SelectionId(selector, highlight);
+        }
+
+        public static createWithIdsAndMeasure(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity, measureId: string, highlight: boolean = false): SelectionId {
+            let selector: Selector = {};
+            let selectorData = SelectionId.idArray(id1, id2);
+            if (selectorData)
+                selector.data = selectorData;
+
+            if (measureId)
+                selector.metadata = measureId;
+            if (!id1 && !id2 && !measureId)
+                selector = null;
+            return new SelectionId(selector, highlight);
+        }
+
+        public static createWithSelectorForColumnAndMeasure(dataMap: SelectorForColumn, measureId: string, highlight: boolean = false): SelectionId {
+            let selectionId: SelectionId;
+            let keys = Object.keys(dataMap);
+            if (keys.length === 2) {
+                selectionId = this.createWithIdsAndMeasure(<DataViewScopeIdentity>dataMap[keys[0]], <DataViewScopeIdentity>dataMap[keys[1]], measureId, highlight);
+            } else if (keys.length === 1) {
+                selectionId = this.createWithIdsAndMeasure(<DataViewScopeIdentity>dataMap[keys[0]], null, measureId, highlight);
+            } else {
+                selectionId = this.createWithIdsAndMeasure(null, null, measureId, highlight);
+            }
+
+            let selectorsByColumn: SelectorsByColumn = {};
+            if (!_.isEmpty(dataMap))
+                selectorsByColumn.dataMap = dataMap;
+            if (measureId)
+                selectorsByColumn.metadata = measureId;
+            if (!dataMap && !measureId)
+                selectorsByColumn = null;
+
+            selectionId.selectorsByColumn = selectorsByColumn;
+
+            return selectionId;
+        }
+
+        public static createWithHighlight(original: SelectionId): SelectionId {
+            let newId = new SelectionId(original.getSelector(), /*highlight*/ true);
+            newId.selectorsByColumn = original.selectorsByColumn;
+
+            return newId;
+        }
+
+        private static idArray(id1: DataViewScopeIdentity, id2: DataViewScopeIdentity): DataViewScopeIdentity[] {
+            if (id1 || id2) {
+                let data = [];
+                if (id1)
+                    data.push(id1);
+                if (id2 && id2 !== id1)
+                    data.push(id2);
+                return data;
+            }
         }
     }
 }

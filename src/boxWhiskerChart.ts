@@ -60,9 +60,14 @@ module powerbi.extensibility.visual {
     import TooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
     import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
 
+    // powerbi.extensibility.data
+    import SelectionId = powerbi.extensibility.data.SelectionId;
+
     import telemetry = powerbi.extensibility.utils.telemetry;
     // d3
     import Selection = d3.Selection;
+
+    import Selector = powerbi.data.Selector;
 
     export interface ISQExpr extends powerbi.data.ISQExpr {
         ref: string
@@ -148,51 +153,60 @@ module powerbi.extensibility.visual {
                     referenceLines: []
                 };
             }
+
             let categories = dataView.matrix.rows.root.children;
-            let samples = dataView.matrix.columns.root.childIdentityFields;
             let category = dataView.categorical.categories[0];
+            let samples = dataView.matrix.columns.levels;
+            let valueSources = dataView.matrix.valueSources;
             let categoryValues = [];
             let sampleValues = [];
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
+            let maxPoints = 30000;
 
-            this.settings.xAxis.defaultTitle = category.source.displayName;
-            this.settings.yAxis.defaultTitle = dataView.categorical.values[0].source.displayName;
+            this.settings.xAxis.defaultTitle = dataView.matrix.rows.levels[0].sources[0].displayName;
+            this.settings.yAxis.defaultTitle = valueSources[0].displayName;
 
-            for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
-                categoryValues.push(
-                    this.getValueArray(dataView.matrix.rows.root.children[i].values)
-                        .filter((value) => { return value != null; })
-                );
+            for (let c=0; c<categories.length;c++) {
+                let values = categories[c].values;
+                let categoryValue = [];
+                for (let v=0; v<maxPoints;v++) {
+                    let value = values[v.toString()];
+                    if (value && value.value) {
+                        categoryValue.push(value.value);
+                    }
+                }
+                categoryValues.push(categoryValue);
             }
-            for (let i = 0; i < samples.length; i++) {
-                sampleValues.push((samples[i] as ISQExpr).ref);
+
+            for (let s=0;s<samples.length;s++) {
+                sampleValues.push(samples[s].sources[0].displayName);
             }
 
             let maxValue = d3.max(categoryValues, (val) => d3.max(val));
 
             this.settings.formatting.valuesFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(dataView.categorical.values[0].source),
+                format: valueFormatter.getFormatStringByColumn(valueSources[0]),
                 precision: this.settings.yAxis.labelPrecision,
                 value: this.settings.yAxis.labelDisplayUnits || maxValue,
                 cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.categoryFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(dataView.categorical.categories[0].source),
+                format: valueFormatter.getFormatStringByColumn(categoryValues[0]),
                 precision: this.settings.xAxis.labelPrecision,
                 value: this.settings.xAxis.labelDisplayUnits || categories[0].value,
                 cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.labelFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(dataView.categorical.values[0].source),
+                format: valueFormatter.getFormatStringByColumn(valueSources[0]),
                 precision: this.settings.labels.labelPrecision,
                 value: this.settings.labels.labelDisplayUnits || maxValue,
                 cultureSelector: this.settings.general.locale
             });
 
-            this.dataType = ValueType.fromDescriptor(dataView.matrix.valueSources[0].type);
+            this.dataType = ValueType.fromDescriptor(valueSources[0].type);
             let hasStaticColor = categories.length > 15;
             let properties = {};
             let colorHelper: ColorHelper = new ColorHelper(
@@ -201,19 +215,14 @@ module powerbi.extensibility.visual {
                 this.settings.general.defaultColor
             )
 
-            let queryName = (category && category.source) ? category.source.queryName : undefined;
-
             for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
                 let values = categoryValues[i];
 
                 if (values.length === 0) {
                     break;
                 }
-
-                let selector = { data: [categories[i].identity], };
-                let selectionId: ISelectionId = this.hostServices.createSelectionIdBuilder()
-                        .withCategory(category, i)
-                        .createSelectionId();
+            
+                let selectionId = new SelectionId({ data: [ categories[i].identity ]}, false);
                 let sortedValue = values.sort((n1, n2) => n1 - n2);
 
                 // Exclusive / Inclusive array correction
@@ -233,13 +242,9 @@ module powerbi.extensibility.visual {
                 sortedValue.forEach(value => { ttl += value; });
                 let avgvalue = ttl / sortedValue.length;
 
-                let minValue;
-                let maxValue;
-                let minValueLabel;
-                let maxValueLabel;
-                let quartileValue;
-                let whiskerValue;
-                let whiskerType: BoxWhiskerEnums.WhiskerType = this.settings.chartOptions.whisker;
+                let minValue, maxValue, minValueLabel, maxValueLabel,
+                    quartileValue, whiskerValue, IQR,
+                    whiskerType: BoxWhiskerEnums.WhiskerType = this.settings.chartOptions.whisker;
 
                 if (!quartile1 || !quartile3) {
                     whiskerType = BoxWhiskerEnums.WhiskerType.MinMax;
@@ -247,7 +252,7 @@ module powerbi.extensibility.visual {
 
                 switch (whiskerType) {
                     case BoxWhiskerEnums.WhiskerType.Standard:
-                        var IQR = quartile3 - quartile1;
+                        IQR = quartile3 - quartile1;
                         minValue = sortedValue.filter((value) => value >= quartile1 - (1.5 * IQR))[0];
                         maxValue = sortedValue.filter((value) => value <= quartile3 + (1.5 * IQR)).reverse()[0];
                         minValueLabel = "Minimum";
@@ -256,7 +261,7 @@ module powerbi.extensibility.visual {
                         whiskerValue = "< 1.5IQR";
                         break;
                     case BoxWhiskerEnums.WhiskerType.IQR:
-                        var IQR = quartile3 - quartile1;
+                        IQR = quartile3 - quartile1;
                         minValue = quartile1 - (1.5 * IQR);
                         maxValue = quartile3 + (1.5 * IQR);
                         minValueLabel = "Q1 - 1.5 x IQR";
@@ -265,14 +270,14 @@ module powerbi.extensibility.visual {
                         whiskerValue = "= 1.5IQR";
                         break;
                     case BoxWhiskerEnums.WhiskerType.Custom:
-                        var lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100/(sortedValue.length + 1)));
-                        var higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100-(100/(sortedValue.length + 1))));
-                        var xl = ((lower / 100.) * (sortedValue.length + corr)) + corr1;
-                        var xh = ((higher / 100.) * (sortedValue.length + corr)) + corr1;
-                        var il = Math.floor(xl);
-                        var ih = Math.floor(xh);
-                        var high = sortedValue[ih-1] + (xh-ih)*((sortedValue[ih] || 0) - sortedValue[ih-1]); // Escape index out of bound
-                        var low = sortedValue[il-1] + (xl-il)*((sortedValue[il] || 0) - sortedValue[il-1]);  // Escape index out of bound
+                        let lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100/(sortedValue.length + 1)));
+                        let higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100-(100/(sortedValue.length + 1))));
+                        let xl = ((lower / 100.) * (sortedValue.length + corr)) + corr1;
+                        let xh = ((higher / 100.) * (sortedValue.length + corr)) + corr1;
+                        let il = Math.floor(xl);
+                        let ih = Math.floor(xh);
+                        let high = sortedValue[ih-1] + (xh-ih)*((sortedValue[ih] || 0) - sortedValue[ih-1]); // Escape index out of bound
+                        let low = sortedValue[il-1] + (xl-il)*((sortedValue[il] || 0) - sortedValue[il-1]);  // Escape index out of bound
                         minValue = low;
                         maxValue = high;
                         minValueLabel = "Lower: " + lower.toString() + "%";
@@ -296,11 +301,10 @@ module powerbi.extensibility.visual {
                 let dataPointColor: string;
 
                 if (this.settings.dataPoint.oneColor) {
-                    if (category.objects && category.objects[0]) {
-                        dataPointColor = colorHelper.getColorForMeasure(category.objects[0], "");
-                    } else {
-                        dataPointColor = colors.getColor("0").value;
+                    if (this.settings.dataPoint.oneColor === undefined) {
+                        this.settings.dataPoint.oneFill = colors.getColor("0").value;
                     }
+                    dataPointColor = this.settings.dataPoint.oneFill;
                 } else {
                     if (category.objects && category.objects[i]) {
                         dataPointColor = colorHelper.getColorForMeasure(category.objects[i], "");
@@ -353,17 +357,13 @@ module powerbi.extensibility.visual {
                             .map((dataPoint) => { return { value: dataPoint, x: 0, y: 0, visible: 1 }; })
                             .concat(outliers.map((outlier) => { return { value: outlier.value, x: 0, y: 0, visible: 1 }; }))
                         : [],
-                    label: categories[0].value === undefined
-                        ? dataView.matrix.valueSources[0].displayName
-                        : this.settings.formatting.categoryFormatter.format(categories[i].value),
+                    label: this.settings.formatting.categoryFormatter.format(categories[i].value),
                     selectionId: selectionId,
                     color: dataPointColor,
                     tooltipInfo: [
                         {
                             displayName: "Category",
-                            value: categories[0].value === undefined
-                                ? dataView.matrix.valueSources[0].displayName
-                                : this.settings.formatting.categoryFormatter.format(categories[i].value),
+                            value: this.settings.formatting.categoryFormatter.format(categories[i].value),
                         },
                         {
                             displayName: "Quartile Calculation",
@@ -604,11 +604,11 @@ module powerbi.extensibility.visual {
                 }
             }
 
-            var yScale = d3.scale.linear()
+            let yScale = d3.scale.linear()
                 .domain([this.settings.axis.axisOptions.min || 0, this.settings.axis.axisOptions.max || 0])
                 .range([this.settings.general.margin.bottom + this.settings.axis.axisSizeX, this.settings.general.viewport.height - this.settings.general.margin.top]);
 
-            var xScale = d3.scale.linear()
+            let xScale = d3.scale.linear()
                 .domain([1, dataPoints.length + 1])
                 .range([this.settings.general.margin.left + this.settings.axis.axisSizeY, this.settings.general.viewport.width - this.settings.general.margin.right]);
 
@@ -653,9 +653,9 @@ module powerbi.extensibility.visual {
         } 
 
         public getValueArray(nodes: any): Array<number> {
-            var rArray: Array<number> = [];
+            let rArray: Array<number> = [];
 
-            for (var i = 0; i < 50000; i++) {
+            for (let i = 0; i < 50000; i++) {
                 if (nodes[i] === undefined) {
                     break;
                 }
@@ -713,7 +713,10 @@ module powerbi.extensibility.visual {
                     }
                     break;                    
                 case "dataPoint":
+                if (!this.settings.dataPoint.oneColor) {
+                    this.removeEnumerateObject(instanceEnumeration, "oneFill");
                     instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
+                }
                     break;
                 case "y1AxisReferenceLine":
                     instances = referenceLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);

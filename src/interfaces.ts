@@ -61,7 +61,7 @@ module powerbi.extensibility.visual {
     }
 
     export interface BoxWhiskerChartOutlier {
-        category: string,
+        category: number,
         color?: string,
         value: number
         tooltipInfo?: TooltipDataItem[];

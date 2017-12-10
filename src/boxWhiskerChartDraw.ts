@@ -58,17 +58,17 @@ module powerbi.extensibility.visual {
             }
         }
 
-        var stack = d3.layout.stack();
-        var layers = stack(dataPoints);
+        let stack = d3.layout.stack();
+        let layers = stack(dataPoints);
 
-        var selection = chart.selectAll(BoxWhiskerChart.ChartNode.selectorName).data(layers);
+        let selection = chart.selectAll(BoxWhiskerChart.ChartNode.selectorName).data(layers);
 
         selection
             .enter()
             .append('g')
             .classed(BoxWhiskerChart.ChartNode.className, true);
 
-        var quartile = selection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
+        let quartile = selection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
             if (d && d.length > 0) { return [d]; }
             return [];
         });
@@ -101,47 +101,44 @@ module powerbi.extensibility.visual {
 
         let quartileData = (points) => {
             return points.map((value) => {
-                var x1 = xScale(value.category + leftBoxMargin);
-                var x2 = xScale(value.category + boxMiddle);
-                var x3 = xScale(value.category + rightBoxMargin);
-                var y1 = yScale(value.min);
-                var y2 = value.samples <= 3 ? yScale(value.min) : yScale(value.quartile1);
-                var y3 = value.samples <= 3 ? yScale(value.max) : yScale(value.quartile3);
-                var y4 = yScale(value.max);
+                let x1 = xScale(value.category + leftBoxMargin);
+                let x2 = xScale(value.category + boxMiddle);
+                let x3 = xScale(value.category + rightBoxMargin);
+                let y1 = yScale(value.min);
+                let y2 = value.samples <= 3 ? yScale(value.min) : yScale(value.quartile1);
+                let y3 = value.samples <= 3 ? yScale(value.max) : yScale(value.quartile3);
+                let y4 = yScale(value.max);
                 return `M ${x1},${y1}L${x3},${y1}L${x2},${y1}L${x2},${y2} L${x1},${y2}L${x1},${y3}L${x2},${y3} L${x2},${y4}L${x1},${y4}L${x3},${y4}L${x2},${y4}L${x2},${y3} L${x3},${y3}L${x3},${y2}L${x2},${y2}L${x2},${y1}`;
             }).join(' ');
         };
 
-        var medianData = (points) => {
+        let medianData = (points) => {
             return points.map((value) => {
-                var x1 = xScale(value.category + leftBoxMargin);
-                var y1 = yScale(value.median);
-                var x2 = xScale(value.category + rightBoxMargin);
-                var y2 = yScale(value.median);
+                let x1 = xScale(value.category + leftBoxMargin);
+                let y1 = yScale(value.median);
+                let x2 = xScale(value.category + rightBoxMargin);
+                let y2 = yScale(value.median);
                 return `M ${x1},${y1} L${x2},${y2}`;
             }).join(' ');
         };
 
-        var avgData = (points) => {
+        let avgData = (points) => {
             return points.map((value) => {
-                var x1 = xScale(value.category + boxMiddle);
-                var y1 = yScale(value.average);
-                var r = dotRadius;
-                var r2 = 2 * r;
+                let x1 = xScale(value.category + boxMiddle);
+                let y1 = yScale(value.average);
+                let r = dotRadius;
+                let r2 = 2 * r;
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
             }).join(' ');
         };
 
-        let outlierData = //(points) => {
-            //return points.map(
-                (value) => {
-                var x1 = xScale(value.category + boxMiddle);
-                var y1 = yScale(value.value);
-                var r = dotRadius;
-                var r2 = 2 * r;
+        let outlierData = (value) => {
+                let x1 = xScale(value.category + boxMiddle);
+                let y1 = yScale(value.value);
+                let r = dotRadius;
+                let r2 = 2 * r;
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
-            } //).join(' ');
-        //};
+            };
 
         quartile
             .enter()
@@ -173,7 +170,7 @@ module powerbi.extensibility.visual {
 
         quartile.exit().remove();
 
-        var average = selection.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName).data(d => {
+        let average = selection.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName).data(d => {
             if (d && d.length > 0) { return [d]; }
             return [];
         });
@@ -237,16 +234,16 @@ module powerbi.extensibility.visual {
 
         outliers.exit().remove();
 
-        var dataLabels = selection.selectAll(BoxWhiskerChart.ChartDataLabel.selectorName).data(d => {
+        let dataLabels = selection.selectAll(BoxWhiskerChart.ChartDataLabel.selectorName).data(d => {
             let dp: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
             if (dp.dataLabels && dp.dataLabels.length > 0 && dataLabelsShow) {
-                var topLabels = dp.dataLabels
+                let topLabels = dp.dataLabels
                     .filter((dataLabel) => dataLabel.value >= dp.median) // Higher half of data labels
                     .sort((dataLabel1, dataLabel2) => dataLabel1.value - dataLabel2.value); // Sort: median index 0
-                var lowerLabels = dp.dataLabels
+                let lowerLabels = dp.dataLabels
                     .filter((dataLabel) => dataLabel.value <= dp.median) // Lower half of data labels
                     .sort((dataLabel1, dataLabel2) => dataLabel2.value - dataLabel1.value); // Sort: median index 0
-                    var x = xScale(dp.category + rightBoxMargin + 0.02);
+                    let x = xScale(dp.category + rightBoxMargin + 0.02);
 
                 topLabels[0].y = yScale(dp.median) - 4;
                 topLabels[0].x = xScale(dp.category + rightBoxMargin + 0.02);
@@ -254,17 +251,17 @@ module powerbi.extensibility.visual {
                 lowerLabels[0].x = xScale(dp.category + rightBoxMargin + 0.02);
                 if ((topLabels[0].value === dp.median) && (!settings.shapes.showMedian)) { topLabels[0].visible = 0}
 
-                var adjustment = 0;
-                var textHeight = (textMeasurementService.measureSvgTextHeight(
+                let adjustment = 0;
+                let textHeight = (textMeasurementService.measureSvgTextHeight(
                     settings.labels.axisTextProperties,
                     "X" // Sample text to determine a height
                 ) / 2) + 1;
 
-                for (var i = 1; i < topLabels.length; i++) {
+                for (let i = 1; i < topLabels.length; i++) {
                     if ((topLabels[i].value === dp.average) && (!settings.shapes.showMean)) { topLabels[i].visible = 0}
                     topLabels[i].y = yScale(topLabels[i].value) - 4;
                     topLabels[i].x = x;
-                    var diff = Math.abs((topLabels[i].y + adjustment) - (topLabels[i - 1].y));
+                    let diff = Math.abs((topLabels[i].y + adjustment) - (topLabels[i - 1].y));
                     if (diff < textHeight) {
                         adjustment += (textHeight - diff);
                     }
@@ -274,11 +271,11 @@ module powerbi.extensibility.visual {
                     }
                 }
                 adjustment = 0;
-                for (var i = 1; i < lowerLabels.length; i++) {
+                for (let i = 1; i < lowerLabels.length; i++) {
                     if ((lowerLabels[i].value === dp.average) && (!settings.shapes.showMean)) { lowerLabels[i].visible = 0}
                     lowerLabels[i].y = yScale(lowerLabels[i].value) - 4;
                     lowerLabels[i].x = x;
-                    var diff = Math.abs((lowerLabels[i].y + adjustment) - lowerLabels[i - 1].y);
+                    let diff = Math.abs((lowerLabels[i].y + adjustment) - lowerLabels[i - 1].y);
                     if (diff < textHeight) {
                         adjustment -= (textHeight - diff);
                     }
@@ -287,7 +284,7 @@ module powerbi.extensibility.visual {
                         adjustment = 0;
                     }
                 }
-                var dataLabels = lowerLabels.concat(topLabels.filter((dataLabel) => dataLabel.value > dp.median)).filter((dataLabel) => dataLabel.x > 0);
+                let dataLabels = lowerLabels.concat(topLabels.filter((dataLabel) => dataLabel.value > dp.median)).filter((dataLabel) => dataLabel.x > 0);
                 return dataLabels.map((dataPoint) => {
                     return dataPoint;
                 });
@@ -301,7 +298,7 @@ module powerbi.extensibility.visual {
             .append("text")
             .classed(BoxWhiskerChart.ChartDataLabel.className, true);
 
-        var y0 = settings.general.viewport.height + settings.axis.axisSizeX;
+        let y0 = settings.general.viewport.height + settings.axis.axisSizeX;
 
         dataLabels
             .attr("transform", dataLabel => `translate(0 ${y0}) scale(1, -1)`)
