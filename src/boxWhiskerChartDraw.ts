@@ -37,9 +37,12 @@ module powerbi.extensibility.visual {
     // d3
     import Selection = d3.Selection;
 
-    export function drawChart(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, tooltipServiceWrapper: ITooltipServiceWrapper, dataPoints: BoxWhiskerChartDatapoint[][], xScale: d3.scale.Linear<any, any>, yScale: d3.scale.Linear<any, any>): void {
+    export function drawChart(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, tooltipServiceWrapper: ITooltipServiceWrapper, data: BoxWhiskerChartData, xScale: d3.scale.Linear<any, any>, yScale: d3.scale.Linear<any, any>): void {
         let chart: Selection<any> = rootElement.selectAll(BoxWhiskerChart.Chart.selectorName);
         let svg: Selection<any> = rootElement;
+        let dataPoints: BoxWhiskerChartDatapoint[][] = data.dataPoints;
+        let highlightOpacity = 1;
+        let backgroundOpacity = 0.1;
 
         let dotRadius: number = 4,
             leftBoxMargin: number = 0.1;
@@ -67,14 +70,7 @@ module powerbi.extensibility.visual {
             .enter()
             .append('g')
             .classed(BoxWhiskerChart.ChartNode.className, true);
-
-        let quartile = selection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
-            if (d && d.length > 0) { return [d]; }
-            return [];
-        });
-
-        svg.on('click', () => selectionManager.clear().then(() => quartile.style('opacity', 1)));
-
+    
         let fontSize = settings.labels.fontSize + "px";
         let dataLabelsShow = settings.labels.show;
 
@@ -140,6 +136,11 @@ module powerbi.extensibility.visual {
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
             };
 
+        let quartile = selection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
+            if (d && d.length > 0) { return [d]; }
+            return [];
+        });
+    
         quartile
             .enter()
             .append('path')
@@ -147,25 +148,22 @@ module powerbi.extensibility.visual {
 
         quartile
             .style('fill', value => (<BoxWhiskerChartDatapoint>value[0]).color)
-            .style('opacity', 1)
+            .style('stroke', value => (<BoxWhiskerChartDatapoint>value[0]).color)
+            .style('stroke-width', 2)
             .on('click', function (d) {
                 let dataPoint:BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
                 selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
                     if (ids.length > 0) {
-                        quartile.style('opacity', 0.5);
-                        d3.select(this).transition()
-                            .duration(settings.general.duration)
-                            .style('opacity', 1);
+                        setSelection(this);
                     } else {
-                        quartile.style('opacity', 1);
+                        resetSelection();
                     }
                 });
                 (<Event>d3.event).stopPropagation();
             })
-            .style('stroke', value => (<BoxWhiskerChartDatapoint>value[0]).color)
-            .style('stroke-width', 2)
             .transition()
             .duration(settings.general.duration)
+            .style('opacity', value => (<BoxWhiskerChartDatapoint>value[0]).highlight ? highlightOpacity : backgroundOpacity)
             .attr('d', quartileData);
 
         quartile.exit().remove();
@@ -182,9 +180,20 @@ module powerbi.extensibility.visual {
 
         average
             .style('fill', settings.dataPoint.meanColor)
-            .style("opacity", d => settings.shapes.showMean ? 1 : 0)
+            .on('click', function (d) {
+                let dataPoint:BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
+                selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
+                    if (ids.length > 0) {
+                        setSelection(this);
+                    } else {
+                        resetSelection();
+                    }
+                });
+                (<Event>d3.event).stopPropagation();
+            })
             .transition()
             .duration(settings.general.duration)
+            .style('opacity', value => settings.shapes.showMean ? ((<BoxWhiskerChartDatapoint>value[0]).highlight ? highlightOpacity : backgroundOpacity) : 0)
             .attr('d', avgData);
 
         average.exit().remove();
@@ -202,24 +211,28 @@ module powerbi.extensibility.visual {
         median
             .style('stroke', settings.dataPoint.medianColor)
             .style('stroke-width', 2)
-            .style("opacity", d => settings.shapes.showMedian ? 1 : 0)
+            .on('click', function (d) {
+                let dataPoint:BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
+                selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
+                    if (ids.length > 0) {
+                        setSelection(this);
+                    } else {
+                        resetSelection();
+                    }
+                });
+                (<Event>d3.event).stopPropagation();
+            })
             .transition()
             .duration(settings.general.duration)
+            .style('opacity', value => settings.shapes.showMedian ? ((<BoxWhiskerChartDatapoint>value[0]).highlight ? highlightOpacity : backgroundOpacity) : 0)
             .attr('d', medianData);
 
         median.exit().remove();
 
-        let outliersData = [];
-        selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
-            let dp: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
-            if (dp.outliers && dp.outliers.length > 0) { 
-                dp.outliers.forEach(outlier => {
-                    outliersData.push(outlier);                     
-                });
-            }
+        let outliers = selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
+            if (d && d.length > 0) { return (<BoxWhiskerChartDatapoint>d[0]).outliers }
             return [];
         });
-        let outliers = selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(outliersData);
 
         outliers
             .enter()
@@ -230,6 +243,7 @@ module powerbi.extensibility.visual {
             .style('fill', value => value.color)
             .transition()
             .duration(settings.general.duration)
+            .style('opacity', value => value.highlight ? highlightOpacity : backgroundOpacity)
             .attr('d', outlierData);
 
         outliers.exit().remove();
@@ -318,6 +332,8 @@ module powerbi.extensibility.visual {
 
         dataLabels.exit().remove();
 
+        svg.on('click', () => selectionManager.clear().then(() => resetSelection()));
+
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
@@ -335,5 +351,52 @@ module powerbi.extensibility.visual {
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => null)
 
         selection.exit().remove();
+
+        function setSelection(_this) {
+            quartile.transition()
+                .duration(settings.general.duration)
+                .style('opacity', backgroundOpacity);
+            if (settings.shapes.showMean) {
+                average.transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', backgroundOpacity);
+            }
+            if (settings.shapes.showMedian) {
+                median.transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', backgroundOpacity);
+            }
+            if (settings.chartOptions.outliers) {
+                outliers.transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', backgroundOpacity);
+            }
+            _this.parentNode.childNodes.forEach((n) => {
+                d3.select(n).transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', highlightOpacity);
+            });
+        }
+
+        function resetSelection() {
+            quartile.transition()
+                .duration(settings.general.duration)
+                .style('opacity', highlightOpacity);
+            if (settings.shapes.showMean) {
+                average.transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', highlightOpacity);
+            }
+            if (settings.shapes.showMedian) {
+                median.transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', highlightOpacity);
+            }
+            if (settings.chartOptions.outliers) {
+                outliers.transition()
+                    .duration(settings.general.duration)
+                    .style('opacity', highlightOpacity);
+            }
+        }
     }
 }

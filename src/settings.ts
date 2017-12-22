@@ -59,7 +59,7 @@ module powerbi.extensibility.visual {
         };
         public locale:string = undefined;
         public formatString: string = "";
-        public duration: number = 0;
+        public duration: number = 100;
         public defaultColor: string = "#01B8AA"
         public ColorProperties: DataViewObjectPropertyIdentifier = {
             objectName: "dataPoint",
@@ -166,6 +166,8 @@ module powerbi.extensibility.visual {
     class ShapeSettings {
         public showMean: boolean = true;
         public showMedian: boolean = true;
+        public highlight: boolean = true;
+        public fixedCategory: boolean = true;
     }
 
     class GridLinesSettings {

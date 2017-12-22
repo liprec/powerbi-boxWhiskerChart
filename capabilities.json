@@ -16,11 +16,7 @@
             "displayName": "Values"
         }
     ],
-    "drilldown": {
-        "roles": [
-            "Groups"
-        ]
-    },
+    "supportsHighlight": true,
     "dataViewMappings": [{
         "conditions": [{
             "Groups": {
@@ -61,6 +57,7 @@
                 },
                 "telemetry": {
                     "displayName": "Telemetry",
+                    "description": "Enable telemetry logging",
                     "type": {
                         "bool": true
                     }
@@ -409,7 +406,21 @@
                     "displayName": "Median",
                     "description": "Display Median line",
                     "type": { "bool": true }
-                }                
+                },
+                "highlight": {
+                    "displayName": "Highlight",
+                    "description": "Enable highlight support",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "fixedCategory": {
+                    "displayName": "Fixed Category",
+                    "description": "When highlight is not supported, keep the same amount of categories",
+                    "type": {
+                        "bool": true
+                    }
+                }              
             }
         },
         "gridLines": {

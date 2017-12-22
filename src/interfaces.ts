@@ -52,6 +52,7 @@ module powerbi.extensibility.visual {
         category: number;
         color?: string;
         label?: string;
+        highlight: boolean;
         outliers: BoxWhiskerChartOutlier[];
         dataLabels: BoxWhiskerDataLabel[];
         selectionId: powerbi.visuals.ISelectionId;
@@ -61,9 +62,10 @@ module powerbi.extensibility.visual {
     }
 
     export interface BoxWhiskerChartOutlier {
-        category: number,
-        color?: string,
-        value: number
+        category: number;
+        color?: string;
+        value: number;
+        highlight: boolean;
         tooltipInfo?: TooltipDataItem[];
     }
 
@@ -92,7 +94,10 @@ module powerbi.extensibility.visual {
 
     export interface BoxWhiskerChartData {
         dataPoints: BoxWhiskerChartDatapoint[][];
-        referenceLines: BoxWhiskerChartReferenceLine[]
+        dataPointLength: number;
+        categories: string[];
+        isHighLighted: boolean;
+        referenceLines: BoxWhiskerChartReferenceLine[];
     }
 
     export interface BoxWhiskerDataLabel {

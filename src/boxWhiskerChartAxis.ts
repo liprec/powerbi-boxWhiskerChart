@@ -37,14 +37,14 @@ module powerbi.extensibility.visual {
     // d3
     import Selection = d3.Selection;
     
-    export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, dataPoints: BoxWhiskerChartDatapoint[][], yScale: d3.scale.Linear<any, any>) {
+    export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, data: BoxWhiskerChartData, yScale: d3.scale.Linear<any, any>) {
         let axisX: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisX.selectorName);
         let axisY: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisY.selectorName);
         let axisXLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisXLabel.selectorName);
         let axisYLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisYLabel.selectorName);
         let axisMajorGrid: Selection<any> = rootElement.select(BoxWhiskerChart.AxisMajorGrid.selectorName);
         let axisMinorGrid: Selection<any> = rootElement.select(BoxWhiskerChart.AxisMinorGrid.selectorName);
-
+        let dataPoints = data.dataPoints;
         let yAxisLabelHeight = 0;
         let xAxisLabelWidth = 0;
         if (dataPoints.length > 0) {
@@ -62,26 +62,26 @@ module powerbi.extensibility.visual {
         // Can we draw at least one X-axis label?
         if (xAxisLabelWidth < (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - settings.axis.axisSizeY)) {
             let overSamplingX = 1;
-            let visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
+            let visibleDataPoints = data.categories.filter((category, i) => i % overSamplingX === 0);
             let totalXAxisWidth = d3.max(visibleDataPoints
-                .map((d) =>
+                .map((category) =>
                     textMeasurementService.measureSvgTextWidth(
                         settings.yAxis.axisTextProperties,
-                        d[0].label) + 2 //margin
+                        category) + 2 //margin
                 )) * visibleDataPoints.length;
 
             while (totalXAxisWidth > (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - settings.axis.axisSizeY)) {
                 overSamplingX += 1;
-                visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
+                visibleDataPoints = data.categories.filter((category, i) => i % overSamplingX === 0);
                 totalXAxisWidth = d3.max(visibleDataPoints
-                    .map((d) =>
+                    .map((category) =>
                         textMeasurementService.measureSvgTextWidth(
                             settings.yAxis.axisTextProperties,
-                            d[0].label) + 2 //margin
+                            category) + 2 //margin
                     )) * visibleDataPoints.length;
             }
 
-            xs.domain(dataPoints.map((values, index) => { return (index % overSamplingX === 0) ? values[0].label : null; })
+            xs.domain(data.categories.map((category, index) => { return (index % overSamplingX === 0) ? category : null; })
                 .filter((d) => d !== null)
             )
                 .rangeBands([settings.general.margin.left + settings.axis.axisSizeY, settings.general.viewport.width - settings.general.margin.right]);
@@ -121,13 +121,15 @@ module powerbi.extensibility.visual {
 
             axisX
                 .attr("transform", "translate(0, " + xAxisTransform + ")")
-                .style("opacity", 1)
                 .transition()
                 .duration(settings.general.duration)
+                .style("opacity", 1)
                 .call(xAxis);
 
             axisX
                 .selectAll("text")
+                .transition()
+                .duration(settings.general.duration)
                 .style("fill", settings.xAxis.fontColor)
                 .style("font-family", settings.xAxis.fontFamily)                
                 .style("font-size", settings.xAxis.fontSize + "px");
@@ -157,19 +159,25 @@ module powerbi.extensibility.visual {
                 }
                 axisXLabel
                     .attr("transform", "translate(" + xTransform + ", " + yTransform + ")")
+                    .transition()
+                    .duration(settings.general.duration)
                     .style("opacity", 1)
                     .text(settings.xAxis.title || settings.xAxis.defaultTitle)
                     .style("fill", settings.xAxis.titleFontColor)
                     .style("font-family", settings.xAxis.titleFontFamily)                
                     .style("font-size", settings.xAxis.titleFontSize + "px")
-                    .transition()
-                    .duration(settings.general.duration);
             } else {
-                axisXLabel.style("opacity", 0);
+                axisXLabel.transition()
+                    .duration(settings.general.duration)
+                    .style("opacity", 0);
             }
         } else {
-            axisX.style("opacity", 0);
-            axisXLabel.style("opacity", 0);
+            axisX.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+            axisXLabel.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
         }
 
         if (settings.yAxis.show) {
@@ -181,13 +189,15 @@ module powerbi.extensibility.visual {
 
             axisY
                 .attr("transform", "translate(" + (settings.axis.axisSizeY + settings.general.margin.left) + ", 0)")
-                .style("opacity", 1)
                 .transition()
                 .duration(settings.general.duration)
+                .style("opacity", 1)
                 .call(yAxis);
 
             axisY
                 .selectAll("text")
+                .transition()
+                .duration(settings.general.duration)
                 .style("fill", settings.yAxis.fontColor)
                 .style("font-family", settings.yAxis.fontFamily)
                 .style("font-size", settings.yAxis.fontSize + "px");
@@ -215,19 +225,25 @@ module powerbi.extensibility.visual {
                 }
                 axisYLabel
                     .attr("transform", "translate(" + xTransform + ", " + yTransform + ") rotate(-90)")
+                    .transition()
+                    .duration(settings.general.duration)
                     .style("opacity", 1)
                     .text(settings.yAxis.title || settings.yAxis.defaultTitle)
                     .style("fill", settings.yAxis.titleFontColor)
                     .style("font-family", settings.yAxis.titleFontFamily)                
                     .style("font-size", settings.yAxis.titleFontSize + "px")
-                    .transition()
-                    .duration(settings.general.duration);
             } else {
-                axisYLabel.style("opacity", 0);
+                axisYLabel.transition()
+                    .duration(settings.general.duration)
+                    .style("opacity", 0);
             }
         } else {
-            axisY.style("opacity", 0);
-            axisYLabel.style("opacity", 0);
+            axisY.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+            axisYLabel.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
         }
 
         if (settings.gridLines.show) {
@@ -240,13 +256,15 @@ module powerbi.extensibility.visual {
 
             axisMajorGrid
                 .attr("transform", "translate(" + (settings.axis.axisSizeY + settings.general.margin.left) + ", 0)")
-                .style("opacity", 1)
                 .transition()
                 .duration(settings.general.duration)
+                .style("opacity", 1)
                 .call(yMajorGrid);
 
             axisMajorGrid
                 .selectAll("line")
+                .transition()
+                .duration(settings.general.duration)
                 .style("stroke", settings.gridLines.majorGridColor)
                 .style("stroke-width", settings.gridLines.majorGridSize);
 
@@ -260,24 +278,31 @@ module powerbi.extensibility.visual {
 
                 axisMinorGrid
                     .attr("transform", "translate(" + (settings.axis.axisSizeY + settings.general.margin.left) + ", 0)")
-                    .style("opacity", 1)
                     .transition()
                     .duration(settings.general.duration)
+                    .style("opacity", 1)
                     .call(yMinorGrid);
 
                 axisMinorGrid
                     .selectAll("line")
+                    .transition()
+                    .duration(settings.general.duration)
                     .style("stroke", settings.gridLines.minorGridColor)
                     .style("stroke-width", settings.gridLines.minorGridSize);
             }
             else {
-
-                axisMinorGrid.style("opacity", 0);
+                axisMinorGrid.transition()
+                    .duration(settings.general.duration)
+                    .style("opacity", 0);
             }
         }
         else {
-            axisMajorGrid.style("opacity", 0);
-            axisMinorGrid.style("opacity", 0);
+            axisMajorGrid.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+            axisMinorGrid.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
         }
     }
 
