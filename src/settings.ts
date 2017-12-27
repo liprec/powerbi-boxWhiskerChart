@@ -38,7 +38,6 @@ module powerbi.extensibility.visual {
     export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 
         public general: GeneralSettings = new GeneralSettings();
-        public axis: AxisSettings = new AxisSettings();
         public formatting: FormattingSettings = new FormattingSettings();
         public chartOptions: ChartOptionsSettings = new ChartOptionsSettings();
         public xAxis: XAxisSettings = new XAxisSettings();
@@ -69,14 +68,6 @@ module powerbi.extensibility.visual {
         public maxPoints:number = 30000;
     }
 
-    class AxisSettings {
-        public axisSizeY: number = 0;
-        public axisSizeX: number = 0;
-        public axisLabelSizeY: number = 0;
-        public axisLabelSizeX: number = 0;
-        public axisOptions: BoxWhiskerAxisOptions;
-    }
-
     class FormattingSettings {
         public valuesFormatter: IValueFormatter;
         public categoryFormatter: IValueFormatter;
@@ -100,6 +91,7 @@ module powerbi.extensibility.visual {
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
+        public orientation: BoxWhiskerEnums.LabelOrientation = BoxWhiskerEnums.LabelOrientation.Horizontal;
         public showTitle: boolean = false;
         public title: string = undefined;
         public defaultTitle: string = undefined;
@@ -109,11 +101,11 @@ module powerbi.extensibility.visual {
         public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "px"
+            fontSize: this.fontSize + "pt"
         };
         public titleTextProperties: TextProperties = {
             fontFamily: this.titleFontFamily,
-            fontSize: this.titleFontSize + "px"
+            fontSize: this.titleFontSize + "pt"
         };
     }
 
@@ -135,11 +127,11 @@ module powerbi.extensibility.visual {
         public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "px"
+            fontSize: this.fontSize + "pt"
         };
         public titleTextProperties: TextProperties = {
             fontFamily: this.titleFontFamily,
-            fontSize: this.titleFontSize + "px"
+            fontSize: this.titleFontSize + "pt"
         };
     }
 
@@ -159,7 +151,7 @@ module powerbi.extensibility.visual {
         public labelPrecision: number = undefined;
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "px"
+            fontSize: this.fontSize + "pt"
         };
     }
 

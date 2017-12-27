@@ -113,4 +113,15 @@ module powerbi.extensibility.visual {
         ticks: number;
         tickSize: number;
     }
+
+    export interface BoxWhiskerAxisSettings {
+        axisScaleCategory: d3.scale.Linear<number, number>; 
+        axisSizeCategory: number;
+        axisLabelSizeCategory: number;
+        axisAngleCategory: number;
+        axisSizeValue: number;
+        axisLabelSizeValue: number;
+        axisScaleValue: d3.scale.Linear<number, number>;
+        axisOptions: BoxWhiskerAxisOptions;
+    }
 }

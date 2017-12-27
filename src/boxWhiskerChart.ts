@@ -385,10 +385,10 @@ module powerbi.extensibility.visual {
                             outliers: outliers,
                             dataLabels: (this.settings.labels.show) ?
                                 [maxValue, minValue, avgvalue, median, quartile1, quartile3]
-                                    .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                                     .filter((value) => { return value != null; }) // Remove empties
                                     .map((dataPoint) => { return { value: dataPoint, x: 0, y: 0, visible: 1 }; })
                                     .concat(outliers.map((outlier) => { return { value: outlier.value, x: 0, y: 0, visible: 1 }; }))
+                                    .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                                 : [],
                             label: this.settings.formatting.categoryFormatter.format(categories[i].value),
                             highlight: t===1 || !hasHighlight,
@@ -562,110 +562,44 @@ module powerbi.extensibility.visual {
                     'width': this.settings.general.viewport.width
                 });
 
-            this.chartMain.attr('transform', 'scale(1, -1)' + translate(0, -(this.settings.general.viewport.height - this.settings.axis.axisSizeX)));
+            let axisSettings: BoxWhiskerAxisSettings = calcAxisSettings(this.settings, this.data);
 
-            // calculate scalefactor
-            let stack = d3.layout.stack();
-            let layers = stack(dataPoints);
-            let refLines = this.data.referenceLines;
-
-            this.settings.axis.axisOptions = getAxisOptions(
-                d3.min([
-                    d3.min(refLines, (refLine) => refLine.value),
-                    d3.min(layers, (layer) => {
-                        return d3.min(layer, (point) => {
-                            return  d3.min([(<BoxWhiskerChartDatapoint>point).min, 
-                                    d3.min((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
-                        });
-                    })
-                ]),
-                d3.max([
-                    d3.max(refLines, (refLine) => refLine.value),
-                    d3.max(layers, (layer) => {
-                        return d3.max(layer, (point) => {
-                            return  d3.max([(<BoxWhiskerChartDatapoint>point).max, 
-                                    d3.max((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
-                        });
-                    })
-                ]));
+            //this.chartMain.attr('transform', 'scale(1, -1)' + translate(0, -(this.settings.general.viewport.height - axisSettings.axisSizeCategory)));
 
             if (this.settings.yAxis.start !== undefined) {
-                if (this.settings.yAxis.start <= this.settings.axis.axisOptions.min) {
-                    this.settings.axis.axisOptions.min = this.settings.yAxis.start;
+                if (this.settings.yAxis.start <= axisSettings.axisOptions.min) {
+                    axisSettings.axisOptions.min = this.settings.yAxis.start;
                 } else {
-                    this.settings.yAxis.start = this.settings.axis.axisOptions.min;
+                    this.settings.yAxis.start = axisSettings.axisOptions.min;
                 }
             }
-
+            
             if (this.settings.yAxis.end !== undefined) {
-                if (this.settings.yAxis.end >= this.settings.axis.axisOptions.max) {
-                    this.settings.axis.axisOptions.max = this.settings.yAxis.end;
+                if (this.settings.yAxis.end >= axisSettings.axisOptions.max) {
+                    axisSettings.axisOptions.max = this.settings.yAxis.end;
                 } else {
-                    this.settings.yAxis.end = this.settings.axis.axisOptions.max;
+                    this.settings.yAxis.end = axisSettings.axisOptions.max;
                 }
             }
+            
+            this.settings.general.margin.top = textMeasurementService.measureSvgTextHeight(
+                this.settings.yAxis.axisTextProperties,
+                this.settings.formatting.valuesFormatter.format(axisSettings.axisOptions.max || 0)
+            ) / 2.;
 
-            if (this.data.dataPointLength > 0) {
-                // calculate AxisSizeX, AxisSizeY
-                if (this.settings.xAxis.show) {
-                    this.settings.axis.axisSizeX = textMeasurementService.measureSvgTextHeight(
-                        this.settings.xAxis.axisTextProperties,
-                        "X"
-                    );
-
-                    if (this.settings.xAxis.showTitle) {
-                        this.settings.axis.axisLabelSizeX = textMeasurementService.measureSvgTextHeight(
-                            this.settings.xAxis.titleTextProperties,
-                            this.settings.formatting.categoryFormatter.format(this.settings.xAxis.title || this.settings.xAxis.defaultTitle)
-                        );
-                        this.settings.axis.axisSizeX += this.settings.axis.axisLabelSizeX;
-                    }
-                }
-
-                if (this.settings.yAxis.show) {
-                    for (let i = this.settings.axis.axisOptions.min; i < this.settings.axis.axisOptions.max; i += this.settings.axis.axisOptions.tickSize) {
-                        let tempSize = textMeasurementService.measureSvgTextWidth(
-                            this.settings.yAxis.axisTextProperties,
-                            this.settings.formatting.valuesFormatter.format(i));
-                        this.settings.axis.axisSizeY = tempSize > this.settings.axis.axisSizeY ? tempSize : this.settings.axis.axisSizeY
-                    }
-                    this.settings.axis.axisSizeY += + 5; // Axis width itself
-
-                    if (this.settings.yAxis.showTitle) {
-                        this.settings.axis.axisLabelSizeY = textMeasurementService.measureSvgTextHeight(
-                            this.settings.yAxis.titleTextProperties,
-                            this.settings.formatting.valuesFormatter.format(this.settings.yAxis.title || this.settings.yAxis.defaultTitle)
-                        );
-                        this.settings.axis.axisSizeY += this.settings.axis.axisLabelSizeY;
-                    }
-                }
-
-                this.settings.general.margin.top = textMeasurementService.measureSvgTextHeight(
-                    this.settings.yAxis.axisTextProperties,
-                    this.settings.formatting.valuesFormatter.format(this.settings.axis.axisOptions.max || 0)
-                ) / 2.;
-
-                if (this.settings.labels.show && this.data.dataPoints.length > 0) {
-                    let dataLabelTop = textMeasurementService.measureSvgTextHeight(
-                        this.settings.yAxis.axisTextProperties,
-                        this.settings.formatting.valuesFormatter.format(this.data.dataPoints[0][0].dataLabels[0].value)
-                    ) / 2.;
-                }
-            }
-
-            let yScale = d3.scale.linear()
-                .domain([this.settings.axis.axisOptions.min || 0, this.settings.axis.axisOptions.max || 0])
-                .range([this.settings.general.margin.bottom + this.settings.axis.axisSizeX, this.settings.general.viewport.height - this.settings.general.margin.top]);
-
-            let xScale = d3.scale.linear()
-                .domain([0, this.data.dataPointLength])
-                .range([this.settings.general.margin.left + this.settings.axis.axisSizeY, this.settings.general.viewport.width - this.settings.general.margin.right]);
-
+            let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
+            drawAxis(
+                this.axis, 
+                this.settings, 
+                this.data,
+                axisSettings);
+            timerAxis();
+            timer();
             drawReferenceLines(
                 this.svg, 
                 this.settings, 
                 this.data.referenceLines,
-                yScale,
+                axisSettings,
                 false);
             let timerChart = telemetry.PerfTimer.start(this.traceEvents.drawChart, this.settings.general.telemetry);
             drawChart(
@@ -674,23 +608,15 @@ module powerbi.extensibility.visual {
                 this.selectionManager, 
                 this.tooltipServiceWrapper, 
                 this.data, 
-                xScale, 
-                yScale);
+                axisSettings);
             timerChart();
             drawReferenceLines(
                 this.svg, 
                 this.settings, 
                 this.data.referenceLines,
-                yScale,
+                axisSettings,
                 true);
-            let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
-            drawAxis(
-                this.axis, 
-                this.settings, 
-                this.data, 
-                yScale);
-            timerAxis();
-            timer();
+            
         }
 
         private static getTooltipData(value: any): VisualTooltipDataItem[] { 

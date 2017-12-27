@@ -51,6 +51,11 @@ module powerbi.extensibility.visual {
             Large
         }
 
+        export enum LabelOrientation {
+            Horizontal,
+            Diagonal,
+            Vertical
+        }
         export module ReferenceLine {
             export enum Style {
                 dashed,
