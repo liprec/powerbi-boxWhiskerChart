@@ -150,6 +150,7 @@ module powerbi.extensibility.visual {
                 !(dataView.matrix.columns.root.children.length > 0) ||
                 !(dataView.matrix.columns.root.children[0].levelValues) ||
                 !dataView.matrix.valueSources ||
+                !(dataView.matrix.valueSources.length > 0) ||
                 !dataView.matrix.valueSources[0]) {
                 return {
                     dataPoints: [],
@@ -327,8 +328,6 @@ module powerbi.extensibility.visual {
                                 whiskerValue = "Min/Max";
                                 break;
                         }
-
-                        //dataPoints.push([]);
 
                         let dataPointColor: string;
 
@@ -564,8 +563,6 @@ module powerbi.extensibility.visual {
 
             let axisSettings: BoxWhiskerAxisSettings = calcAxisSettings(this.settings, this.data);
 
-            //this.chartMain.attr('transform', 'scale(1, -1)' + translate(0, -(this.settings.general.viewport.height - axisSettings.axisSizeCategory)));
-
             if (this.settings.yAxis.start !== undefined) {
                 if (this.settings.yAxis.start <= axisSettings.axisOptions.min) {
                     axisSettings.axisOptions.min = this.settings.yAxis.start;
@@ -582,10 +579,11 @@ module powerbi.extensibility.visual {
                 }
             }
             
-            this.settings.general.margin.top = textMeasurementService.measureSvgTextHeight(
+            this.settings.general.margin.top = this.settings.formatting.valuesFormatter ?
+            textMeasurementService.measureSvgTextHeight(
                 this.settings.yAxis.axisTextProperties,
                 this.settings.formatting.valuesFormatter.format(axisSettings.axisOptions.max || 0)
-            ) / 2.;
+            ) / 2. : 5;
 
             let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
             drawAxis(

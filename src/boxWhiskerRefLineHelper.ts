@@ -151,7 +151,7 @@ module powerbi.extensibility.visual {
 
         let referenceLineData = (refLines) => {
             return refLines.map((refLine: BoxWhiskerChartReferenceLine) => {
-                let x1 = settings.general.margin.left + axisSettings.axisSizeValue;
+                let x1 = settings.general.margin.left + axisSettings.axisValueWidth;
                 let y1 = axisSettings.axisScaleValue(refLine.value);
                 let x2 = settings.general.viewport.width - settings.general.margin.left;
                 let y2 = axisSettings.axisScaleValue(refLine.value);
@@ -205,7 +205,7 @@ module powerbi.extensibility.visual {
             .append("text")
             .classed(BoxWhiskerChart.ChartReferenceLineLabel.className, true);
 
-        let y0 = axisSettings.axisSizeCategory + settings.general.margin.bottom;
+        let y0 = axisSettings.axisCategoryHeight + settings.general.margin.bottom;
 
         referenceLineLabel
             .attr("transform", value => `translate(0 ${y0}) scale(1, -1)`)
@@ -239,7 +239,7 @@ module powerbi.extensibility.visual {
                         label = formatter.format(refLine.value);
                 }
                 return refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
-                    ? settings.general.margin.left + axisSettings.axisSizeValue
+                    ? settings.general.margin.left + axisSettings.axisValueWidth
                     : settings.general.viewport.width - settings.general.margin.right -
                         textMeasurementService.measureSvgTextWidth(textProperties, label);
             })

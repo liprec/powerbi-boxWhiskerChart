@@ -101,11 +101,11 @@ module powerbi.extensibility.visual {
         public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "pt"
+            fontSize: this.fontSize + "px"
         };
         public titleTextProperties: TextProperties = {
             fontFamily: this.titleFontFamily,
-            fontSize: this.titleFontSize + "pt"
+            fontSize: this.titleFontSize + "px"
         };
     }
 
@@ -127,11 +127,11 @@ module powerbi.extensibility.visual {
         public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "pt"
+            fontSize: this.fontSize + "px"
         };
         public titleTextProperties: TextProperties = {
             fontFamily: this.titleFontFamily,
-            fontSize: this.titleFontSize + "pt"
+            fontSize: this.titleFontSize + "px"
         };
     }
 
@@ -151,7 +151,7 @@ module powerbi.extensibility.visual {
         public labelPrecision: number = undefined;
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "pt"
+            fontSize: this.fontSize + "px"
         };
     }
 

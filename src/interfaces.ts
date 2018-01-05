@@ -116,10 +116,12 @@ module powerbi.extensibility.visual {
 
     export interface BoxWhiskerAxisSettings {
         axisScaleCategory: d3.scale.Linear<number, number>; 
-        axisSizeCategory: number;
+        axisCategoryHeight: number;
+        axisCategoryWidth: number;
         axisLabelSizeCategory: number;
         axisAngleCategory: number;
-        axisSizeValue: number;
+        axisValueHeight: number;
+        axisValueWidth: number;
         axisLabelSizeValue: number;
         axisScaleValue: d3.scale.Linear<number, number>;
         axisOptions: BoxWhiskerAxisOptions;
