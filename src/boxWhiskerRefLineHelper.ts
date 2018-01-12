@@ -132,7 +132,7 @@ module powerbi.extensibility.visual {
         return instances;        
     }
 
-    export function drawReferenceLines(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, referenceLines: BoxWhiskerChartReferenceLine[], yScale: d3.scale.Linear<any, any>, front: boolean) {
+    export function drawReferenceLines(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, referenceLines: BoxWhiskerChartReferenceLine[], axisSettings: BoxWhiskerAxisSettings, front: boolean) {
         let referenceLineElement: Selection<any> = rootElement.selectAll(BoxWhiskerChart.ChartMain.selectorName);
         let stack = d3.layout.stack();
         let layers = stack([referenceLines])
@@ -151,10 +151,10 @@ module powerbi.extensibility.visual {
 
         let referenceLineData = (refLines) => {
             return refLines.map((refLine: BoxWhiskerChartReferenceLine) => {
-                let x1 = settings.general.margin.left + settings.axis.axisSizeY;
-                let y1 = yScale(refLine.value);
+                let x1 = settings.general.margin.left + axisSettings.axisValueWidth;
+                let y1 = axisSettings.axisScaleValue(refLine.value);
                 let x2 = settings.general.viewport.width - settings.general.margin.left;
-                let y2 = yScale(refLine.value);
+                let y2 = axisSettings.axisScaleValue(refLine.value);
                 return `M ${x1},${y1} L${x2},${y2}`;
             }).join(' ');
         };
@@ -205,7 +205,7 @@ module powerbi.extensibility.visual {
             .append("text")
             .classed(BoxWhiskerChart.ChartReferenceLineLabel.className, true);
 
-        let y0 = settings.axis.axisSizeX + settings.general.margin.bottom;
+        let y0 = axisSettings.axisCategoryHeight + settings.general.margin.bottom;
 
         referenceLineLabel
             .attr("transform", value => `translate(0 ${y0}) scale(1, -1)`)
@@ -239,7 +239,7 @@ module powerbi.extensibility.visual {
                         label = formatter.format(refLine.value);
                 }
                 return refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
-                    ? settings.general.margin.left + settings.axis.axisSizeY
+                    ? settings.general.margin.left + axisSettings.axisValueWidth
                     : settings.general.viewport.width - settings.general.margin.right -
                         textMeasurementService.measureSvgTextWidth(textProperties, label);
             })
@@ -270,7 +270,7 @@ module powerbi.extensibility.visual {
                 let offSet = refLine.vPosition === BoxWhiskerEnums.ReferenceLine.VPosition.above
                     ? 4
                     : -.75 * textMeasurementService.measureSvgTextHeight(textProperties, label);
-                return y0 - yScale(refLine.value) - offSet
+                return y0 - axisSettings.axisScaleValue(refLine.value) - offSet
             })
             .style("opacity", value => {
                 let refLine = (<BoxWhiskerChartReferenceLine>value[0]);

@@ -38,7 +38,6 @@ module powerbi.extensibility.visual {
     export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 
         public general: GeneralSettings = new GeneralSettings();
-        public axis: AxisSettings = new AxisSettings();
         public formatting: FormattingSettings = new FormattingSettings();
         public chartOptions: ChartOptionsSettings = new ChartOptionsSettings();
         public xAxis: XAxisSettings = new XAxisSettings();
@@ -59,20 +58,14 @@ module powerbi.extensibility.visual {
         };
         public locale:string = undefined;
         public formatString: string = "";
-        public duration: number = 0;
+        public duration: number = 100;
         public defaultColor: string = "#01B8AA"
         public ColorProperties: DataViewObjectPropertyIdentifier = {
             objectName: "dataPoint",
             propertyName: "fill"
         };
-    }
-
-    class AxisSettings {
-        public axisSizeY: number = 0;
-        public axisSizeX: number = 0;
-        public axisLabelSizeY: number = 0;
-        public axisLabelSizeX: number = 0;
-        public axisOptions: BoxWhiskerAxisOptions;
+        public telemetry:boolean = false;
+        public maxPoints:number = 30000;
     }
 
     class FormattingSettings {
@@ -98,6 +91,7 @@ module powerbi.extensibility.visual {
         public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
+        public orientation: BoxWhiskerEnums.LabelOrientation = BoxWhiskerEnums.LabelOrientation.Horizontal;
         public showTitle: boolean = false;
         public title: string = undefined;
         public defaultTitle: string = undefined;
@@ -164,6 +158,8 @@ module powerbi.extensibility.visual {
     class ShapeSettings {
         public showMean: boolean = true;
         public showMedian: boolean = true;
+        public highlight: boolean = true;
+        public fixedCategory: boolean = true;
     }
 
     class GridLinesSettings {

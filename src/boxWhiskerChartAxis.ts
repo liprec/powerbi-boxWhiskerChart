@@ -33,105 +33,218 @@ module powerbi.extensibility.visual {
 
     // utils.type
     import ValueType = powerbi.extensibility.utils.type.ValueType;
+    import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
 
     // d3
     import Selection = d3.Selection;
     
-    export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, dataPoints: BoxWhiskerChartDatapoint[][], yScale: d3.scale.Linear<any, any>) {
-        let axisX: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisX.selectorName);
-        let axisY: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisY.selectorName);
-        let axisXLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisXLabel.selectorName);
-        let axisYLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisYLabel.selectorName);
+    export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: BoxWhiskerChartData): BoxWhiskerAxisSettings {
+        let axisSettings: BoxWhiskerAxisSettings = {
+            axisScaleCategory: undefined,
+            axisCategoryHeight: 0,
+            axisCategoryWidth: 0,
+            axisLabelSizeCategory: 0,
+            axisAngleCategory: 0,
+            axisValueHeight: 0,
+            axisValueWidth: 0,
+            axisLabelSizeValue: 0,
+            axisScaleValue: undefined,
+            axisOptions: {
+                max:0,
+                min: 0,
+                ticks: 0,
+                tickSize: 0
+            }
+        }
+        let sin, cos, tan;
+
+        switch(settings.xAxis.orientation) {
+            case BoxWhiskerEnums.LabelOrientation.Vertical:
+                axisSettings.axisAngleCategory = 90;
+                break;
+            case BoxWhiskerEnums.LabelOrientation.Diagonal:
+            axisSettings.axisAngleCategory = 45;
+                break;
+            case BoxWhiskerEnums.LabelOrientation.Horizontal:
+            default:
+            axisSettings.axisAngleCategory = 0;
+        }
+        sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI/180));
+        cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI/180));
+        tan = Math.tan(axisSettings.axisAngleCategory * (Math.PI/180));
+
+        // Caclulate optimum min/max of value axis 
+        let stack = d3.layout.stack();
+        let layers = stack(data.dataPoints);
+        let refLines = data.referenceLines;
+        axisSettings.axisOptions = getAxisOptions(
+            d3.min([
+                d3.min(refLines, (refLine: BoxWhiskerChartReferenceLine) => refLine.value),
+                d3.min(layers, (layer) => {
+                    return d3.min(layer, (point) => {
+                        return  d3.min([(<BoxWhiskerChartDatapoint>point).min, 
+                                d3.min((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
+                    });
+                })
+            ]),
+            d3.max([
+                d3.max(refLines, (refLine: BoxWhiskerChartReferenceLine) => refLine.value),
+                d3.max(layers, (layer) => {
+                    return d3.max(layer, (point) => {
+                        return  d3.max([(<BoxWhiskerChartDatapoint>point).max, 
+                                d3.max((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
+                    });
+                })
+            ])
+        );
+
+        if (data.dataPointLength > 0) {
+            // calculate AxisSizeX, AxisSizeY
+            if (settings.xAxis.show) { // Show category axis
+                axisSettings.axisCategoryHeight = d3.max(data.categories.map((category: string) => {
+                    let size1 = cos * textMeasurementService.measureSvgTextHeight(
+                        settings.xAxis.axisTextProperties,
+                        category);
+                    let size2 = sin * textMeasurementService.measureSvgTextWidth(
+                        settings.xAxis.axisTextProperties,
+                        category);
+                    console.log(`Height: ${size1} ${size2} ${category}`)
+                    return size1 + size2 + 10; // Axis width/margin itself;
+                }));
+                console.log(axisSettings.axisCategoryHeight);
+                axisSettings.axisCategoryWidth = d3.max(data.categories.map((category: string) => {
+                    return textMeasurementService.measureSvgTextWidth(
+                        settings.xAxis.axisTextProperties,
+                        settings.formatting.categoryFormatter.format(category));
+                }));
+
+                if (settings.xAxis.showTitle) {
+                    axisSettings.axisLabelSizeCategory = textMeasurementService.measureSvgTextHeight(
+                        settings.xAxis.titleTextProperties,
+                        settings.formatting.categoryFormatter.format(settings.xAxis.title || settings.xAxis.defaultTitle)
+                    );
+                    axisSettings.axisCategoryHeight += axisSettings.axisLabelSizeCategory;
+                }
+            }
+        
+            if (settings.yAxis.show) { // Show value azis
+                for (let i = axisSettings.axisOptions.min; i < axisSettings.axisOptions.max; i += axisSettings.axisOptions.tickSize) {
+                    let tempSize = textMeasurementService.measureSvgTextWidth(
+                        settings.yAxis.axisTextProperties,
+                        settings.formatting.valuesFormatter.format(i));
+                        axisSettings.axisValueWidth = tempSize > axisSettings.axisValueWidth ? tempSize : axisSettings.axisValueWidth
+                }
+                axisSettings.axisValueWidth += 10; // Axis width itself
+
+                axisSettings.axisValueHeight = textMeasurementService.measureSvgTextHeight(
+                    settings.yAxis.axisTextProperties, 
+                    settings.formatting.valuesFormatter.format(axisSettings.axisOptions.max));
+
+                if (settings.yAxis.showTitle) {
+                    axisSettings.axisLabelSizeValue = textMeasurementService.measureSvgTextHeight(
+                        settings.yAxis.titleTextProperties,
+                        settings.formatting.valuesFormatter.format(settings.yAxis.title || settings.yAxis.defaultTitle)
+                    );
+                    axisSettings.axisValueWidth += axisSettings.axisLabelSizeValue;
+                }
+            }
+        }
+
+        axisSettings.axisScaleValue = d3.scale.linear()
+            .domain([axisSettings.axisOptions.min || 0, axisSettings.axisOptions.max || 0])
+            .range([settings.general.margin.bottom + axisSettings.axisCategoryHeight, settings.general.viewport.height - settings.general.margin.top]);
+
+        axisSettings.axisScaleCategory = d3.scale.linear()
+            .domain([0, data.dataPointLength])
+            .range([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
+
+        return axisSettings
+    }
+
+    export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, data: BoxWhiskerChartData, axisSettings: BoxWhiskerAxisSettings) {
+        let axisCategory: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisX.selectorName);
+        let axisValue: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisY.selectorName);
+        let axisCategoryLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisXLabel.selectorName);
+        let axisValueLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisYLabel.selectorName);
         let axisMajorGrid: Selection<any> = rootElement.select(BoxWhiskerChart.AxisMajorGrid.selectorName);
         let axisMinorGrid: Selection<any> = rootElement.select(BoxWhiskerChart.AxisMinorGrid.selectorName);
+        let sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI/180));
+        let cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI/180));
 
-        let yAxisLabelHeight = 0;
-        let xAxisLabelWidth = 0;
-        if (dataPoints.length > 0) {
-            yAxisLabelHeight = textMeasurementService.measureSvgTextHeight(
-                settings.yAxis.axisTextProperties, 
-                settings.formatting.valuesFormatter.format(dataPoints[0][0].label));
-        
-        
-            xAxisLabelWidth = textMeasurementService.measureSvgTextWidth(
-                settings.xAxis.axisTextProperties,
-                settings.formatting.categoryFormatter.format(settings.axis.axisOptions.max));
-        }
-
-        let xs = d3.scale.ordinal();
-        // Can we draw at least one X-axis label?
-        if (xAxisLabelWidth < (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - settings.axis.axisSizeY)) {
+        let categoryScale = d3.scale.ordinal();
+        // Can we draw at least one Category label?
+        if (axisSettings.axisCategoryWidth < (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - axisSettings.axisValueWidth)) {
             let overSamplingX = 1;
-            let visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
+            let visibleDataPoints = data.categories.filter((category, i) => i % overSamplingX === 0);
             let totalXAxisWidth = d3.max(visibleDataPoints
-                .map((d) =>
-                    textMeasurementService.measureSvgTextWidth(
-                        settings.yAxis.axisTextProperties,
-                        d[0].label) + 2 //margin
-                )) * visibleDataPoints.length;
-
-            while (totalXAxisWidth > (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - settings.axis.axisSizeY)) {
+                .map((category) => calcWidth(settings.xAxis.orientation, category))) * visibleDataPoints.length;
+            while (totalXAxisWidth > (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - axisSettings.axisValueWidth)) {
                 overSamplingX += 1;
-                visibleDataPoints = dataPoints.filter((d, i) => i % overSamplingX === 0);
+                visibleDataPoints = data.categories.filter((category, i) => i % overSamplingX === 0);
                 totalXAxisWidth = d3.max(visibleDataPoints
-                    .map((d) =>
-                        textMeasurementService.measureSvgTextWidth(
-                            settings.yAxis.axisTextProperties,
-                            d[0].label) + 2 //margin
-                    )) * visibleDataPoints.length;
+                    .map((category) => calcWidth(settings.xAxis.orientation, category))) * visibleDataPoints.length;
             }
-
-            xs.domain(dataPoints.map((values, index) => { return (index % overSamplingX === 0) ? values[0].label : null; })
+            categoryScale.domain(data.categories.map((category, index) => { return (index % overSamplingX === 0) ? category : null; })
                 .filter((d) => d !== null)
             )
-                .rangeBands([settings.general.margin.left + settings.axis.axisSizeY, settings.general.viewport.width - settings.general.margin.right]);
+                .rangeBands([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right], 0);
         } else {
-            xs.domain([])
-                .rangeBands([settings.general.margin.left + settings.axis.axisSizeY, settings.general.viewport.width - settings.general.margin.right]);
+            categoryScale.domain([])
+                .rangeBands([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
         }
 
-        let ys = yScale.range([settings.general.viewport.height - settings.axis.axisSizeX - settings.general.margin.bottom, settings.general.margin.top]);
-        let yAxisTicks = settings.axis.axisOptions.ticks;
+        let valueScale = axisSettings.axisScaleValue.range([settings.general.viewport.height - axisSettings.axisCategoryHeight - settings.general.margin.bottom, settings.general.margin.top]);
+        let yAxisTicks = axisSettings.axisOptions.ticks;
 
-        if (yAxisLabelHeight < (settings.general.viewport.height - settings.axis.axisSizeX - settings.general.margin.bottom - settings.general.margin.top)) {
-            let totalYAxisHeight = yAxisTicks * yAxisLabelHeight;
+        if (axisSettings.axisValueHeight < (settings.general.viewport.height - axisSettings.axisCategoryHeight - settings.general.margin.bottom - settings.general.margin.top)) {
+            let totalYAxisHeight = yAxisTicks * axisSettings.axisValueHeight;
 
             // Calculate minimal ticks that fits the height
-            while (totalYAxisHeight > settings.general.viewport.height - settings.axis.axisSizeX - settings.general.margin.bottom - settings.general.margin.top) {
+            while (totalYAxisHeight > settings.general.viewport.height - axisSettings.axisCategoryHeight - settings.general.margin.bottom - settings.general.margin.top) {
                 yAxisTicks /= 2;
-                totalYAxisHeight = yAxisTicks * yAxisLabelHeight;
+                totalYAxisHeight = yAxisTicks * axisSettings.axisValueHeight;
             }
         } else {
             yAxisTicks = 0;
         }
 
         let xAxisTransform =
-            settings.axis.axisOptions.min > 0 ?
-                ys(settings.axis.axisOptions.min) :
-                settings.axis.axisOptions.max < 0 ?
-                    ys(settings.axis.axisOptions.min) :
-                    ys(0);
+            axisSettings.axisOptions.min > 0 ?
+                valueScale(axisSettings.axisOptions.min) :
+                axisSettings.axisOptions.max < 0 ?
+                    valueScale(axisSettings.axisOptions.min) :
+                    valueScale(0);
 
         if (settings.xAxis.show) {
-            let xAxis = d3.svg.axis()
-                .scale(xs)
+            let categoryAxis = d3.svg.axis()
+                .scale(categoryScale)
                 .orient("bottom")
                 .tickSize(0)
-                .innerTickSize(8 + ((settings.general.viewport.height - settings.general.margin.top - settings.axis.axisSizeX) - xAxisTransform));
+                .innerTickSize(8 + ((settings.general.viewport.height - settings.general.margin.top - axisSettings.axisCategoryHeight) - xAxisTransform));
 
-            axisX
+            axisCategory
                 .attr("transform", "translate(0, " + xAxisTransform + ")")
-                .style("opacity", 1)
                 .transition()
                 .duration(settings.general.duration)
-                .call(xAxis);
+                .style("opacity", 1)
+                .call(categoryAxis);
 
-            axisX
+            axisCategory
                 .selectAll("text")
                 .style("fill", settings.xAxis.fontColor)
                 .style("font-family", settings.xAxis.fontFamily)                
-                .style("font-size", settings.xAxis.fontSize + "px");
-
+                .style("font-size", settings.xAxis.fontSize + "px")
+                .style("text-anchor", axisSettings.axisAngleCategory === BoxWhiskerEnums.LabelOrientation.Horizontal ? "middle" : "end")
+                .attr("dx", (d) => {
+                    return (-0.0044 * axisSettings.axisAngleCategory) + "em"
+                })
+                .attr("dy", (d) => {
+                    return ((-0.0139 * axisSettings.axisAngleCategory) + 0.75) + "em"
+                })
+                .attr("transform", function(d) {
+                    return `rotate(-${axisSettings.axisAngleCategory})` 
+                });
+            
             if (settings.xAxis.showTitle) {
                 let yTransform = settings.general.viewport.height - settings.general.margin.bottom;
                 let labelWidth = textMeasurementService.measureSvgTextWidth(
@@ -141,7 +254,7 @@ module powerbi.extensibility.visual {
                 let xTransform;
                 switch (settings.xAxis.titleAlignment) {
                     case "left":
-                        xTransform = settings.general.margin.left + settings.axis.axisSizeY;
+                        xTransform = settings.general.margin.left + axisSettings.axisValueWidth;
                         break;
                     case "right":
                         xTransform = settings.general.viewport.width - settings.general.margin.left -
@@ -150,49 +263,58 @@ module powerbi.extensibility.visual {
                     case "center":
                     default:
                         xTransform = (((settings.general.viewport.width - settings.general.margin.left - 
-                            settings.general.margin.right - settings.axis.axisSizeY) / 2) +
-                            settings.general.margin.left + settings.axis.axisSizeY) -
+                            settings.general.margin.right - axisSettings.axisValueWidth) / 2) +
+                            settings.general.margin.left + axisSettings.axisValueWidth) -
                             (labelWidth / 2);
                         break;
                 }
-                axisXLabel
+                axisCategoryLabel
                     .attr("transform", "translate(" + xTransform + ", " + yTransform + ")")
+                    .transition()
+                    .duration(settings.general.duration)
                     .style("opacity", 1)
                     .text(settings.xAxis.title || settings.xAxis.defaultTitle)
                     .style("fill", settings.xAxis.titleFontColor)
                     .style("font-family", settings.xAxis.titleFontFamily)                
                     .style("font-size", settings.xAxis.titleFontSize + "px")
-                    .transition()
-                    .duration(settings.general.duration);
             } else {
-                axisXLabel.style("opacity", 0);
+                axisCategoryLabel.transition()
+                    .duration(settings.general.duration)
+                    .style("opacity", 0);
             }
         } else {
-            axisX.style("opacity", 0);
+            axisCategory.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+            axisCategoryLabel.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
         }
 
         if (settings.yAxis.show) {
-            let yAxis = d3.svg.axis()
-                .scale(ys)
+            let valueAxis = d3.svg.axis()
+                .scale(valueScale)
                 .orient("left")
                 .tickFormat(d => settings.formatting.valuesFormatter.format(d))
                 .ticks(yAxisTicks);
 
-            axisY
-                .attr("transform", "translate(" + (settings.axis.axisSizeY + settings.general.margin.left) + ", 0)")
-                .style("opacity", 1)
+            axisValue
+                .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
                 .transition()
                 .duration(settings.general.duration)
-                .call(yAxis);
+                .style("opacity", 1)
+                .call(valueAxis);
 
-            axisY
+            axisValue
                 .selectAll("text")
+                .transition()
+                .duration(settings.general.duration)
                 .style("fill", settings.yAxis.fontColor)
                 .style("font-family", settings.yAxis.fontFamily)
                 .style("font-size", settings.yAxis.fontSize + "px");
 
             if (settings.yAxis.showTitle) {
-                let xTransform = settings.general.margin.left + (settings.axis.axisLabelSizeY / 2);
+                let xTransform = settings.general.margin.left + (axisSettings.axisLabelSizeValue / 2);
                 let labelWidth = textMeasurementService.measureSvgTextWidth(
                     settings.yAxis.axisTextProperties,
                     settings.yAxis.title || settings.yAxis.defaultTitle
@@ -200,7 +322,7 @@ module powerbi.extensibility.visual {
                 let yTransform;
                 switch (settings.yAxis.titleAlignment) {
                     case "left":
-                        yTransform = settings.general.viewport.height - settings.axis.axisSizeX;
+                        yTransform = settings.general.viewport.height - axisSettings.axisCategoryHeight;
                         break;
                     case "right":
                         yTransform = settings.general.margin.top + labelWidth;
@@ -208,74 +330,107 @@ module powerbi.extensibility.visual {
                     case "center":
                     default:
                         yTransform = ((settings.general.viewport.height - settings.general.margin.bottom - 
-                            settings.general.margin.top - settings.axis.axisSizeX) / 2) +
+                            settings.general.margin.top - axisSettings.axisCategoryHeight) / 2) +
                             (labelWidth / 2);
                         break;
                 }
-                axisYLabel
+                axisValueLabel
                     .attr("transform", "translate(" + xTransform + ", " + yTransform + ") rotate(-90)")
+                    .transition()
+                    .duration(settings.general.duration)
                     .style("opacity", 1)
                     .text(settings.yAxis.title || settings.yAxis.defaultTitle)
                     .style("fill", settings.yAxis.titleFontColor)
                     .style("font-family", settings.yAxis.titleFontFamily)                
                     .style("font-size", settings.yAxis.titleFontSize + "px")
-                    .transition()
-                    .duration(settings.general.duration);
             } else {
-                axisYLabel.style("opacity", 0);
+                axisValueLabel.transition()
+                    .duration(settings.general.duration)
+                    .style("opacity", 0);
             }
         } else {
-            axisY.style("opacity", 0);
+            axisValue.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+            axisValueLabel.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
         }
 
         if (settings.gridLines.show) {
             let yMajorGrid = d3.svg.axis()
-                .scale(ys)
+                .scale(valueScale)
                 .orient("left")
                 .ticks(yAxisTicks)
                 .outerTickSize(0)
-                .innerTickSize(-(settings.general.viewport.width - settings.axis.axisSizeY - settings.general.margin.right - settings.general.margin.left));
-
+                .innerTickSize(-(settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right - settings.general.margin.left));
+            
             axisMajorGrid
-                .attr("transform", "translate(" + (settings.axis.axisSizeY + settings.general.margin.left) + ", 0)")
-                .style("opacity", 1)
+                .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
                 .transition()
                 .duration(settings.general.duration)
+                .style("opacity", 1)
                 .call(yMajorGrid);
 
             axisMajorGrid
                 .selectAll("line")
+                .transition()
+                .duration(settings.general.duration)
                 .style("stroke", settings.gridLines.majorGridColor)
                 .style("stroke-width", settings.gridLines.majorGridSize);
 
             if (settings.gridLines.minorGrid) {
                 let yMinorGrid = d3.svg.axis()
-                    .scale(ys)
+                    .scale(valueScale)
                     .orient("left")
                     .ticks(yAxisTicks * 5)
                     .outerTickSize(0)
-                    .innerTickSize(-(settings.general.viewport.width - settings.axis.axisSizeY - settings.general.margin.right + settings.general.margin.left));
+                    .innerTickSize(-(settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right + settings.general.margin.left));
 
                 axisMinorGrid
-                    .attr("transform", "translate(" + (settings.axis.axisSizeY + settings.general.margin.left) + ", 0)")
-                    .style("opacity", 1)
+                    .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
                     .transition()
                     .duration(settings.general.duration)
+                    .style("opacity", 1)
                     .call(yMinorGrid);
 
                 axisMinorGrid
                     .selectAll("line")
+                    .transition()
+                    .duration(settings.general.duration)
                     .style("stroke", settings.gridLines.minorGridColor)
                     .style("stroke-width", settings.gridLines.minorGridSize);
             }
             else {
-
-                axisMinorGrid.style("opacity", 0);
+                axisMinorGrid.transition()
+                    .duration(settings.general.duration)
+                    .style("opacity", 0);
             }
         }
         else {
-            axisMajorGrid.style("opacity", 0);
-            axisMinorGrid.style("opacity", 0);
+            axisMajorGrid.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+            axisMinorGrid.transition()
+                .duration(settings.general.duration)
+                .style("opacity", 0);
+        }
+
+        function calcWidth(orientation: BoxWhiskerEnums.LabelOrientation, category: string) {
+            let width = 0,
+                cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI/180));
+            switch(orientation) {
+                case BoxWhiskerEnums.LabelOrientation.Vertical:
+                    width = textMeasurementService.measureSvgTextHeight(settings.xAxis.axisTextProperties, category) * .75;
+                    break;
+                case BoxWhiskerEnums.LabelOrientation.Diagonal:
+                    width = (textMeasurementService.measureSvgTextHeight(settings.xAxis.axisTextProperties, category) * .75) / cos;
+                    break;
+                case BoxWhiskerEnums.LabelOrientation.Horizontal:
+                default:
+                    width = textMeasurementService.measureSvgTextWidth(settings.xAxis.axisTextProperties, category);
+            }       
+            return width;
         }
     }
 

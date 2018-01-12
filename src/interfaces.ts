@@ -52,19 +52,20 @@ module powerbi.extensibility.visual {
         category: number;
         color?: string;
         label?: string;
+        highlight: boolean;
         outliers: BoxWhiskerChartOutlier[];
         dataLabels: BoxWhiskerDataLabel[];
-        selectionId: SelectionId;
-        identifyId: powerbi.visuals.ISelectionId;
+        selectionId: powerbi.visuals.ISelectionId;
         tooltipInfo?: TooltipDataItem[];
         x: number;
         y: number;
     }
 
     export interface BoxWhiskerChartOutlier {
-        category: string,
-        color?: string,
-        value: number
+        category: number;
+        color?: string;
+        value: number;
+        highlight: boolean;
         tooltipInfo?: TooltipDataItem[];
     }
 
@@ -93,13 +94,17 @@ module powerbi.extensibility.visual {
 
     export interface BoxWhiskerChartData {
         dataPoints: BoxWhiskerChartDatapoint[][];
-        referenceLines: BoxWhiskerChartReferenceLine[]
+        dataPointLength: number;
+        categories: string[];
+        isHighLighted: boolean;
+        referenceLines: BoxWhiskerChartReferenceLine[];
     }
 
     export interface BoxWhiskerDataLabel {
         value: number;
         y: number;
         x: number;
+        visible: number;
     }
 
     export interface BoxWhiskerAxisOptions {
@@ -107,5 +112,18 @@ module powerbi.extensibility.visual {
         min: number;
         ticks: number;
         tickSize: number;
+    }
+
+    export interface BoxWhiskerAxisSettings {
+        axisScaleCategory: d3.scale.Linear<number, number>; 
+        axisCategoryHeight: number;
+        axisCategoryWidth: number;
+        axisLabelSizeCategory: number;
+        axisAngleCategory: number;
+        axisValueHeight: number;
+        axisValueWidth: number;
+        axisLabelSizeValue: number;
+        axisScaleValue: d3.scale.Linear<number, number>;
+        axisOptions: BoxWhiskerAxisOptions;
     }
 }

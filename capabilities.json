@@ -16,6 +16,7 @@
             "displayName": "Values"
         }
     ],
+    "supportsHighlight": true,
     "dataViewMappings": [{
         "conditions": [{
             "Groups": {
@@ -37,7 +38,7 @@
             "values": {
                 "group": {
                     "by": "Samples",
-                    "dataReductionAlgorithm": { "top": { "count": 50000 } },
+                    "dataReductionAlgorithm": { "top": { "count": 30000 } },
                     "select": [{
                         "for": {
                             "in": "Values"   
@@ -53,6 +54,13 @@
             "properties": {
                 "formatString": {
                     "type": { "formatting": { "labelDisplayUnits": false } }
+                },
+                "telemetry": {
+                    "displayName": "Telemetry",
+                    "description": "Enable telemetry logging",
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },
@@ -151,7 +159,7 @@
             }
         },
         "xAxis": {
-            "displayName": "X-Axis",
+            "displayName": "Category Axis",
             "properties": {
                 "show": { 
                     "displayName": "Show",
@@ -191,6 +199,26 @@
                     },
                     "suppressFormatPainterCopy": true
                 },
+                "orientation": {
+                    "displayName": "Label orientation",
+                    "description": "Set the orientation of the labels",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Horizontal"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "45 deg"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "Vertical"
+                            }
+                        ]
+                    }
+                },
                 "showTitle": {
                     "displayName": "Show Title",
                     "type": { "bool": true }
@@ -227,7 +255,7 @@
             }
         },
         "yAxis": {
-            "displayName": "Y-Axis",
+            "displayName": "Value Axis",
             "properties": {
                 "show": { 
                     "displayName": "Show",
@@ -398,7 +426,21 @@
                     "displayName": "Median",
                     "description": "Display Median line",
                     "type": { "bool": true }
-                }                
+                },
+                "highlight": {
+                    "displayName": "Highlight",
+                    "description": "Enable highlight support",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "fixedCategory": {
+                    "displayName": "Fixed Category",
+                    "description": "When highlight is not supported, keep the same amount of categories",
+                    "type": {
+                        "bool": true
+                    }
+                }              
             }
         },
         "gridLines": {

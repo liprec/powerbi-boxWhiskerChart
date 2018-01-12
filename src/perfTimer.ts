@@ -25,60 +25,33 @@
 *  THE SOFTWARE.
 */
 
-module powerbi.extensibility.visual {
-
-    export module BoxWhiskerEnums {
-        export enum ChartOrientation {
-            Horizontal,
-            Vertical
-        }
-
-        export enum QuartileType {
-            Exclusive,
-            Inclusive
-        }
-
-        export enum WhiskerType {
-            MinMax,
-            Standard,
-            IQR,
-            Custom
-        }
+module powerbi.extensibility.utils.telemetry {
     
-        export enum MarginType {
-            Small,
-            Medium,
-            Large
+    export class PerfTimer {
+        public static start(name: string, enabled: boolean) {
+            let performance: Performance = window.performance;
+            if (!performance || !performance.mark || !enabled)
+                return _.noop;
+            if (console.time)
+                console.time(name);
+            let startMark: string = 'Begin ' + name;
+            performance.mark(startMark);
+            return function () {
+                let end: string = 'End ' + name;
+                performance.mark(end);
+                // NOTE: Chromium supports performance.mark but not performance.measure.
+                if (performance.measure)
+                    performance.measure(name, startMark, end);
+                if (console.timeEnd)
+                    console.timeEnd(name);
+            };
         }
 
-        export enum LabelOrientation {
-            Horizontal,
-            Diagonal,
-            Vertical
-        }
-        export module ReferenceLine {
-            export enum Style {
-                dashed,
-                solid,
-                dotted
-            }
-            export enum Position {
-                front,
-                back
-            }
-            export enum LabelType {
-                value,
-                name,
-                valueName,
-            }
-            export enum HPosition {
-                left,
-                right
-            }
-            export enum VPosition {
-                above,
-                under
-            }
+        public static logTime(action) {
+            // Desktop's old Chromium doesn't support use of Performance Markers yet  
+            let start: number = Date.now();
+            action();
+            return Date.now() - start;
         }
     }
 }
