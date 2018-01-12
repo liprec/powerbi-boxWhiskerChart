@@ -692,10 +692,10 @@ module powerbi.extensibility.visual {
                     }
                     break;                    
                 case "dataPoint":
-                if (!this.settings.dataPoint.oneColor) {
-                    this.removeEnumerateObject(instanceEnumeration, "oneFill");
-                    instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
-                }
+                    if (!this.settings.dataPoint.oneColor) {
+                        this.removeEnumerateObject(instanceEnumeration, "oneFill");
+                        instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
+                    }
                     break;
                 case "y1AxisReferenceLine":
                     instances = referenceLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);

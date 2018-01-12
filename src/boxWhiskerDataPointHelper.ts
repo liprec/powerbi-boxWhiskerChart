@@ -39,11 +39,11 @@ module powerbi.extensibility.visual {
         if (oneColor) {
             let selectionId: Selector = dataPoints[0][0].selectionId as Selector;
             instances.push({
-                displayName: "Fill Color",
+                displayName: dataPoint[0].label,
                 objectName: "dataPoint",
-                selector: selectionId,
+                selector: dataPoint[0].identifyId.getSelector(),
                 properties: {
-                    fill: { solid: { color: dataPoints[0][0].color } }
+                    fill: { solid: { color: dataPoint[0].color } }
                 }
             });
         } else {
