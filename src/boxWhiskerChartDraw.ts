@@ -86,7 +86,7 @@ module powerbi.extensibility.visual {
                         });
                     });
                 })
-                * 10) / 10.));
+                * 1000) / 1000.)) + leftBoxMargin;
 
         if (dataLabelwidth > 0.8) {
             dataLabelsShow = false;
