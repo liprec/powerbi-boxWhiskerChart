@@ -205,72 +205,24 @@ module powerbi.extensibility.visual {
             .append("text")
             .classed(BoxWhiskerChart.ChartReferenceLineLabel.className, true);
 
-        let y0 = axisSettings.axisCategoryHeight + settings.general.margin.bottom;
+        let referenceLabelTransform = (refLines) => {
+            return refLines.map((refLine: BoxWhiskerChartReferenceLine) => {
+                let x0 = refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
+                        ? 0
+                        : settings.general.viewport.width - settings.general.margin.left;
+                let y0 = axisSettings.axisScaleValue(refLine.value);
+                return `translate(${x0} ${y0})`;
+            });
+        };
+
+        let y0 = axisSettings.axisCategoryHeight; // + settings.general.margin.bottom;
 
         referenceLineLabel
-            .attr("transform", value => `translate(0 ${y0}) scale(1, -1)`)
+            .attr("transform", referenceLabelTransform)
             .attr("fill", value => {
                 let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
                 if (!refLine) { return "#000"; }
                 return refLine.labelColor;
-            })
-            .attr("x", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
-                if (!refLine) { return 0; }
-                let formatter = valueFormatter.create({
-                    precision: refLine.labelPrecision,
-                    value: refLine.labelDisplayUnits || refLine.value,
-                    cultureSelector: settings.general.locale
-                });
-                let textProperties: TextProperties = {
-                    fontFamily: refLine.labelFontFamily,
-                    fontSize: refLine.labelFontSize + "px"
-                };
-                let label;
-                switch (refLine.labelType) {
-                    case BoxWhiskerEnums.ReferenceLine.LabelType.name:
-                        label = refLine.displayName;
-                        break;
-                    case BoxWhiskerEnums.ReferenceLine.LabelType.valueName:
-                        label = refLine.displayName + " " + formatter.format(refLine.value);
-                        break;
-                    case BoxWhiskerEnums.ReferenceLine.LabelType.value:
-                    default:
-                        label = formatter.format(refLine.value);
-                }
-                return refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
-                    ? settings.general.margin.left + axisSettings.axisValueWidth
-                    : settings.general.viewport.width - settings.general.margin.right -
-                        textMeasurementService.measureSvgTextWidth(textProperties, label);
-            })
-            .attr("y", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
-                if (!refLine) { return 0; }
-                let formatter = valueFormatter.create({
-                    precision: refLine.labelPrecision,
-                    value: refLine.labelDisplayUnits || refLine.value,
-                    cultureSelector: settings.general.locale
-                });
-                let textProperties: TextProperties = {
-                    fontFamily: refLine.labelFontFamily,
-                    fontSize: refLine.labelFontSize + "px"
-                };
-                let label;
-                switch (refLine.labelType) {
-                    case BoxWhiskerEnums.ReferenceLine.LabelType.name:
-                        label = refLine.displayName;
-                        break;
-                    case BoxWhiskerEnums.ReferenceLine.LabelType.valueName:
-                        label = refLine.displayName + " " + formatter.format(refLine.value);
-                        break;
-                    case BoxWhiskerEnums.ReferenceLine.LabelType.value:
-                    default:
-                        label = formatter.format(refLine.value);
-                }
-                let offSet = refLine.vPosition === BoxWhiskerEnums.ReferenceLine.VPosition.above
-                    ? 4
-                    : -.75 * textMeasurementService.measureSvgTextHeight(textProperties, label);
-                return y0 - axisSettings.axisScaleValue(refLine.value) - offSet;
             })
             .style("opacity", value => {
                 let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
@@ -316,6 +268,24 @@ module powerbi.extensibility.visual {
             })
             .transition()
             .duration(settings.general.duration);
+
+        selection.selectAll(BoxWhiskerChart.ChartReferenceLineLabel.selectorName)
+            .attr("x", function(value) {
+                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                if (!refLine) { return 0; }
+                let width = this.getBBox().width;
+                return refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
+                    ? settings.general.margin.left + axisSettings.axisValueWidth
+                    : -width;
+            })
+            .attr("y", function(value) {
+                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                if (!refLine) { return 0; }
+                let height = this.getBBox().height;
+                return refLine.vPosition === BoxWhiskerEnums.ReferenceLine.VPosition.above
+                    ? -4
+                    : 0.75 * height;
+            });
 
         referenceLineLabel.exit().remove();
 
