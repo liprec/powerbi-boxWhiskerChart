@@ -45,6 +45,7 @@ module powerbi.extensibility.visual {
         public xAxis: XAxisSettings = new XAxisSettings();
         public yAxis: YAxisSettings = new YAxisSettings();
         public dataPoint: DataPointSettings = new DataPointSettings();
+        public toolTip: ToolTipSettings = new ToolTipSettings();
         public shapes: ShapeSettings = new ShapeSettings();
         public gridLines: GridLinesSettings = new GridLinesSettings();
         public labels: LabelsSettings = new LabelsSettings();
@@ -74,7 +75,7 @@ module powerbi.extensibility.visual {
         public valuesFormatter: IValueFormatter;
         public categoryFormatter: IValueFormatter;
         public labelFormatter: IValueFormatter;
-    }
+        public toolTipFormatter: IValueFormatter;    }
 
     class ChartOptionsSettings {
         public orientation: BoxWhiskerEnums.ChartOrientation = BoxWhiskerEnums.ChartOrientation.Vertical;
@@ -142,6 +143,11 @@ module powerbi.extensibility.visual {
         public medianColor: string = "#111";
         public oneColor: boolean = false;
         public oneFill: string = undefined;
+    }
+
+    class ToolTipSettings {
+        public labelDisplayUnits: number = 0;
+        public labelPrecision: number = undefined;
     }
 
     class LabelsSettings {

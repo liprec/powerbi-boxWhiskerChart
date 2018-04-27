@@ -370,6 +370,29 @@
                 }
             }
         },
+        "toolTip": {
+            "displayName": "Tooltips",
+            "properties": {
+                "labelDisplayUnits": {
+                    "displayName": "Display units",
+                    "description": "Selects the unit (millions, billions, etc.)",
+                    "type": {
+                        "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                    }
+                },
+                "labelPrecision": {
+                    "displayName": "Value decimal places",
+                    "description": "Select the number of decimal places to display",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    },
+                    "suppressFormatPainterCopy": true
+                }
+            }
+        },
         "labels": {
             "displayName": "Data labels",
             "properties": {

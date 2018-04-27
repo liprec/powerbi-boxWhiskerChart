@@ -234,6 +234,13 @@ module powerbi.extensibility.visual {
                 cultureSelector: this.settings.general.locale
             });
 
+            this.settings.formatting.toolTipFormatter = valueFormatter.create({
+                format: valueFormatter.getFormatStringByColumn(valueSources[0]),
+                precision: this.settings.toolTip.labelPrecision,
+                value: this.settings.toolTip.labelDisplayUnits || maxValue,
+                cultureSelector: this.settings.general.locale
+            });
+
             this.dataType = ValueType.fromDescriptor(valueSources[0].type);
             let hasStaticColor = categories.length > 15;
             let properties = {};
@@ -359,7 +366,7 @@ module powerbi.extensibility.visual {
                                             },
                                             {
                                                 displayName: "Value",
-                                                value: value
+                                                value: this.settings.formatting.toolTipFormatter.format(value)
                                             }
                                         ]
                                     };
@@ -412,27 +419,27 @@ module powerbi.extensibility.visual {
                                 },
                                 {
                                     displayName: maxValueLabel,
-                                    value: this.settings.formatting.valuesFormatter.format(maxValue),
+                                    value: this.settings.formatting.toolTipFormatter.format(maxValue),
                                 },
                                 {
                                     displayName: "Quartile 3",
-                                    value: this.settings.formatting.valuesFormatter.format(quartile3),
+                                    value: this.settings.formatting.toolTipFormatter.format(quartile3),
                                 },
                                 {
                                     displayName: "Median",
-                                    value: this.settings.formatting.valuesFormatter.format(median),
+                                    value: this.settings.formatting.toolTipFormatter.format(median),
                                 },
                                 {
                                     displayName: "Average",
-                                    value: this.settings.formatting.valuesFormatter.format(avgvalue),
+                                    value: this.settings.formatting.toolTipFormatter.format(avgvalue),
                                 },
                                 {
                                     displayName: "Quartile 1",
-                                    value: this.settings.formatting.valuesFormatter.format(quartile1),
+                                    value: this.settings.formatting.toolTipFormatter.format(quartile1),
                                 },
                                 {
                                     displayName: minValueLabel,
-                                    value: this.settings.formatting.valuesFormatter.format(minValue),
+                                    value: this.settings.formatting.toolTipFormatter.format(minValue),
                                 }]
                         };
                         let updated = false;
@@ -613,26 +620,26 @@ module powerbi.extensibility.visual {
 
         }
 
-        private static getTooltipData(value: any): VisualTooltipDataItem[] {
-            return [{
-                displayName: value.category,
-                value: value.value.toString(),
-                color: value.color
-            }];
-        }
+        // private static getTooltipData(value: any): VisualTooltipDataItem[] {
+        //     return [{
+        //         displayName: value.category,
+        //         value: value.value.toString(),
+        //         color: value.color
+        //     }];
+        // }
 
-        public getValueArray(nodes: any): Array<number> {
-            let rArray: Array<number> = [];
+        // public getValueArray(nodes: any): Array<number> {
+        //     let rArray: Array<number> = [];
 
-            for (let i = 0; i < 50000; i++) {
-                if (nodes[i] === undefined) {
-                    break;
-                }
-                rArray.push(nodes[i].value);
-            }
+        //     for (let i = 0; i < 50000; i++) {
+        //         if (nodes[i] === undefined) {
+        //             break;
+        //         }
+        //         rArray.push(nodes[i].value);
+        //     }
 
-            return rArray;
-        }
+        //     return rArray;
+        // }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             const instanceEnumeration: VisualObjectInstanceEnumeration = BoxWhiskerChartSettings.enumerateObjectInstances(
