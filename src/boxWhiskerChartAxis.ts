@@ -1,21 +1,21 @@
 /*
 *
-* Copyright (c) 2017 Jan Pieter Posthuma / DataScenarios
-* 
+* Copyright (c) 2018 Jan Pieter Posthuma / DataScenarios
+*
 * All rights reserved.
-* 
+*
 * MIT License.
-* 
+*
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
 *  in the Software without restriction, including without limitation the rights
 *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 *  copies of the Software, and to permit persons to whom the Software is
 *  furnished to do so, subject to the following conditions:
-* 
+*
 * The above copyright notice and this permission notice shall be included in
 *  all copies or substantial portions of the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,7 +37,7 @@ module powerbi.extensibility.visual {
 
     // d3
     import Selection = d3.Selection;
-    
+
     export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: BoxWhiskerChartData): BoxWhiskerAxisSettings {
         let axisSettings: BoxWhiskerAxisSettings = {
             axisScaleCategory: undefined,
@@ -50,15 +50,15 @@ module powerbi.extensibility.visual {
             axisLabelSizeValue: 0,
             axisScaleValue: undefined,
             axisOptions: {
-                max:0,
+                max: 0,
                 min: 0,
                 ticks: 0,
                 tickSize: 0
             }
-        }
+        };
         let sin, cos, tan;
 
-        switch(settings.xAxis.orientation) {
+        switch (settings.xAxis.orientation) {
             case BoxWhiskerEnums.LabelOrientation.Vertical:
                 axisSettings.axisAngleCategory = 90;
                 break;
@@ -69,11 +69,11 @@ module powerbi.extensibility.visual {
             default:
             axisSettings.axisAngleCategory = 0;
         }
-        sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI/180));
-        cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI/180));
-        tan = Math.tan(axisSettings.axisAngleCategory * (Math.PI/180));
+        sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI / 180));
+        cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI / 180));
+        tan = Math.tan(axisSettings.axisAngleCategory * (Math.PI / 180));
 
-        // Caclulate optimum min/max of value axis 
+        // Caclulate optimum min/max of value axis
         let stack = d3.layout.stack();
         let layers = stack(data.dataPoints);
         let refLines = data.referenceLines;
@@ -82,7 +82,7 @@ module powerbi.extensibility.visual {
                 d3.min(refLines, (refLine: BoxWhiskerChartReferenceLine) => refLine.value),
                 d3.min(layers, (layer) => {
                     return d3.min(layer, (point) => {
-                        return  d3.min([(<BoxWhiskerChartDatapoint>point).min, 
+                        return  d3.min([(<BoxWhiskerChartDatapoint>point).min,
                                 d3.min((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                     });
                 })
@@ -91,7 +91,7 @@ module powerbi.extensibility.visual {
                 d3.max(refLines, (refLine: BoxWhiskerChartReferenceLine) => refLine.value),
                 d3.max(layers, (layer) => {
                     return d3.max(layer, (point) => {
-                        return  d3.max([(<BoxWhiskerChartDatapoint>point).max, 
+                        return  d3.max([(<BoxWhiskerChartDatapoint>point).max,
                                 d3.max((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                     });
                 })
@@ -108,10 +108,8 @@ module powerbi.extensibility.visual {
                     let size2 = sin * textMeasurementService.measureSvgTextWidth(
                         settings.xAxis.axisTextProperties,
                         category);
-                    console.log(`Height: ${size1} ${size2} ${category}`)
                     return size1 + size2 + 10; // Axis width/margin itself;
                 }));
-                console.log(axisSettings.axisCategoryHeight);
                 axisSettings.axisCategoryWidth = d3.max(data.categories.map((category: string) => {
                     return textMeasurementService.measureSvgTextWidth(
                         settings.xAxis.axisTextProperties,
@@ -126,18 +124,18 @@ module powerbi.extensibility.visual {
                     axisSettings.axisCategoryHeight += axisSettings.axisLabelSizeCategory;
                 }
             }
-        
+
             if (settings.yAxis.show) { // Show value azis
                 for (let i = axisSettings.axisOptions.min; i < axisSettings.axisOptions.max; i += axisSettings.axisOptions.tickSize) {
                     let tempSize = textMeasurementService.measureSvgTextWidth(
                         settings.yAxis.axisTextProperties,
                         settings.formatting.valuesFormatter.format(i));
-                        axisSettings.axisValueWidth = tempSize > axisSettings.axisValueWidth ? tempSize : axisSettings.axisValueWidth
+                        axisSettings.axisValueWidth = tempSize > axisSettings.axisValueWidth ? tempSize : axisSettings.axisValueWidth;
                 }
                 axisSettings.axisValueWidth += 10; // Axis width itself
 
                 axisSettings.axisValueHeight = textMeasurementService.measureSvgTextHeight(
-                    settings.yAxis.axisTextProperties, 
+                    settings.yAxis.axisTextProperties,
                     settings.formatting.valuesFormatter.format(axisSettings.axisOptions.max));
 
                 if (settings.yAxis.showTitle) {
@@ -158,7 +156,7 @@ module powerbi.extensibility.visual {
             .domain([0, data.dataPointLength])
             .range([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
 
-        return axisSettings
+        return axisSettings;
     }
 
     export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, data: BoxWhiskerChartData, axisSettings: BoxWhiskerAxisSettings) {
@@ -168,8 +166,8 @@ module powerbi.extensibility.visual {
         let axisValueLabel: Selection<any> = rootElement.selectAll(BoxWhiskerChart.AxisYLabel.selectorName);
         let axisMajorGrid: Selection<any> = rootElement.select(BoxWhiskerChart.AxisMajorGrid.selectorName);
         let axisMinorGrid: Selection<any> = rootElement.select(BoxWhiskerChart.AxisMinorGrid.selectorName);
-        let sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI/180));
-        let cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI/180));
+        let sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI / 180));
+        let cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI / 180));
 
         let categoryScale = d3.scale.ordinal();
         // Can we draw at least one Category label?
@@ -232,19 +230,19 @@ module powerbi.extensibility.visual {
             axisCategory
                 .selectAll("text")
                 .style("fill", settings.xAxis.fontColor)
-                .style("font-family", settings.xAxis.fontFamily)                
+                .style("font-family", settings.xAxis.fontFamily)
                 .style("font-size", settings.xAxis.fontSize + "px")
                 .style("text-anchor", axisSettings.axisAngleCategory === BoxWhiskerEnums.LabelOrientation.Horizontal ? "middle" : "end")
                 .attr("dx", (d) => {
-                    return (-0.0044 * axisSettings.axisAngleCategory) + "em"
+                    return (-0.0044 * axisSettings.axisAngleCategory) + "em";
                 })
                 .attr("dy", (d) => {
-                    return ((-0.0139 * axisSettings.axisAngleCategory) + 0.75) + "em"
+                    return ((-0.0139 * axisSettings.axisAngleCategory) + 0.75) + "em";
                 })
                 .attr("transform", function(d) {
-                    return `rotate(-${axisSettings.axisAngleCategory})` 
+                    return `rotate(-${axisSettings.axisAngleCategory})`;
                 });
-            
+
             if (settings.xAxis.showTitle) {
                 let yTransform = settings.general.viewport.height - settings.general.margin.bottom;
                 let labelWidth = textMeasurementService.measureSvgTextWidth(
@@ -262,7 +260,7 @@ module powerbi.extensibility.visual {
                         break;
                     case "center":
                     default:
-                        xTransform = (((settings.general.viewport.width - settings.general.margin.left - 
+                        xTransform = (((settings.general.viewport.width - settings.general.margin.left -
                             settings.general.margin.right - axisSettings.axisValueWidth) / 2) +
                             settings.general.margin.left + axisSettings.axisValueWidth) -
                             (labelWidth / 2);
@@ -275,8 +273,8 @@ module powerbi.extensibility.visual {
                     .style("opacity", 1)
                     .text(settings.xAxis.title || settings.xAxis.defaultTitle)
                     .style("fill", settings.xAxis.titleFontColor)
-                    .style("font-family", settings.xAxis.titleFontFamily)                
-                    .style("font-size", settings.xAxis.titleFontSize + "px")
+                    .style("font-family", settings.xAxis.titleFontFamily)
+                    .style("font-size", settings.xAxis.titleFontSize + "px");
             } else {
                 axisCategoryLabel.transition()
                     .duration(settings.general.duration)
@@ -329,7 +327,7 @@ module powerbi.extensibility.visual {
                         break;
                     case "center":
                     default:
-                        yTransform = ((settings.general.viewport.height - settings.general.margin.bottom - 
+                        yTransform = ((settings.general.viewport.height - settings.general.margin.bottom -
                             settings.general.margin.top - axisSettings.axisCategoryHeight) / 2) +
                             (labelWidth / 2);
                         break;
@@ -341,8 +339,8 @@ module powerbi.extensibility.visual {
                     .style("opacity", 1)
                     .text(settings.yAxis.title || settings.yAxis.defaultTitle)
                     .style("fill", settings.yAxis.titleFontColor)
-                    .style("font-family", settings.yAxis.titleFontFamily)                
-                    .style("font-size", settings.yAxis.titleFontSize + "px")
+                    .style("font-family", settings.yAxis.titleFontFamily)
+                    .style("font-size", settings.yAxis.titleFontSize + "px");
             } else {
                 axisValueLabel.transition()
                     .duration(settings.general.duration)
@@ -364,7 +362,7 @@ module powerbi.extensibility.visual {
                 .ticks(yAxisTicks)
                 .outerTickSize(0)
                 .innerTickSize(-(settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right - settings.general.margin.left));
-            
+
             axisMajorGrid
                 .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
                 .transition()
@@ -418,8 +416,8 @@ module powerbi.extensibility.visual {
 
         function calcWidth(orientation: BoxWhiskerEnums.LabelOrientation, category: string) {
             let width = 0,
-                cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI/180));
-            switch(orientation) {
+                cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI / 180));
+            switch (orientation) {
                 case BoxWhiskerEnums.LabelOrientation.Vertical:
                     width = textMeasurementService.measureSvgTextHeight(settings.xAxis.axisTextProperties, category) * .75;
                     break;
@@ -429,7 +427,7 @@ module powerbi.extensibility.visual {
                 case BoxWhiskerEnums.LabelOrientation.Horizontal:
                 default:
                     width = textMeasurementService.measureSvgTextWidth(settings.xAxis.axisTextProperties, category);
-            }       
+            }
             return width;
         }
     }

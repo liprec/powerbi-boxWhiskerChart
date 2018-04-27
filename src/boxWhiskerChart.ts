@@ -1,21 +1,21 @@
 /*
 *
-* Copyright (c) 2017 Jan Pieter Posthuma / DataScenarios
-* 
+* Copyright (c) 2018 Jan Pieter Posthuma / DataScenarios
+*
 * All rights reserved.
-* 
+*
 * MIT License.
-* 
+*
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
 *  in the Software without restriction, including without limitation the rights
 *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 *  copies of the Software, and to permit persons to whom the Software is
 *  furnished to do so, subject to the following conditions:
-* 
+*
 * The above copyright notice and this permission notice shall be included in
 *  all copies or substantial portions of the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,16 +44,16 @@ module powerbi.extensibility.visual {
 
     // utils.dataview
     import DataViewObjectsModule = powerbi.extensibility.utils.dataview.DataViewObjects;
-    
+
     // utils.color
     import ColorHelper = powerbi.extensibility.utils.color.ColorHelper;
 
     // utils.tooltip
     import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
     import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
-    
+
     // powerbi.visuals
-    import ISelectionId = powerbi.visuals.ISelectionId
+    import ISelectionId = powerbi.visuals.ISelectionId;
 
     // powerbi.extensibility
     import IColorPalette = powerbi.extensibility.IColorPalette;
@@ -70,7 +70,7 @@ module powerbi.extensibility.visual {
     import Selector = powerbi.data.Selector;
 
     export interface ISQExpr extends powerbi.data.ISQExpr {
-        ref: string
+        ref: string;
     }
 
     export class BoxWhiskerChart implements IVisual {
@@ -87,18 +87,18 @@ module powerbi.extensibility.visual {
 
         // Trace messages
         private traceEvents = {
-            convertor: 'BoxWhiskerChart1455240051538: Convertor method',
-            update: 'BoxWhiskerChart1455240051538: Update method',
-            drawChart: 'BoxWhiskerChart1455240051538: DrawChart method',
-            drawAxis: 'BoxWhiskerChart1455240051538: DrawAxis method'
-        }
+            convertor: "BoxWhiskerChart1455240051538: Convertor method",
+            update: "BoxWhiskerChart1455240051538: Update method",
+            drawChart: "BoxWhiskerChart1455240051538: DrawChart method",
+            drawAxis: "BoxWhiskerChart1455240051538: DrawAxis method"
+        };
 
         private static VisualClassName = "boxWhiskerChart";
 
         public static Axis: ClassAndSelector = createClassAndSelector("axis");
-        public static AxisX: ClassAndSelector = createClassAndSelector("axisX")
+        public static AxisX: ClassAndSelector = createClassAndSelector("axisX");
         public static AxisY: ClassAndSelector = createClassAndSelector("axisY");
-        public static AxisXLabel: ClassAndSelector = createClassAndSelector("axisXLabel")
+        public static AxisXLabel: ClassAndSelector = createClassAndSelector("axisXLabel");
         public static AxisYLabel: ClassAndSelector = createClassAndSelector("axisYLabel");
         public static AxisMajorGrid: ClassAndSelector = createClassAndSelector("axisMajorGrid");
         public static AxisMinorGrid: ClassAndSelector = createClassAndSelector("axisMinorGrid");
@@ -137,7 +137,7 @@ module powerbi.extensibility.visual {
         private hostServices: IVisualHost;
         private dataView: DataView;
         private data: BoxWhiskerChartData;
-        private tooltipServiceWrapper: ITooltipServiceWrapper
+        private tooltipServiceWrapper: ITooltipServiceWrapper;
 
         private dataType: ValueType;
 
@@ -172,16 +172,16 @@ module powerbi.extensibility.visual {
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
             let maxPoints = this.settings.general.maxPoints;
             let types = 1;
-            this.settings.xAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index===1 })[0].displayName;
-            this.settings.yAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index===0 })[0].displayName;;
+            this.settings.xAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index === 1; })[0].displayName;
+            this.settings.yAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index === 0; })[0].displayName;
             let categoriesLables = [];
 
-            let hasHighlight = this.settings.shapes.highlight && categories[0].values[0].highlight!==undefined;
+            let hasHighlight = this.settings.shapes.highlight && categories[0].values[0].highlight !== undefined;
 
-            for (let c=0; c<categories.length;c++) {
+            for (let c = 0; c < categories.length; c++) {
                 let values = categories[c].values;
                 let categoryValue = [];
-                for (let v=0; v<maxPoints;v++) {
+                for (let v = 0; v < maxPoints; v++) {
                     let value = values[v.toString()];
                     if (value && value.value) {
                         if (!this.settings.shapes.highlight) {
@@ -198,10 +198,10 @@ module powerbi.extensibility.visual {
 
             if (hasHighlight) {
                 types = 2;
-                for (let c=0; c<categories.length;c++) {
+                for (let c = 0; c < categories.length; c++) {
                     let values = categories[c].values;
                     let categoryValue = [];
-                    for (let v=0; v<maxPoints;v++) {
+                    for (let v = 0; v < maxPoints; v++) {
                         let value = values[v.toString()];
                         if (value && value.highlight) {
                             categoryValue.push(value.highlight);
@@ -211,7 +211,7 @@ module powerbi.extensibility.visual {
                 }
             }
 
-            for (let s=0;s<samples.length;s++) {
+            for (let s = 0; s < samples.length; s++) {
                 sampleValues.push(samples[s].sources[0].displayName);
             }
 
@@ -245,12 +245,12 @@ module powerbi.extensibility.visual {
                 colors,
                 this.settings.general.ColorProperties,
                 this.settings.general.defaultColor
-            )
+            );
 
             for (let t = 0; t < types; t++) {
                 for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
-                    let values = t==1 ? highlightValues[i] : categoryValues[i];
-                    if ((t===0) && ((values.length !== 0) || this.settings.shapes.fixedCategory)) {
+                    let values = t === 1 ? highlightValues[i] : categoryValues[i];
+                    if ((t === 0) && ((values.length !== 0) || this.settings.shapes.fixedCategory)) {
                         categoriesLables.push(this.settings.formatting.categoryFormatter.format(categories[i].value));
                     }
 
@@ -267,9 +267,9 @@ module powerbi.extensibility.visual {
                         let q1l = Math.floor(q1);
                         let ml  = Math.floor(m);
                         let q3l = Math.floor(q3);
-                        let quartile1 = sortedValue[q1l-1] + (q1-q1l)*(sortedValue[q1l] - sortedValue[q1l-1]);
-                        let median    = sortedValue[ml-1] + (m-ml)*(sortedValue[ml] - sortedValue[ml-1]);
-                        let quartile3 = sortedValue[q3l-1] + (q3-q3l)*(sortedValue[q3l] - sortedValue[q3l-1]);
+                        let quartile1 = sortedValue[q1l - 1] + (q1 - q1l) * (sortedValue[q1l] - sortedValue[q1l - 1]);
+                        let median    = sortedValue[ml - 1] + (m - ml) * (sortedValue[ml] - sortedValue[ml - 1]);
+                        let quartile3 = sortedValue[q3l - 1] + (q3 - q3l) * (sortedValue[q3l] - sortedValue[q3l - 1]);
 
                         let ttl: number = 0;
                         sortedValue.forEach(value => { ttl += value; });
@@ -303,14 +303,14 @@ module powerbi.extensibility.visual {
                                 whiskerValue = "= 1.5IQR";
                                 break;
                             case BoxWhiskerEnums.WhiskerType.Custom:
-                                let lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100/(sortedValue.length + 1)));
-                                let higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100-(100/(sortedValue.length + 1))));
+                                let lower = Math.max(this.settings.chartOptions.lower || 0, Math.ceil(100 / (sortedValue.length + 1)));
+                                let higher = Math.min(this.settings.chartOptions.higher || 100, Math.floor(100 - (100 / (sortedValue.length + 1))));
                                 let xl = ((lower / 100.) * (sortedValue.length + corr)) + corr1;
                                 let xh = ((higher / 100.) * (sortedValue.length + corr)) + corr1;
                                 let il = Math.floor(xl);
                                 let ih = Math.floor(xh);
-                                let high = sortedValue[ih-1] + (xh-ih)*((sortedValue[ih] || 0) - sortedValue[ih-1]); // Escape index out of bound
-                                let low = sortedValue[il-1] + (xl-il)*((sortedValue[il] || 0) - sortedValue[il-1]);  // Escape index out of bound
+                                let high = sortedValue[ih - 1] + (xh - ih) * ((sortedValue[ih] || 0) - sortedValue[ih - 1]); // Escape index out of bound
+                                let low = sortedValue[il - 1] + (xl - il) * ((sortedValue[il] || 0) - sortedValue[il - 1]);  // Escape index out of bound
                                 minValue = low;
                                 maxValue = high;
                                 minValueLabel = "Lower: " + lower.toString() + "%";
@@ -343,17 +343,17 @@ module powerbi.extensibility.visual {
                                 dataPointColor = colors.getColor(i.toString()).value;
                             }
                         }
-                        
+
                         let outliers: BoxWhiskerChartOutlier[] = this.settings.chartOptions.outliers ?
                             sortedValue
-                                .filter((value) => value < minValue || value > maxValue) // Filter outliers 
+                                .filter((value) => value < minValue || value > maxValue) // Filter outliers
                                 .filter((value, index, self) => self.indexOf(value) === index) // Make unique
-                                .map((value) => { 
-                                    return { 
+                                .map((value) => {
+                                    return {
                                         category: i,
-                                        color: dataPointColor, 
+                                        color: dataPointColor,
                                         value: value,
-                                        highlight: t===1 || !hasHighlight,
+                                        highlight: t === 1 || !hasHighlight,
                                         tooltipInfo: [
                                             {
                                                 displayName: "Category",
@@ -366,13 +366,13 @@ module powerbi.extensibility.visual {
                                                 value: value
                                             }
                                         ]
-                                    }
+                                    };
                                 })
                             : [];
 
                         let dataPoint: BoxWhiskerChartDatapoint = {
-                            x:0,
-                            y:0,
+                            x: 0,
+                            y: 0,
                             min: minValue,
                             max: maxValue,
                             quartile1: quartile1,
@@ -390,10 +390,10 @@ module powerbi.extensibility.visual {
                                     .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                                 : [],
                             label: this.settings.formatting.categoryFormatter.format(categories[i].value),
-                            highlight: t===1 || !hasHighlight,
+                            highlight: t === 1 || !hasHighlight,
                             selectionId: selectionId,
                             color: dataPointColor,
-                            tooltipInfo: (t===0 && hasHighlight) ? undefined : [
+                            tooltipInfo: (t === 0 && hasHighlight) ? undefined : [
                                 {
                                     displayName: "Category",
                                     value: this.settings.formatting.categoryFormatter.format(categories[i].value),
@@ -408,11 +408,11 @@ module powerbi.extensibility.visual {
                                 },
                                 {
                                     displayName: "# Samples",
-                                    value: valueFormatter.format(sortedValue.length, 'd', false),
+                                    value: valueFormatter.format(sortedValue.length, "d", false),
                                 },
                                 {
                                     displayName: "Sampling",
-                                    value: sampleValues.join(',\n')
+                                    value: sampleValues.join(",\n")
                                 },
                                 {
                                     displayName: maxValueLabel,
@@ -438,10 +438,10 @@ module powerbi.extensibility.visual {
                                     displayName: minValueLabel,
                                     value: this.settings.formatting.valuesFormatter.format(minValue),
                                 }]
-                        }
+                        };
                         let updated = false;
                         dataPoints.forEach((dp: BoxWhiskerChartDatapoint[], index: number) => {
-                            if ((dataPoint.category===dp[0].category) && (dataPoint.average===dp[0].average)) {
+                            if ((dataPoint.category === dp[0].category) && (dataPoint.average === dp[0].average)) {
                                 dataPoints[index][0] = dataPoint;
                                 updated = true;
                             }
@@ -466,23 +466,23 @@ module powerbi.extensibility.visual {
             if (options.element) {
                 this.root = $(options.element);
             }
-            
+
             let element = options.element;
             this.hostServices = options.host;
             this.colorPalette = options.host.colorPalette;
             this.selectionIdBuilder = options.host.createSelectionIdBuilder();
             this.selectionManager = options.host.createSelectionManager();
             this.tooltipServiceWrapper = createTooltipServiceWrapper(this.hostServices.tooltipService, options.element);
-            
+
             this.settings = BoxWhiskerChart.parseSettings(this.dataView);
             this.settings.general.locale = options.host.locale;
 
             if (!this.svg) {
                 this.svg = d3.select(this.root.get(0))
-                    .append('svg')
+                    .append("svg")
                     .classed(BoxWhiskerChart.VisualClassName, true);
             }
-            
+
             this.mainGroupElement = this.svg.append("g");
 
             this.axis = this.mainGroupElement
@@ -516,7 +516,7 @@ module powerbi.extensibility.visual {
             this.chartMain = this.mainGroupElement
                 .append("g")
                 .classed(BoxWhiskerChart.ChartMain.className, true);
-            
+
             let backRefLine = this.chartMain
                 .append("g")
                 .classed(BoxWhiskerChart.ChartReferenceLineBackNode.className, true);
@@ -553,12 +553,12 @@ module powerbi.extensibility.visual {
             this.settings.general.viewport = {
                 height: options.viewport.height > 0 ? options.viewport.height : 0,
                 width: options.viewport.width > 0 ? options.viewport.width : 0
-            };    
+            };
 
             this.svg
                 .attr({
-                    'height': this.settings.general.viewport.height,
-                    'width': this.settings.general.viewport.width
+                    "height": this.settings.general.viewport.height,
+                    "width": this.settings.general.viewport.width
                 });
 
             let axisSettings: BoxWhiskerAxisSettings = calcAxisSettings(this.settings, this.data);
@@ -570,7 +570,7 @@ module powerbi.extensibility.visual {
                     this.settings.yAxis.start = axisSettings.axisOptions.min;
                 }
             }
-            
+
             if (this.settings.yAxis.end !== undefined) {
                 if (this.settings.yAxis.end >= axisSettings.axisOptions.max) {
                     axisSettings.axisOptions.max = this.settings.yAxis.end;
@@ -578,7 +578,7 @@ module powerbi.extensibility.visual {
                     this.settings.yAxis.end = axisSettings.axisOptions.max;
                 }
             }
-            
+
             this.settings.general.margin.top = this.settings.formatting.valuesFormatter ?
             textMeasurementService.measureSvgTextHeight(
                 this.settings.yAxis.axisTextProperties,
@@ -587,43 +587,43 @@ module powerbi.extensibility.visual {
 
             let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
             drawAxis(
-                this.axis, 
-                this.settings, 
+                this.axis,
+                this.settings,
                 this.data,
                 axisSettings);
             timerAxis();
             timer();
             drawReferenceLines(
-                this.svg, 
-                this.settings, 
+                this.svg,
+                this.settings,
                 this.data.referenceLines,
                 axisSettings,
                 false);
             let timerChart = telemetry.PerfTimer.start(this.traceEvents.drawChart, this.settings.general.telemetry);
             drawChart(
-                this.svg, 
-                this.settings, 
-                this.selectionManager, 
-                this.tooltipServiceWrapper, 
-                this.data, 
+                this.svg,
+                this.settings,
+                this.selectionManager,
+                this.tooltipServiceWrapper,
+                this.data,
                 axisSettings);
             timerChart();
             drawReferenceLines(
-                this.svg, 
-                this.settings, 
+                this.svg,
+                this.settings,
                 this.data.referenceLines,
                 axisSettings,
                 true);
-            
+
         }
 
-        private static getTooltipData(value: any): VisualTooltipDataItem[] { 
-            return [{ 
-                displayName: value.category, 
-                value: value.value.toString(), 
-                color: value.color 
-            }]; 
-        } 
+        private static getTooltipData(value: any): VisualTooltipDataItem[] {
+            return [{
+                displayName: value.category,
+                value: value.value.toString(),
+                color: value.color
+            }];
+        }
 
         public getValueArray(nodes: any): Array<number> {
             let rArray: Array<number> = [];
@@ -638,15 +638,15 @@ module powerbi.extensibility.visual {
             return rArray;
         }
 
-        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration{
+        public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             const instanceEnumeration: VisualObjectInstanceEnumeration = BoxWhiskerChartSettings.enumerateObjectInstances(
                 this.settings || BoxWhiskerChartSettings.getDefault(),
                 options);
             if (options.objectName === "general") {
-                //return;
+                // return;
             }
-            
-            let instances : VisualObjectInstance[] = [];
+
+            let instances: VisualObjectInstance[] = [];
 
             switch (options.objectName) {
                 case "chartOptions":
@@ -690,7 +690,7 @@ module powerbi.extensibility.visual {
                         this.removeEnumerateObject(instanceEnumeration, "titleFontFamily");
                         this.removeEnumerateObject(instanceEnumeration, "titleAlignment");
                     }
-                    break;                    
+                    break;
                 case "dataPoint":
                     if (!this.settings.dataPoint.oneColor) {
                         this.removeEnumerateObject(instanceEnumeration, "oneFill");
@@ -701,7 +701,7 @@ module powerbi.extensibility.visual {
                     instances = referenceLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);
                     break;
             }
-            instances.forEach((instance: VisualObjectInstance) => { this.addAnInstanceToEnumeration(instanceEnumeration, instance) })
+            instances.forEach((instance: VisualObjectInstance) => { this.addAnInstanceToEnumeration(instanceEnumeration, instance); });
             return instanceEnumeration;
         }
 
@@ -718,9 +718,9 @@ module powerbi.extensibility.visual {
         public removeEnumerateObject(instanceEnumeration: VisualObjectInstanceEnumeration, objectName: string): void {
             if ((instanceEnumeration as VisualObjectInstanceEnumerationObject).instances) {
                 delete (instanceEnumeration as VisualObjectInstanceEnumerationObject)
-                    .instances[0].properties[objectName]
+                    .instances[0].properties[objectName];
             } else {
-                delete (instanceEnumeration as VisualObjectInstance[])[0].properties[objectName]
+                delete (instanceEnumeration as VisualObjectInstance[])[0].properties[objectName];
             }
         }
 
@@ -732,23 +732,23 @@ module powerbi.extensibility.visual {
             settings.yAxis.axisTextProperties = {
                 fontFamily: settings.yAxis.fontFamily,
                 fontSize: settings.yAxis.fontSize + "px"
-            }
+            };
             settings.yAxis.titleTextProperties = {
                 fontFamily: settings.yAxis.titleFontFamily,
                 fontSize: settings.yAxis.titleFontSize + "px"
-            }
+            };
             settings.xAxis.axisTextProperties = {
                 fontFamily: settings.xAxis.fontFamily,
                 fontSize: settings.xAxis.fontSize + "px"
-            }
+            };
             settings.xAxis.titleTextProperties = {
                 fontFamily: settings.xAxis.titleFontFamily,
                 fontSize: settings.xAxis.titleFontSize + "px"
-            }
+            };
             settings.labels.axisTextProperties = {
                 fontFamily: settings.labels.fontFamily,
                 fontSize: settings.labels.fontSize + "px"
-            }
+            };
 
             if (settings.chartOptions.higher > 100) { settings.chartOptions.higher = 100; }
             if (settings.chartOptions.higher < 75) { settings.chartOptions.higher = 75; }

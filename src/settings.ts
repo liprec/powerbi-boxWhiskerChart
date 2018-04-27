@@ -1,21 +1,21 @@
 /*
 *
-* Copyright (c) 2017 Jan Pieter Posthuma / DataScenarios
-* 
+* Copyright (c) 2018 Jan Pieter Posthuma / DataScenarios
+*
 * All rights reserved.
-* 
+*
 * MIT License.
-* 
+*
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
 *  in the Software without restriction, including without limitation the rights
 *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 *  copies of the Software, and to permit persons to whom the Software is
 *  furnished to do so, subject to the following conditions:
-* 
+*
 * The above copyright notice and this permission notice shall be included in
 *  all copies or substantial portions of the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -26,7 +26,7 @@
 */
 
 module powerbi.extensibility.visual {
- 
+
     // utils.formatting
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
     import TextProperties = powerbi.extensibility.utils.formatting.TextProperties;
@@ -34,7 +34,9 @@ module powerbi.extensibility.visual {
     import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
     // utils.svg
     import IMargin = powerbi.extensibility.utils.svg.IMargin;
-    
+
+    const fontFamily: string = "\"Segoe UI\",wf_segoe-ui_normal,helvetica,arial,sans-serif";
+
     export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 
         public general: GeneralSettings = new GeneralSettings();
@@ -56,16 +58,16 @@ module powerbi.extensibility.visual {
             right: 5,
             left: 5
         };
-        public locale:string = undefined;
+        public locale: string = undefined;
         public formatString: string = "";
         public duration: number = 100;
-        public defaultColor: string = "#01B8AA"
+        public defaultColor: string = "#01B8AA";
         public ColorProperties: DataViewObjectPropertyIdentifier = {
             objectName: "dataPoint",
             propertyName: "fill"
         };
-        public telemetry:boolean = false;
-        public maxPoints:number = 30000;
+        public telemetry: boolean = false;
+        public maxPoints: number = 30000;
     }
 
     class FormattingSettings {
@@ -86,18 +88,18 @@ module powerbi.extensibility.visual {
 
     class XAxisSettings {
         public show: boolean = true;
-        public fontColor: string = "#777"
+        public fontColor: string = "#777";
         public fontSize: number = 11;
-        public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public fontFamily: string = fontFamily;
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
         public orientation: BoxWhiskerEnums.LabelOrientation = BoxWhiskerEnums.LabelOrientation.Horizontal;
         public showTitle: boolean = false;
         public title: string = undefined;
         public defaultTitle: string = undefined;
-        public titleFontColor: string = "#777"
+        public titleFontColor: string = "#777";
         public titleFontSize: number = 11;
-        public titleFontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public titleFontFamily: string = fontFamily;
         public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
@@ -113,17 +115,17 @@ module powerbi.extensibility.visual {
         public show: boolean = true;
         public start: number = undefined;
         public end: number = undefined;
-        public fontColor: string = "#777"
+        public fontColor: string = "#777";
         public fontSize: number = 11;
-        public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public fontFamily: string = fontFamily;
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
         public showTitle: boolean = false;
         public title: string = undefined;
         public defaultTitle: string = undefined;
-        public titleFontColor: string = "#777"
+        public titleFontColor: string = "#777";
         public titleFontSize: number = 11;
-        public titleFontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public titleFontFamily: string = fontFamily;
         public titleAlignment: string = "center";
         public axisTextProperties: TextProperties = {
             fontFamily: this.fontFamily,
@@ -143,10 +145,10 @@ module powerbi.extensibility.visual {
     }
 
     class LabelsSettings {
-        public show:boolean = false;
-        public fontColor: string = "#777"
+        public show: boolean = false;
+        public fontColor: string = "#777";
         public fontSize: number = 11;
-        public fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
+        public fontFamily: string = fontFamily;
         public labelDisplayUnits: number = 0;
         public labelPrecision: number = undefined;
         public axisTextProperties: TextProperties = {
