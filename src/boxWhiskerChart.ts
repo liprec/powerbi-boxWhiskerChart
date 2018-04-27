@@ -163,11 +163,9 @@ module powerbi.extensibility.visual {
 
             let categories = dataView.matrix.rows.root.children;
             let category = dataView.categorical.categories[0];
-            let samples = dataView.matrix.columns.levels;
             let valueSources = dataView.matrix.valueSources;
             let categoryValues = [];
             let highlightValues = [];
-            let sampleValues = [];
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
             let maxPoints = this.settings.general.maxPoints;
@@ -211,9 +209,7 @@ module powerbi.extensibility.visual {
                 }
             }
 
-            for (let s = 0; s < samples.length; s++) {
-                sampleValues.push(samples[s].sources[0].displayName);
-            }
+            let sampleValues = dataView.metadata.columns.filter((d) => d.roles.Samples === true ).map((d) => { return d.displayName; });
 
             let maxValue = d3.max(categoryValues, (val) => d3.max(val));
 
