@@ -20,9 +20,9 @@ See also [Box and Whisker chart at Microsoft Office store](https://store.office.
 # Build
 Some changes are needed before this visual can be build:
 
-Changes to `.api/v1.9.0/schema.capablities.json`:
+Changes to `.api/v1.11.0/schema.capablities.json`:
 
-Replace row 80:
+Replace row 84:
 ```
 },
 "cartesianKind": {
@@ -30,7 +30,7 @@ Replace row 80:
     "description" : "The cartesion kind for analytical support"
 }
 ```
-Replace (now) row 961:
+Replace (now) row 973:
 ```
 },
 "fontFamily": {
@@ -39,7 +39,7 @@ Replace (now) row 961:
 }
 ```
 
-Replace (now) row 983:
+Replace (now) row 995:
 ```
 },
 {
