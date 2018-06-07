@@ -352,25 +352,22 @@ module powerbi.extensibility.visual {
             quartile.transition()
                 .duration(settings.general.duration)
                 .style("opacity", backgroundOpacity);
-            if (settings.shapes.showMean) {
-                average.transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", backgroundOpacity);
-            }
-            if (settings.shapes.showMedian) {
-                median.transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", backgroundOpacity);
-            }
-            if (settings.chartOptions.outliers) {
-                outliers.transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", backgroundOpacity);
-            }
+            average.transition()
+                .duration(settings.general.duration)
+                .style("opacity", settings.shapes.showMean ? backgroundOpacity : 0);
+            median.transition()
+                .duration(settings.general.duration)
+                .style("opacity", settings.shapes.showMedian ? backgroundOpacity : 0);
+            outliers.transition()
+                .duration(settings.general.duration)
+                .style("opacity", settings.chartOptions.outliers ? backgroundOpacity : 0);
             _this.parentNode.childNodes.forEach((n) => {
-                d3.select(n).transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", highlightOpacity);
+                let element = d3.select(n);
+                if (element.style("opacity") !== "0") {
+                    element.transition()
+                        .duration(settings.general.duration)
+                        .style("opacity", highlightOpacity);
+                }
             });
         }
 
@@ -378,21 +375,15 @@ module powerbi.extensibility.visual {
             quartile.transition()
                 .duration(settings.general.duration)
                 .style("opacity", highlightOpacity);
-            if (settings.shapes.showMean) {
-                average.transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", highlightOpacity);
-            }
-            if (settings.shapes.showMedian) {
-                median.transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", highlightOpacity);
-            }
-            if (settings.chartOptions.outliers) {
-                outliers.transition()
-                    .duration(settings.general.duration)
-                    .style("opacity", highlightOpacity);
-            }
+            average.transition()
+                .duration(settings.general.duration)
+                .style("opacity", settings.shapes.showMean ? highlightOpacity : 0);
+            median.transition()
+                .duration(settings.general.duration)
+                .style("opacity", settings.shapes.showMedian ? highlightOpacity : 0);
+            outliers.transition()
+                .duration(settings.general.duration)
+                .style("opacity", settings.chartOptions.outliers ? highlightOpacity : 0);
         }
     }
 }
