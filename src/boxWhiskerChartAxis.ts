@@ -369,7 +369,7 @@ module powerbi.extensibility.visual {
                 .orient("left")
                 .ticks(yAxisTicks)
                 .outerTickSize(0)
-                .innerTickSize(-(settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right - settings.general.margin.left));
+                .innerTickSize(0);
 
             axisMajorGrid
                 .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
@@ -383,7 +383,8 @@ module powerbi.extensibility.visual {
                 .transition()
                 .duration(settings.general.duration)
                 .style("stroke", settings.gridLines.majorGridColor)
-                .style("stroke-width", settings.gridLines.majorGridSize);
+                .style("stroke-width", settings.gridLines.majorGridSize)
+                .attr("x2", settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right + settings.general.margin.left);
 
             if (settings.gridLines.minorGrid) {
                 let yMinorGrid = d3.svg.axis()
@@ -391,7 +392,7 @@ module powerbi.extensibility.visual {
                     .orient("left")
                     .ticks(yAxisTicks * 5)
                     .outerTickSize(0)
-                    .innerTickSize(-(settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right + settings.general.margin.left));
+                    .innerTickSize(0);
 
                 axisMinorGrid
                     .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
@@ -405,7 +406,9 @@ module powerbi.extensibility.visual {
                     .transition()
                     .duration(settings.general.duration)
                     .style("stroke", settings.gridLines.minorGridColor)
-                    .style("stroke-width", settings.gridLines.minorGridSize);
+                    .style("stroke-width", settings.gridLines.minorGridSize)
+                    .attr("x2", settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right + settings.general.margin.left);
+
             }
             else {
                 axisMinorGrid.transition()
