@@ -82,7 +82,10 @@ module powerbi.extensibility.visual {
                 d3.min(refLines, (refLine: BoxWhiskerChartReferenceLine) => refLine.value),
                 d3.min(layers, (layer) => {
                     return d3.min(layer, (point) => {
-                        return  d3.min([(<BoxWhiskerChartDatapoint>point).min,
+                        return  d3.min([
+                                    (<BoxWhiskerChartDatapoint>point).min,
+                                    (<BoxWhiskerChartDatapoint>point).median,
+                                    (<BoxWhiskerChartDatapoint>point).average,
                                 d3.min((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                     });
                 })
@@ -91,7 +94,10 @@ module powerbi.extensibility.visual {
                 d3.max(refLines, (refLine: BoxWhiskerChartReferenceLine) => refLine.value),
                 d3.max(layers, (layer) => {
                     return d3.max(layer, (point) => {
-                        return  d3.max([(<BoxWhiskerChartDatapoint>point).max,
+                        return  d3.max([
+                                    (<BoxWhiskerChartDatapoint>point).max,
+                                    (<BoxWhiskerChartDatapoint>point).median,
+                                    (<BoxWhiskerChartDatapoint>point).average,
                                 d3.max((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                     });
                 })
