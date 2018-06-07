@@ -567,17 +567,13 @@ module powerbi.extensibility.visual {
             let axisSettings: BoxWhiskerAxisSettings = calcAxisSettings(this.settings, this.data);
 
             if (this.settings.yAxis.start !== undefined) {
-                if (this.settings.yAxis.start <= axisSettings.axisOptions.min) {
-                    axisSettings.axisOptions.min = this.settings.yAxis.start;
-                } else {
+                if (this.settings.yAxis.start !== axisSettings.axisOptions.min) {
                     this.settings.yAxis.start = axisSettings.axisOptions.min;
                 }
             }
 
             if (this.settings.yAxis.end !== undefined) {
-                if (this.settings.yAxis.end >= axisSettings.axisOptions.max) {
-                    axisSettings.axisOptions.max = this.settings.yAxis.end;
-                } else {
+                if (this.settings.yAxis.end !== axisSettings.axisOptions.max) {
                     this.settings.yAxis.end = axisSettings.axisOptions.max;
                 }
             }

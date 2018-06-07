@@ -207,6 +207,7 @@ module powerbi.extensibility.visual {
 
         let referenceLabelTransform = (refLines) => {
             return refLines.map((refLine: BoxWhiskerChartReferenceLine) => {
+                if (!refLine) { return; }
                 let x0 = refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
                         ? 0
                         : settings.general.viewport.width - settings.general.margin.left;

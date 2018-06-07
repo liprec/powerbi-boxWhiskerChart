@@ -95,7 +95,9 @@ module powerbi.extensibility.visual {
                                 d3.max((<BoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                     });
                 })
-            ])
+            ]),
+            settings.yAxis.start,
+            settings.yAxis.end
         );
 
         if (data.dataPointLength > 0) {
@@ -432,9 +434,11 @@ module powerbi.extensibility.visual {
         }
     }
 
-    export function getAxisOptions(min: number, max: number): BoxWhiskerAxisOptions {
-        let min1 = min === 0 ? 0 : min > 0 ? (min * .99) - ((max - min) / 100) : (min * 1.01) - ((max - min) / 100);
-        let max1 = max === 0 ? min === 0 ? 1 : 0 : max < 0 ? (max * .99) + ((max - min) / 100) : (max * 1.01) + ((max - min) / 100);
+    export function getAxisOptions(min: number, max: number, fixedMin: number, fixedMax: number): BoxWhiskerAxisOptions {
+        let isFixedMin = fixedMin !== undefined;
+        let isFixedMax = fixedMax !== undefined;
+        let min1 = isFixedMin ? fixedMin : (min === 0 ? 0 : min > 0 ? (min * .99) - ((max - min) / 100) : (min * 1.01) - ((max - min) / 100));
+        let max1 = isFixedMax ? fixedMax : (max === 0 ? min === 0 ? 1 : 0 : max < 0 ? (max * .99) + ((max - min) / 100) : (max * 1.01) + ((max - min) / 100));
 
         let p = Math.log(max1 - min1) / Math.log(10);
         let f = Math.pow(10, p - Math.floor(p));
