@@ -332,19 +332,19 @@ module powerbi.extensibility.visual {
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].selectionId);
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].selectionId);
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].selectionId);
 
         tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data.tooltipInfo,
-            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => null);
+            (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data[0].selectionId);
 
         selection.exit().remove();
 
