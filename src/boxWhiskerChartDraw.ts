@@ -44,8 +44,7 @@ module powerbi.extensibility.visual {
         let highlightOpacity = 1;
         let backgroundOpacity = 0.1;
 
-        let dotRadius: number = 4,
-            leftBoxMargin: number = 0.1;
+        let leftBoxMargin: number = 0.1;
         if (!settings.labels.show) {
             switch (settings.chartOptions.margin) {
                 case BoxWhiskerEnums.MarginType.Small:
@@ -122,7 +121,7 @@ module powerbi.extensibility.visual {
             return points.map((value) => {
                 let x1 = axisSettings.axisScaleCategory(value.category + boxMiddle);
                 let y1 = axisSettings.axisScaleValue(value.average);
-                let r = dotRadius;
+                let r = settings.shapes.dotRadius;
                 let r2 = 2 * r;
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
             }).join(" ");
@@ -131,7 +130,7 @@ module powerbi.extensibility.visual {
         let outlierData = (value) => {
                 let x1 = axisSettings.axisScaleCategory(value.category + boxMiddle);
                 let y1 = axisSettings.axisScaleValue(value.value);
-                let r = dotRadius;
+                let r = settings.shapes.dotRadius;
                 let r2 = 2 * r;
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
             };
@@ -147,7 +146,7 @@ module powerbi.extensibility.visual {
             .classed(BoxWhiskerChart.ChartQuartileBox.className, true);
 
         quartile
-            .style("fill", value => (<BoxWhiskerChartDatapoint>value[0]).color)
+            .style("fill", value => (<BoxWhiskerChartDatapoint>value[0]).fillColor)
             .style("stroke", value => (<BoxWhiskerChartDatapoint>value[0]).color)
             .style("stroke-width", 2)
             .on("click", function (d) {

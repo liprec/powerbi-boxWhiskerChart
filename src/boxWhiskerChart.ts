@@ -56,7 +56,7 @@ module powerbi.extensibility.visual {
     import ISelectionId = powerbi.visuals.ISelectionId;
 
     // powerbi.extensibility
-    import IColorPalette = powerbi.extensibility.IColorPalette;
+    import ISandboxExtendedColorPalette = powerbi.extensibility.ISandboxExtendedColorPalette;
     import TooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
     import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
 
@@ -131,7 +131,7 @@ module powerbi.extensibility.visual {
         private axisMinorGrid: Selection<any>;
 
         private mainGroupElement: Selection<any>;
-        private colorPalette: IColorPalette;
+        private colorPalette: ISandboxExtendedColorPalette;
         private selectionIdBuilder: ISelectionIdBuilder;
         private selectionManager: ISelectionManager;
         private hostServices: IVisualHost;
@@ -141,17 +141,18 @@ module powerbi.extensibility.visual {
 
         private dataType: ValueType;
 
-        public converter(dataView: DataView, colors: IColorPalette): BoxWhiskerChartData {
+        public converter(dataView: DataView, colors: ISandboxExtendedColorPalette): BoxWhiskerChartData {
             let timer = telemetry.PerfTimer.start(this.traceEvents.convertor, this.settings.general.telemetry);
             if (!dataView ||
-                !dataView.matrix ||
-                !dataView.matrix.columns ||
-                !dataView.matrix.columns.root.children ||
-                !(dataView.matrix.columns.root.children.length > 0) ||
-                !(dataView.matrix.columns.root.children[0].levelValues) ||
-                !dataView.matrix.valueSources ||
-                !(dataView.matrix.valueSources.length > 0) ||
-                !dataView.matrix.valueSources[0]) {
+                !dataView.categorical ||
+                !dataView.categorical.categories ||
+                !dataView.categorical.categories[0] ||
+                !dataView.categorical.categories[0].values ||
+                !(dataView.categorical.categories[0].values.length > 0) ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values ||
+                !(dataView.categorical.values[0].values.length > 0)) {
                 return {
                     dataPoints: [],
                     dataPointLength: 0,
@@ -161,87 +162,75 @@ module powerbi.extensibility.visual {
                 };
             }
 
-            let categories = dataView.matrix.rows.root.children;
-            let category = dataView.categorical.categories[0];
-            let valueSources = dataView.matrix.valueSources;
-            let categoryValues = [];
+            let valueSource = dataView.categorical.values[0].source;
+            let hasHighlight = this.settings.shapes.highlight && dataView.categorical.values[0].highlights !== undefined;
+            let rawValues = dataView.categorical.values[0].values;
+            let rawHighlightValues = dataView.categorical.values[0].highlights || [];
+            let rawCategories = dataView.categorical.categories[0].source.roles.Samples === true ?
+                    dataView.categorical.categories[0].values.map(() => { return valueSource.displayName; }) :
+                    dataView.categorical.categories[0].values;
+            let categories = [];
+            let sampleValues = [];
             let highlightValues = [];
+            rawValues.map((value: PrimitiveValue, index: number) => {
+                if (categories.indexOf(rawCategories[index]) === -1) {
+                    categories.push(rawCategories[index]);
+                    sampleValues.push([]);
+                    if (hasHighlight) {
+                        highlightValues.push([]);
+                    }
+                }
+                let i = categories.indexOf(rawCategories[index]);
+                if (this.settings.chartOptions.includeEmpty || value !== null) {
+                    sampleValues[i].push(value);
+                }
+                if (hasHighlight && rawHighlightValues[index] !== null) {
+                    highlightValues[i].push(rawHighlightValues[index]);
+                }
+            });
+
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
             let maxPoints = this.settings.general.maxPoints;
-            let types = 1;
+            let queryName = valueSource.queryName || "";
+            let types = hasHighlight ? 2 : 1;
             this.settings.xAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index === 1; })[0].displayName;
             this.settings.yAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index === 0; })[0].displayName;
-            let categoriesLables = [];
+            let categoriesLabels = [];
 
-            let hasHighlight = this.settings.shapes.highlight && categories[0].values[0].highlight !== undefined;
+            let sampleLabels = dataView.metadata.columns.filter((d) => d.roles.Samples === true ).map((d) => { return d.displayName; });
 
-            for (let c = 0; c < categories.length; c++) {
-                let values = categories[c].values;
-                let categoryValue = [];
-                for (let v = 0; v < maxPoints; v++) {
-                    let value = values[v.toString()];
-                    if (value && value.value) {
-                        if (!this.settings.shapes.highlight) {
-                            if (value.highlight) {
-                                categoryValue.push(value.highlight);
-                            }
-                        } else {
-                            categoryValue.push(value.value);
-                        }
-                    }
-                }
-                categoryValues.push(categoryValue);
-            }
-
-            if (hasHighlight) {
-                types = 2;
-                for (let c = 0; c < categories.length; c++) {
-                    let values = categories[c].values;
-                    let categoryValue = [];
-                    for (let v = 0; v < maxPoints; v++) {
-                        let value = values[v.toString()];
-                        if (value && value.highlight) {
-                            categoryValue.push(value.highlight);
-                        }
-                    }
-                    highlightValues.push(categoryValue);
-                }
-            }
-
-            let sampleValues = dataView.metadata.columns.filter((d) => d.roles.Samples === true ).map((d) => { return d.displayName; });
-
-            let maxValue = d3.max(categoryValues, (val) => d3.max(val));
+            let maxValue = d3.max(sampleValues, (sampleValue) => d3.max(sampleValue));
 
             this.settings.formatting.valuesFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(valueSources[0]),
+                format: valueFormatter.getFormatStringByColumn(valueSource),
                 precision: this.settings.yAxis.labelPrecision,
                 value: this.settings.yAxis.labelDisplayUnits || maxValue,
                 cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.categoryFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(categoryValues[0]),
+                format: valueFormatter.getFormatStringByColumn(dataView.categorical.categories[0].source),
                 precision: this.settings.xAxis.labelPrecision,
                 value: this.settings.xAxis.labelDisplayUnits || categories[0].value,
                 cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.labelFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(valueSources[0]),
+                format: valueFormatter.getFormatStringByColumn(valueSource),
                 precision: this.settings.labels.labelPrecision,
                 value: this.settings.labels.labelDisplayUnits || maxValue,
                 cultureSelector: this.settings.general.locale
             });
 
             this.settings.formatting.toolTipFormatter = valueFormatter.create({
-                format: valueFormatter.getFormatStringByColumn(valueSources[0]),
+                format: valueFormatter.getFormatStringByColumn(valueSource),
                 precision: this.settings.toolTip.labelPrecision,
                 value: this.settings.toolTip.labelDisplayUnits || maxValue,
                 cultureSelector: this.settings.general.locale
             });
 
-            this.dataType = ValueType.fromDescriptor(valueSources[0].type);
+            this.dataType = ValueType.fromDescriptor(valueSource.type);
             let hasStaticColor = categories.length > 15;
             let properties = {};
             let colorHelper: ColorHelper = new ColorHelper(
@@ -250,15 +239,29 @@ module powerbi.extensibility.visual {
                 this.settings.general.defaultColor
             );
 
+            let categoryIdentities = categories.map((category) => {
+                let sqlExpr = powerbi["data"].SQExprBuilder.equal(dataView.metadata.columns[0].expr, powerbi["data"].SQExprBuilder.text(category));
+                return powerbi["data"].createDataViewScopeIdentity(sqlExpr);
+            });
+            let category = {
+                source: dataView.categorical.categories[0].source,
+                values: categories,
+                identity: categoryIdentities
+            };
+
+            if (this.settings.dataPoint.oneFill === undefined) {
+                this.settings.dataPoint.oneFill = this.getColumnColorByIndex(category, -1, "", this.colorPalette);
+            }
+
             for (let t = 0; t < types; t++) {
                 for (let i = 0, iLen = categories.length; i < iLen && i < 100; i++) {
-                    let values = t === 1 ? highlightValues[i] : categoryValues[i];
+                    let values = t === 1 ? highlightValues[i] : sampleValues[i];
                     if ((t === 0) && ((values.length !== 0) || this.settings.shapes.fixedCategory)) {
-                        categoriesLables.push(this.settings.formatting.categoryFormatter.format(categories[i].value));
+                        categoriesLabels.push(this.settings.formatting.categoryFormatter.format(categories[i]));
                     }
 
                     if (values.length !== 0) {
-                        let selectionId = new SelectionId({ data: [ categories[i].identity ]}, false);
+                        let selectionId = new SelectionId({ data: [ categoryIdentities[i] ] }, false);
                         let sortedValue = values.sort((n1, n2) => n1 - n2);
 
                         // Exclusive / Inclusive array correction
@@ -332,20 +335,7 @@ module powerbi.extensibility.visual {
                                 break;
                         }
 
-                        let dataPointColor: string;
-
-                        if (this.settings.dataPoint.oneColor) {
-                            if (this.settings.dataPoint.oneFill === undefined) {
-                                this.settings.dataPoint.oneFill = colors.getColor("0").value;
-                            }
-                            dataPointColor = this.settings.dataPoint.oneFill;
-                        } else {
-                            if (category.objects && category.objects[i]) {
-                                dataPointColor = colorHelper.getColorForMeasure(category.objects[i], "");
-                            } else {
-                                dataPointColor = colors.getColor(i.toString()).value;
-                            }
-                        }
+                        let dataPointColor: string = this.getColumnColorByIndex(category, this.settings.dataPoint.showAll ? i : -1, queryName, this.colorPalette);
 
                         let outliers: BoxWhiskerChartOutlier[] = this.settings.chartOptions.outliers ?
                             sortedValue
@@ -362,7 +352,7 @@ module powerbi.extensibility.visual {
                                                 displayName: "Category",
                                                 value: categories[0].value === undefined
                                                     ? dataView.matrix.valueSources[0].displayName
-                                                    : this.settings.formatting.categoryFormatter.format(categories[i].value),
+                                                    : this.settings.formatting.categoryFormatter.format(categories[i]),
                                             },
                                             {
                                                 displayName: "Value",
@@ -392,14 +382,15 @@ module powerbi.extensibility.visual {
                                     .concat(outliers.map((outlier) => { return { value: outlier.value, x: 0, y: 0, visible: 1 }; }))
                                     .filter((value, index, self) => self.indexOf(value) === index) // Make unique
                                 : [],
-                            label: this.settings.formatting.categoryFormatter.format(categories[i].value),
+                            label: this.settings.formatting.categoryFormatter.format(categories[i]),
                             highlight: t === 1 || !hasHighlight,
                             selectionId: selectionId,
                             color: dataPointColor,
+                            fillColor: this.colorPalette.isHighContrast ? this.colorPalette.background.value : dataPointColor,
                             tooltipInfo: (t === 0 && hasHighlight) ? undefined : [
                                 {
                                     displayName: "Category",
-                                    value: this.settings.formatting.categoryFormatter.format(categories[i].value),
+                                    value: this.settings.formatting.categoryFormatter.format(categories[i]),
                                 },
                                 {
                                     displayName: "Quartile Calculation",
@@ -415,7 +406,7 @@ module powerbi.extensibility.visual {
                                 },
                                 {
                                     displayName: "Sampling",
-                                    value: sampleValues.join(",\n")
+                                    value: sampleLabels.join(",\n")
                                 },
                                 {
                                     displayName: maxValueLabel,
@@ -459,7 +450,7 @@ module powerbi.extensibility.visual {
             return {
                 dataPoints: dataPoints,
                 dataPointLength: (this.settings.shapes.highlight || this.settings.shapes.fixedCategory) ? categories.length : dataPoints.length,
-                categories: categoriesLables,
+                categories: categoriesLabels,
                 referenceLines: referenceLines,
                 isHighLighted: hasHighlight
             };
@@ -584,6 +575,15 @@ module powerbi.extensibility.visual {
                 this.settings.formatting.valuesFormatter.format(axisSettings.axisOptions.max || 0)
             ) / 2. : 5;
 
+            // Overwrite High Contrast colors
+            this.settings.xAxis.fontColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.xAxis.fontColor;
+            this.settings.yAxis.fontColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.yAxis.fontColor;
+            this.settings.gridLines.majorGridColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.gridLines.majorGridColor;
+            this.settings.gridLines.minorGridColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.gridLines.minorGridColor;
+            this.settings.dataPoint.meanColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.dataPoint.meanColor;
+            this.settings.dataPoint.medianColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.dataPoint.medianColor;
+            this.settings.shapes.dotRadius = this.colorPalette.isHighContrast ? 6 : this.settings.shapes.dotRadius;
+
             let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
             drawAxis(
                 this.axis,
@@ -616,26 +616,30 @@ module powerbi.extensibility.visual {
 
         }
 
-        // private static getTooltipData(value: any): VisualTooltipDataItem[] {
-        //     return [{
-        //         displayName: value.category,
-        //         value: value.value.toString(),
-        //         color: value.color
-        //     }];
-        // }
+        public getColumnColorByIndex(category: DataViewCategoryColumn, index: number, queryName: string, colorPalette: ISandboxExtendedColorPalette): string {
+            if (colorPalette.isHighContrast) {
+                return colorPalette.foreground.value;
+            }
+            if (index === -1) {
+                return colorPalette.getColor("0").value;
+            }
 
-        // public getValueArray(nodes: any): Array<number> {
-        //     let rArray: Array<number> = [];
+            let objects = this.dataView.metadata.objects;
+            if (objects) {
+                let dataPoint = DataViewObjectsModule.getObject(objects, "dataPoint");
+                if (dataPoint) {
+                    dataPoint = dataPoint.$instances;
+                    if (dataPoint) {
+                        let dataPointSetting: any = dataPoint[index];
+                        if (dataPointSetting) {
+                            return dataPointSetting.fill.solid.color;
+                        }
+                    }
+                }
+            }
 
-        //     for (let i = 0; i < 50000; i++) {
-        //         if (nodes[i] === undefined) {
-        //             break;
-        //         }
-        //         rArray.push(nodes[i].value);
-        //     }
-
-        //     return rArray;
-        // }
+            return colorPalette.getColor(queryName).value;
+        }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
             const instanceEnumeration: VisualObjectInstanceEnumeration = BoxWhiskerChartSettings.enumerateObjectInstances(
@@ -691,9 +695,8 @@ module powerbi.extensibility.visual {
                     }
                     break;
                 case "dataPoint":
-                    if (!this.settings.dataPoint.oneColor) {
-                        this.removeEnumerateObject(instanceEnumeration, "oneFill");
-                        instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.oneColor);
+                    if (this.settings.dataPoint.showAll) {
+                         instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.showAll);
                     }
                     break;
                 case "y1AxisReferenceLine":

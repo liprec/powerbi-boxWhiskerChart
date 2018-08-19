@@ -43,21 +43,27 @@
         }],
         "categorical": {
             "categories": {
-                "for": {
-                    "in": "Groups"
-                },
-                "dataReductionAlgorithm": { "top": { "count": 100 } }
+                "dataReductionAlgorithm": { "top": { "count": 30000 } },
+                "select": [
+                    {
+                        "for": {
+                            "in": "Groups"
+                        }
+                    },
+                    {
+                        "for": {
+                            "in": "Samples"   
+                        }
+                    }
+                ]
             },
             "values": {
-                "group": {
-                    "by": "Samples",
-                    "dataReductionAlgorithm": { "top": { "count": 30000 } },
-                    "select": [{
-                        "for": {
-                            "in": "Values"   
-                        }
-                    }]
-                }
+                "dataReductionAlgorithm": { "top": { "count": 30000 } },
+                "select": [{
+                    "bind": {
+                        "to": "Values"   
+                    }
+                }]
             }
         }
     }],
@@ -109,6 +115,11 @@
                             }
                         ]
                     }
+                },
+                "includeEmpty": {
+                    "displayName": "Include empty values",
+                    "description": "Treat empty values as zeros (0) in calculations",
+                    "type": { "bool": true }
                 },
                 "whisker": {
                     "displayName": "Whisker type",
@@ -368,14 +379,13 @@
                     "description": "Color of the median line",
                     "type": { "fill": {"solid": { "color": true } } }
                 },
-                "oneColor": {
-                    "displayName": "One Color",
-                    "description": "Enable one color for all Box and Whiskers",
-                    "type": { "bool": true }
-                },
                 "oneFill": {
-                    "displayName": "Fill",
+                    "displayName": "Default Color",
                     "type": { "fill": { "solid": { "color": true } } }
+                },
+                "showAll": {
+                    "displayName": "Show all",
+                    "type": { "bool": true }
                 },
                 "fill": {
                     "displayName": "Fill",

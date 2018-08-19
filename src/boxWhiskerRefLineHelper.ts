@@ -39,7 +39,7 @@ module powerbi.extensibility.visual {
     // d3
     import Selection = d3.Selection;
 
-    export function referenceLineReadDataView(objects: DataViewObjects, colors: IColorPalette): BoxWhiskerChartReferenceLine[] {
+    export function referenceLineReadDataView(objects: DataViewObjects, colors: ISandboxExtendedColorPalette): BoxWhiskerChartReferenceLine[] {
         let referenceLines = [];
 
         if (objects) {
@@ -51,13 +51,13 @@ module powerbi.extensibility.visual {
                     let selector = { id: id, metadata: undefined };
                     let lineColor: any = (refLine.lineColor as any);
                     if (lineColor) {
-                        lineColor = lineColor.solid.color;
+                        lineColor = colors.isHighContrast ? colors.foreground.value : lineColor.solid.color;
                     }
                     let labelColor: any = (refLine.labelColor as any);
                     if (labelColor) {
-                        labelColor = labelColor.solid.color;
+                        labelColor = colors.isHighContrast ? colors.foreground.value : labelColor.solid.color;
                     }
-                    let defaultColor = colors.getColor("0").value;
+                    let defaultColor = colors.isHighContrast ? colors.foreground.value : colors.getColor("0").value;
                     referenceLines.push({
                         selector: selector,
                         type: "y1AxisReferenceLine",
@@ -65,7 +65,7 @@ module powerbi.extensibility.visual {
                         displayName: refLine.displayName || undefined,
                         value: refLine.value || 0,
                         lineColor: lineColor || defaultColor,
-                        transparency: refLine.transparency || 50,
+                        transparency: colors.isHighContrast ? 100 : (refLine.transparency || 50),
                         style: refLine.style || BoxWhiskerEnums.ReferenceLine.Style.dashed,
                         position: refLine.position || BoxWhiskerEnums.ReferenceLine.Position.front,
                         showLabel: refLine.showLabel || false,
@@ -145,18 +145,16 @@ module powerbi.extensibility.visual {
             .classed(classSelector.className, true);
 
         let referenceLine = selection.selectAll(BoxWhiskerChart.ChartReferenceLine.selectorName).data(d => {
-            if (d && d.length > 0) { return [d]; }
+            if (d && d.length > 0) { return d; }
             return [];
         });
 
-        let referenceLineData = (refLines) => {
-            return refLines.map((refLine: BoxWhiskerChartReferenceLine) => {
-                let x1 = settings.general.margin.left + axisSettings.axisValueWidth;
-                let y1 = axisSettings.axisScaleValue(refLine.value);
-                let x2 = settings.general.viewport.width - settings.general.margin.left;
-                let y2 = axisSettings.axisScaleValue(refLine.value);
-                return `M ${x1},${y1} L${x2},${y2}`;
-            }).join(" ");
+        let referenceLineData = (refLine) => {
+            let x1 = settings.general.margin.left + axisSettings.axisValueWidth;
+            let y1 = axisSettings.axisScaleValue(refLine.value);
+            let x2 = settings.general.viewport.width - settings.general.margin.left;
+            let y2 = axisSettings.axisScaleValue(refLine.value);
+            return `M ${x1},${y1} L${x2},${y2}`;
         };
 
         referenceLine
@@ -165,19 +163,19 @@ module powerbi.extensibility.visual {
             .classed(BoxWhiskerChart.ChartReferenceLine.className, true);
 
         referenceLine
-            .style("fill", value => (<BoxWhiskerChartReferenceLine>value[0]).lineColor)
+            .style("fill", value => (<BoxWhiskerChartReferenceLine>value).lineColor)
             .style("opacity", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                let refLine = (<BoxWhiskerChartReferenceLine>value);
                 return refLine.position === (front ?
                     BoxWhiskerEnums.ReferenceLine.Position.front :
                     BoxWhiskerEnums.ReferenceLine.Position.back) ?
                         refLine.transparency / 100 :
                         0;
             })
-            .style("stroke", value => (<BoxWhiskerChartReferenceLine>value[0]).lineColor)
+            .style("stroke", value => (<BoxWhiskerChartReferenceLine>value).lineColor)
             .style("stroke-width", 3)
             .style("stroke-dasharray", value => {
-                switch ((<BoxWhiskerChartReferenceLine>value[0]).style) {
+                switch ((<BoxWhiskerChartReferenceLine>value).style) {
                     case BoxWhiskerEnums.ReferenceLine.Style.dashed:
                         return "5, 5";
                     case BoxWhiskerEnums.ReferenceLine.Style.dotted:
@@ -192,10 +190,10 @@ module powerbi.extensibility.visual {
 
         let referenceLineLabel = selection.selectAll(BoxWhiskerChart.ChartReferenceLineLabel.selectorName).data(d => {
             if (d && d.length > 0) {
-                return [d.map((refLine: BoxWhiskerChartReferenceLine) => {
+                return d.map((refLine: BoxWhiskerChartReferenceLine) => {
                     if (refLine.showLabel) {
                         return refLine;
-                    }})];
+                    }});
             }
             return [];
         });
@@ -205,15 +203,13 @@ module powerbi.extensibility.visual {
             .append("text")
             .classed(BoxWhiskerChart.ChartReferenceLineLabel.className, true);
 
-        let referenceLabelTransform = (refLines) => {
-            return refLines.map((refLine: BoxWhiskerChartReferenceLine) => {
-                if (!refLine) { return; }
-                let x0 = refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
-                        ? 0
-                        : settings.general.viewport.width - settings.general.margin.left;
-                let y0 = axisSettings.axisScaleValue(refLine.value);
-                return `translate(${x0} ${y0})`;
-            });
+        let referenceLabelTransform = (refLine) => {
+            if (!refLine) { return; }
+            let x0 = refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
+                    ? 0
+                    : settings.general.viewport.width - settings.general.margin.left;
+            let y0 = axisSettings.axisScaleValue(refLine.value);
+            return `translate(${x0} ${y0})`;
         };
 
         let y0 = axisSettings.axisCategoryHeight; // + settings.general.margin.bottom;
@@ -221,12 +217,12 @@ module powerbi.extensibility.visual {
         referenceLineLabel
             .attr("transform", referenceLabelTransform)
             .attr("fill", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                let refLine = (<BoxWhiskerChartReferenceLine>value);
                 if (!refLine) { return "#000"; }
                 return refLine.labelColor;
             })
             .style("opacity", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                let refLine = (<BoxWhiskerChartReferenceLine>value);
                 if (!refLine) { return 0; }
                 return refLine.position === (front ?
                     BoxWhiskerEnums.ReferenceLine.Position.front :
@@ -235,17 +231,17 @@ module powerbi.extensibility.visual {
                         0;
             })
             .style("font-family", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                let refLine = (<BoxWhiskerChartReferenceLine>value);
                 if (!refLine) { return 0; }
                 return refLine.labelFontFamily;
             })
             .style("font-size", value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                let refLine = (<BoxWhiskerChartReferenceLine>value);
                 if (!refLine) { return 0; }
                 return refLine.labelFontSize + "px";
             })
             .text(value => {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
+                let refLine = (<BoxWhiskerChartReferenceLine>value);
                 if (!refLine) { return ""; }
                 let formatter = valueFormatter.create({
                     format: settings.formatting.valuesFormatter.options.format,
@@ -267,26 +263,22 @@ module powerbi.extensibility.visual {
                 }
                 return label;
             })
-            .transition()
-            .duration(settings.general.duration);
-
-        selection.selectAll(BoxWhiskerChart.ChartReferenceLineLabel.selectorName)
-            .attr("x", function(value) {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
-                if (!refLine) { return 0; }
+            .attr("x", function(value) { // no lambda because of the 'getBBox()'
+                let refLine = <BoxWhiskerChartReferenceLine>value;
                 let width = this.getBBox().width;
                 return refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
                     ? settings.general.margin.left + axisSettings.axisValueWidth
                     : -width;
             })
-            .attr("y", function(value) {
-                let refLine = (<BoxWhiskerChartReferenceLine>value[0]);
-                if (!refLine) { return 0; }
+            .attr("y", function(value) { // no lambda because of the 'getBBox()'
+                let refLine = <BoxWhiskerChartReferenceLine>value;
                 let height = this.getBBox().height;
                 return refLine.vPosition === BoxWhiskerEnums.ReferenceLine.VPosition.above
                     ? -4
                     : 0.75 * height;
-            });
+            })
+            .transition()
+            .duration(settings.general.duration);
 
         referenceLineLabel.exit().remove();
 

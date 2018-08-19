@@ -51,6 +51,7 @@ module powerbi.extensibility.visual {
         samples: number;
         category: number;
         color?: string;
+        fillColor?: string;
         label?: string;
         highlight: boolean;
         outliers: BoxWhiskerChartOutlier[];

@@ -80,6 +80,7 @@ module powerbi.extensibility.visual {
     class ChartOptionsSettings {
         public orientation: BoxWhiskerEnums.ChartOrientation = BoxWhiskerEnums.ChartOrientation.Vertical;
         public quartile: BoxWhiskerEnums.QuartileType = BoxWhiskerEnums.QuartileType.Inclusive;
+        public includeEmpty: boolean = false;
         public whisker: BoxWhiskerEnums.WhiskerType = BoxWhiskerEnums.WhiskerType.MinMax;
         public lower: number = undefined;
         public higher: number = undefined;
@@ -141,8 +142,8 @@ module powerbi.extensibility.visual {
     class DataPointSettings {
         public meanColor: string = "#111";
         public medianColor: string = "#111";
-        public oneColor: boolean = false;
         public oneFill: string = undefined;
+        public showAll: boolean = false;
     }
 
     class ToolTipSettings {
@@ -166,6 +167,7 @@ module powerbi.extensibility.visual {
     class ShapeSettings {
         public showMean: boolean = true;
         public showMedian: boolean = true;
+        public dotRadius: number = 4;
         public highlight: boolean = true;
         public fixedCategory: boolean = true;
     }
