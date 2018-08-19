@@ -14,6 +14,10 @@
             "kind": "Measure",
             "cartesianKind": 1,
             "displayName": "Values"
+        },{
+            "displayName": "Tooltips",
+            "name": "Tooltips",
+            "kind": "Measure"
         }
     ],
     "supportsHighlight": true,
@@ -23,7 +27,7 @@
             "canvas": true
         },
         "roles": [
-            "tooltips"
+            "Tooltips"
         ]
     },
     "dataViewMappings": [{
@@ -380,7 +384,8 @@
             }
         },
         "toolTip": {
-            "displayName": "Tooltips",
+            "displayName": "Tooltip settings",
+            "description": "Settings used for the default tooltips.",
             "properties": {
                 "labelDisplayUnits": {
                     "displayName": "Display units",

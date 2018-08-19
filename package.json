@@ -22,21 +22,21 @@
         "globalize": "0.1.0-a2",
         "jquery": "^3.3.1",
         "lodash": "4.16.2",
-        "powerbi-models": "^1.0.4",
-        "powerbi-visuals-utils-colorutils": "^1.0.0",
+        "powerbi-models": "^1.0.8",
+        "powerbi-visuals-utils-colorutils": "^1.1.0",
         "powerbi-visuals-utils-dataviewutils": "^1.4.1",
-        "powerbi-visuals-utils-formattingutils": "^3.0.1",
+        "powerbi-visuals-utils-formattingutils": "^3.0.2",
         "powerbi-visuals-utils-interactivityutils": "^3.2.0",
         "powerbi-visuals-utils-svgutils": "^1.1.0",
-        "powerbi-visuals-utils-tooltiputils": "^1.0.0"
+        "powerbi-visuals-utils-tooltiputils": "^1.0.1"
     },
     "devDependencies": {
-        "@types/d3": "^3.5.40",
+        "@types/d3": "^3.5.41",
         "@types/jquery": "^2.0.49",
-        "@types/lodash": "^4.14.108",
-        "powerbi-visuals-tools": "^1.11.3",
-        "tslint": "^5.9.1",
-        "tslint-microsoft-contrib": "^5.0.3",
-        "typescript": "^2.4.1"
+        "@types/lodash": "^4.14.116",
+        "powerbi-visuals-tools": "^1.13.1",
+        "tslint": "^5.11.0",
+        "tslint-microsoft-contrib": "^5.2.0",
+        "typescript": "^2.9.2"
     }
 }
