@@ -134,6 +134,7 @@ module powerbi.extensibility.visual {
         private colorPalette: ISandboxExtendedColorPalette;
         private selectionIdBuilder: ISelectionIdBuilder;
         private selectionManager: ISelectionManager;
+        private allowInteractions: boolean;
         private hostServices: IVisualHost;
         private dataView: DataView;
         private data: BoxWhiskerChartData;
@@ -466,6 +467,7 @@ module powerbi.extensibility.visual {
             this.colorPalette = options.host.colorPalette;
             this.selectionIdBuilder = options.host.createSelectionIdBuilder();
             this.selectionManager = options.host.createSelectionManager();
+            this.allowInteractions = options.host.allowInteractions;
             this.tooltipServiceWrapper = createTooltipServiceWrapper(this.hostServices.tooltipService, options.element);
 
             this.settings = BoxWhiskerChart.parseSettings(this.dataView);
@@ -603,6 +605,7 @@ module powerbi.extensibility.visual {
                 this.svg,
                 this.settings,
                 this.selectionManager,
+                this.allowInteractions,
                 this.tooltipServiceWrapper,
                 this.data,
                 axisSettings);

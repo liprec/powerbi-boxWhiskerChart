@@ -37,7 +37,7 @@ module powerbi.extensibility.visual {
     // d3
     import Selection = d3.Selection;
 
-    export function drawChart(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, tooltipServiceWrapper: ITooltipServiceWrapper, data: BoxWhiskerChartData, axisSettings: BoxWhiskerAxisSettings): void {
+    export function drawChart(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, allowInteractions: boolean, tooltipServiceWrapper: ITooltipServiceWrapper, data: BoxWhiskerChartData, axisSettings: BoxWhiskerAxisSettings): void {
         let chart: Selection<any> = rootElement.selectAll(BoxWhiskerChart.Chart.selectorName);
         let svg: Selection<any> = rootElement;
         let dataPoints: BoxWhiskerChartDatapoint[][] = data.dataPoints;
@@ -150,15 +150,22 @@ module powerbi.extensibility.visual {
             .style("stroke", value => (<BoxWhiskerChartDatapoint>value[0]).color)
             .style("stroke-width", 2)
             .on("click", function (d) {
-                let dataPoint: BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
-                selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
-                    if (ids.length > 0) {
-                        setSelection(this);
-                    } else {
-                        resetSelection();
+                if (allowInteractions) {
+                    let isCtrlPressed: boolean = (d3.event as MouseEvent).ctrlKey;
+                    let dataPoint: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
+                    let currentSelectedIds = selectionManager.getSelectionIds()[0];
+                    if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
+                        selectionManager.clear();
                     }
-                });
-                (<Event>d3.event).stopPropagation();
+                    selectionManager.select(dataPoint.selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
+                        if (ids.length > 0) {
+                            setSelection(this);
+                        } else {
+                            resetSelection();
+                        }
+                        });
+                    (<Event>d3.event).stopPropagation();
+                }
             })
             .transition()
             .duration(settings.general.duration)
@@ -180,15 +187,22 @@ module powerbi.extensibility.visual {
         average
             .style("fill", settings.dataPoint.meanColor)
             .on("click", function (d) {
-                let dataPoint: BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
-                selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
-                    if (ids.length > 0) {
-                        setSelection(this);
-                    } else {
-                        resetSelection();
+                if (allowInteractions) {
+                    let isCtrlPressed: boolean = (d3.event as MouseEvent).ctrlKey;
+                    let dataPoint: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
+                    let currentSelectedIds = selectionManager.getSelectionIds()[0];
+                    if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
+                        selectionManager.clear();
                     }
-                });
-                (<Event>d3.event).stopPropagation();
+                    selectionManager.select(dataPoint.selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
+                        if (ids.length > 0) {
+                            setSelection(this);
+                        } else {
+                            resetSelection();
+                        }
+                        });
+                    (<Event>d3.event).stopPropagation();
+                }
             })
             .transition()
             .duration(settings.general.duration)
@@ -211,15 +225,22 @@ module powerbi.extensibility.visual {
             .style("stroke", settings.dataPoint.medianColor)
             .style("stroke-width", 2)
             .on("click", function (d) {
-                let dataPoint: BoxWhiskerChartDatapoint = (<BoxWhiskerChartDatapoint>d[0]);
-                selectionManager.select(dataPoint.selectionId).then((ids: ISelectionId[]) => {
-                    if (ids.length > 0) {
-                        setSelection(this);
-                    } else {
-                        resetSelection();
+                if (allowInteractions) {
+                    let isCtrlPressed: boolean = (d3.event as MouseEvent).ctrlKey;
+                    let dataPoint: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
+                    let currentSelectedIds = selectionManager.getSelectionIds()[0];
+                    if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
+                        selectionManager.clear();
                     }
-                });
-                (<Event>d3.event).stopPropagation();
+                    selectionManager.select(dataPoint.selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
+                        if (ids.length > 0) {
+                            setSelection(this);
+                        } else {
+                            resetSelection();
+                        }
+                        });
+                    (<Event>d3.event).stopPropagation();
+                }
             })
             .transition()
             .duration(settings.general.duration)
@@ -347,7 +368,7 @@ module powerbi.extensibility.visual {
 
         selection.exit().remove();
 
-        function setSelection(_this) {
+        function setSelection(_t) {
             quartile.transition()
                 .duration(settings.general.duration)
                 .style("opacity", backgroundOpacity);
@@ -360,7 +381,7 @@ module powerbi.extensibility.visual {
             outliers.transition()
                 .duration(settings.general.duration)
                 .style("opacity", settings.chartOptions.outliers ? backgroundOpacity : 0);
-            _this.parentNode.childNodes.forEach((n) => {
+            _t.parentNode.childNodes.forEach((n) => {
                 let element = d3.select(n);
                 if (element.style("opacity") !== "0") {
                     element.transition()
