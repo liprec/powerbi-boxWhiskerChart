@@ -66,7 +66,7 @@ module powerbi.extensibility.visual {
     import telemetry = powerbi.extensibility.utils.telemetry;
     // d3
     import Selection = d3.Selection;
-
+    import Update = d3.selection.Update;
     import Selector = powerbi.data.Selector;
 
     export interface ISQExpr extends powerbi.data.ISQExpr {
@@ -123,6 +123,8 @@ module powerbi.extensibility.visual {
         private axis: Selection<any>;
         private chartMain: Selection<any>;
         private settings: BoxWhiskerChartSettings;
+        private chart: Selection<any>;
+        private chartSelection: Update<BoxWhiskerChartDatapoint[]>;
         private axisX: Selection<any>;
         private axisY: Selection<any>;
         private axisXLabel: Selection<any>;
@@ -192,7 +194,8 @@ module powerbi.extensibility.visual {
 
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
-            let maxPoints = this.settings.general.maxPoints;
+            let selectedIds = [];
+            // let maxPoints = this.settings.general.maxPoints;
             let queryName = valueSource.queryName || "";
             let types = hasHighlight ? 2 : 1;
             this.settings.xAxis.defaultTitle = dataView.metadata.columns.filter((d) => { return d.index === 1; })[0].displayName;
@@ -473,11 +476,27 @@ module powerbi.extensibility.visual {
             this.settings = BoxWhiskerChart.parseSettings(this.dataView);
             this.settings.general.locale = options.host.locale;
 
+            this.selectionManager.registerOnSelectCallback(() => {
+                let selectionIds = this.selectionManager.getSelectionIds() as ISelectionId[];
+                this.chartSelection.each(element => console.log({element}));
+                syncSelectionState(this.chartSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
+            });
+
             if (!this.svg) {
                 this.svg = d3.select(this.root.get(0))
                     .append("svg")
                     .classed(BoxWhiskerChart.VisualClassName, true);
             }
+
+            this.svg.on("click", () => {
+                if (this.allowInteractions) {
+                    this.selectionManager
+                        .clear()
+                        .then(() => {
+                            syncSelectionState(this.chartSelection, [])
+                        });
+                }
+            });
 
             this.mainGroupElement = this.svg.append("g");
 
@@ -517,14 +536,13 @@ module powerbi.extensibility.visual {
                 .append("g")
                 .classed(BoxWhiskerChart.ChartReferenceLineBackNode.className, true);
 
-            let chart = this.chartMain
+            this.chart = this.chartMain
                 .append("g")
                 .classed(BoxWhiskerChart.Chart.className, true);
 
             let frontRefLine = this.chartMain
                 .append("g")
                 .classed(BoxWhiskerChart.ChartReferenceLineFrontNode.className, true);
-
             }
 
         public update(options: VisualUpdateOptions): void {
@@ -586,6 +604,19 @@ module powerbi.extensibility.visual {
             this.settings.dataPoint.medianColor = this.colorPalette.isHighContrast ? this.colorPalette.foreground.value : this.settings.dataPoint.medianColor;
             this.settings.shapes.dotRadius = this.colorPalette.isHighContrast ? 6 : this.settings.shapes.dotRadius;
 
+            // Create ChartNodes
+            let stack = d3.layout.stack();
+            let layers = stack(dataPoints);
+
+            this.chartSelection = <Update<BoxWhiskerChartDatapoint[]>>this.chartMain
+                .selectAll(BoxWhiskerChart.ChartNode.selectorName)
+                .data(layers);
+
+            this.chartSelection
+                .enter()
+                .append("g")
+                .classed(BoxWhiskerChart.ChartNode.selectorName, true);
+
             let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
             drawAxis(
                 this.axis,
@@ -602,13 +633,15 @@ module powerbi.extensibility.visual {
                 false);
             let timerChart = telemetry.PerfTimer.start(this.traceEvents.drawChart, this.settings.general.telemetry);
             drawChart(
-                this.svg,
+                this.chart,
+                this.chartSelection,
                 this.settings,
                 this.selectionManager,
                 this.allowInteractions,
                 this.tooltipServiceWrapper,
                 this.data,
                 axisSettings);
+            syncSelectionState(this.chartSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
             timerChart();
             drawReferenceLines(
                 this.svg,
@@ -616,7 +649,6 @@ module powerbi.extensibility.visual {
                 this.data.referenceLines,
                 axisSettings,
                 true);
-
         }
 
         public getColumnColorByIndex(category: DataViewCategoryColumn, index: number, queryName: string, colorPalette: ISandboxExtendedColorPalette): string {

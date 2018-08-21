@@ -27,6 +27,8 @@
 
 module powerbi.extensibility.visual {
 
+    // powerbi.visuals
+    import ISelectionId = powerbi.visuals.ISelectionId;
     // utils.type
     import PixelConverter = powerbi.extensibility.utils.type.PixelConverter;
     // utils.formatting
@@ -36,10 +38,9 @@ module powerbi.extensibility.visual {
     import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
     // d3
     import Selection = d3.Selection;
+    import Update = d3.selection.Update;
 
-    export function drawChart(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, allowInteractions: boolean, tooltipServiceWrapper: ITooltipServiceWrapper, data: BoxWhiskerChartData, axisSettings: BoxWhiskerAxisSettings): void {
-        let chart: Selection<any> = rootElement.selectAll(BoxWhiskerChart.Chart.selectorName);
-        let svg: Selection<any> = rootElement;
+    export function drawChart(chartElement: Selection<any>, chartSelection: Update<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, allowInteractions: boolean, tooltipServiceWrapper: ITooltipServiceWrapper, data: BoxWhiskerChartData, axisSettings: BoxWhiskerAxisSettings): void {
         let dataPoints: BoxWhiskerChartDatapoint[][] = data.dataPoints;
         let highlightOpacity = 1;
         let backgroundOpacity = 0.1;
@@ -59,16 +60,6 @@ module powerbi.extensibility.visual {
                     break;
             }
         }
-
-        let stack = d3.layout.stack();
-        let layers = stack(dataPoints);
-
-        let selection = chart.selectAll(BoxWhiskerChart.ChartNode.selectorName).data(layers);
-
-        selection
-            .enter()
-            .append("g")
-            .classed(BoxWhiskerChart.ChartNode.className, true);
 
         let fontSize = settings.labels.fontSize + "pt";
         let dataLabelsShow = settings.labels.show;
@@ -135,7 +126,7 @@ module powerbi.extensibility.visual {
                 return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
             };
 
-        let quartile = selection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
+        let quartile: Update<BoxWhiskerChartDatapoint[]> = <Update<BoxWhiskerChartDatapoint[]>>chartSelection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName).data(d => {
             if (d && d.length > 0) { return [d]; }
             return [];
         });
@@ -157,24 +148,21 @@ module powerbi.extensibility.visual {
                     if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
                         selectionManager.clear();
                     }
-                    selectionManager.select(dataPoint.selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
-                        if (ids.length > 0) {
-                            setSelection(this);
-                        } else {
-                            resetSelection();
-                        }
+                    selectionManager
+                        .select(dataPoint.selectionId, isCtrlPressed)
+                        .then((ids: ISelectionId[]) => {
+                            syncSelectionState(chartSelection, ids);
                         });
                     (<Event>d3.event).stopPropagation();
                 }
             })
             .transition()
             .duration(settings.general.duration)
-            .style("opacity", value => (<BoxWhiskerChartDatapoint>value[0]).highlight ? highlightOpacity : backgroundOpacity)
             .attr("d", quartileData);
 
         quartile.exit().remove();
 
-        let average = selection.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName).data(d => {
+        let average: Update<BoxWhiskerChartDatapoint[]> = <Update<BoxWhiskerChartDatapoint[]>>chartSelection.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName).data(d => {
             if (d && d.length > 0) { return [d]; }
             return [];
         });
@@ -194,24 +182,21 @@ module powerbi.extensibility.visual {
                     if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
                         selectionManager.clear();
                     }
-                    selectionManager.select(dataPoint.selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
-                        if (ids.length > 0) {
-                            setSelection(this);
-                        } else {
-                            resetSelection();
-                        }
+                    selectionManager
+                        .select(dataPoint.selectionId, isCtrlPressed)
+                        .then((ids: ISelectionId[]) => {
+                            syncSelectionState(chartSelection, ids);
                         });
                     (<Event>d3.event).stopPropagation();
                 }
             })
             .transition()
             .duration(settings.general.duration)
-            .style("opacity", value => settings.shapes.showMean ? ((<BoxWhiskerChartDatapoint>value[0]).highlight ? highlightOpacity : backgroundOpacity) : 0)
             .attr("d", avgData);
 
         average.exit().remove();
 
-        let median = selection.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName).data(d => {
+        let median: Update<BoxWhiskerChartDatapoint[]> = <Update<BoxWhiskerChartDatapoint[]>>chartSelection.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName).data(d => {
             if (d && d.length > 0) { return [d]; }
             return [];
         });
@@ -232,24 +217,21 @@ module powerbi.extensibility.visual {
                     if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
                         selectionManager.clear();
                     }
-                    selectionManager.select(dataPoint.selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
-                        if (ids.length > 0) {
-                            setSelection(this);
-                        } else {
-                            resetSelection();
-                        }
+                    selectionManager
+                        .select(dataPoint.selectionId, isCtrlPressed)
+                        .then((ids: ISelectionId[]) => {
+                            syncSelectionState(chartSelection, ids);
                         });
                     (<Event>d3.event).stopPropagation();
                 }
             })
             .transition()
             .duration(settings.general.duration)
-            .style("opacity", value => settings.shapes.showMedian ? ((<BoxWhiskerChartDatapoint>value[0]).highlight ? highlightOpacity : backgroundOpacity) : 0)
             .attr("d", medianData);
 
         median.exit().remove();
 
-        let outliers = selection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
+        let outliers = chartSelection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName).data(d => {
             if (d && d.length > 0) { return (<BoxWhiskerChartDatapoint>d[0]).outliers; }
             return [];
         });
@@ -267,7 +249,7 @@ module powerbi.extensibility.visual {
 
         outliers.exit().remove();
 
-        let dataLabels = selection.selectAll(BoxWhiskerChart.ChartDataLabel.selectorName).data(d => {
+        let dataLabels = chartSelection.selectAll(BoxWhiskerChart.ChartDataLabel.selectorName).data(d => {
             let dp: BoxWhiskerChartDatapoint = <BoxWhiskerChartDatapoint>d[0];
             if (dataLabelsShow && dp.dataLabels && dp.dataLabels.length > 0) {
                 let topLabels = dp.dataLabels
@@ -340,7 +322,7 @@ module powerbi.extensibility.visual {
             .attr("fill", settings.labels.fontColor)
             .style("opacity", dataLabel => dataLabel.visible);
 
-        chart
+        chartElement
             .selectAll("text")
             .style("fill", settings.labels.fontColor)
             .style("font-family", settings.labels.fontFamily)
@@ -348,62 +330,55 @@ module powerbi.extensibility.visual {
 
         dataLabels.exit().remove();
 
-        svg.on("click", () => selectionManager.clear().then(() => resetSelection()));
-
-        tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
+        tooltipServiceWrapper.addTooltip(chartSelection.selectAll(BoxWhiskerChart.ChartQuartileBox.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].selectionId);
 
-        tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName),
+        tooltipServiceWrapper.addTooltip(chartSelection.selectAll(BoxWhiskerChart.ChartMedianLine.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].selectionId);
 
-        tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName),
+        tooltipServiceWrapper.addTooltip(chartSelection.selectAll(BoxWhiskerChart.ChartAverageDot.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartDatapoint>) => tooltipEvent.data[0].selectionId);
 
-        tooltipServiceWrapper.addTooltip(svg.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName),
+        tooltipServiceWrapper.addTooltip(chartSelection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data.tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data[0].selectionId);
 
-        selection.exit().remove();
-
-        function setSelection(_t) {
-            quartile.transition()
-                .duration(settings.general.duration)
-                .style("opacity", backgroundOpacity);
-            average.transition()
-                .duration(settings.general.duration)
-                .style("opacity", settings.shapes.showMean ? backgroundOpacity : 0);
-            median.transition()
-                .duration(settings.general.duration)
-                .style("opacity", settings.shapes.showMedian ? backgroundOpacity : 0);
-            outliers.transition()
-                .duration(settings.general.duration)
-                .style("opacity", settings.chartOptions.outliers ? backgroundOpacity : 0);
-            _t.parentNode.childNodes.forEach((n) => {
-                let element = d3.select(n);
-                if (element.style("opacity") !== "0") {
-                    element.transition()
-                        .duration(settings.general.duration)
-                        .style("opacity", highlightOpacity);
-                }
-            });
-        }
-
-        function resetSelection() {
-            quartile.transition()
-                .duration(settings.general.duration)
-                .style("opacity", highlightOpacity);
-            average.transition()
-                .duration(settings.general.duration)
-                .style("opacity", settings.shapes.showMean ? highlightOpacity : 0);
-            median.transition()
-                .duration(settings.general.duration)
-                .style("opacity", settings.shapes.showMedian ? highlightOpacity : 0);
-            outliers.transition()
-                .duration(settings.general.duration)
-                .style("opacity", settings.chartOptions.outliers ? highlightOpacity : 0);
-        }
+        chartSelection.exit().remove();
     }
+
+    export function syncSelectionState(selections: d3.Selection<BoxWhiskerChartDatapoint[]>, selectionIds: ISelectionId[]) {
+        let highlightOpacity = 1;
+        let backgroundOpacity = 0.1;
+
+        if (!selections || !selectionIds) {
+            return;
+        }
+
+        if (!selectionIds.length) {
+            selections.style({
+                "opacity": null
+            });
+            return;
+        }
+
+        selections
+            .style("opacity", datapoint => {
+                const isSelected: boolean = isSelectionIdInArray(selectionIds, datapoint[0].selectionId);
+                return isSelected ? highlightOpacity : backgroundOpacity;
+            });
+    }
+
+    function isSelectionIdInArray(selectionIds: ISelectionId[], selectionId: ISelectionId): boolean {
+        if (!selectionIds || !selectionId) {
+            return false;
+        }
+
+        return selectionIds.some((currentSelectionId: ISelectionId) => {
+            return currentSelectionId.getKey() === selectionId.getKey();
+        });
+    }
+
 }
