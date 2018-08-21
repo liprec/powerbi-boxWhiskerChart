@@ -345,8 +345,6 @@ module powerbi.extensibility.visual {
         tooltipServiceWrapper.addTooltip(chartSelection.selectAll(BoxWhiskerChart.ChartOutlierDot.selectorName),
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data.tooltipInfo,
             (tooltipEvent: TooltipEventArgs<BoxWhiskerChartOutlier>) => tooltipEvent.data[0].selectionId);
-
-        chartSelection.exit().remove();
     }
 
     export function syncSelectionState(selections: d3.Selection<BoxWhiskerChartDatapoint[]>, selectionIds: ISelectionId[]) {

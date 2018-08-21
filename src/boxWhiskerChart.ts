@@ -477,8 +477,6 @@ module powerbi.extensibility.visual {
             this.settings.general.locale = options.host.locale;
 
             this.selectionManager.registerOnSelectCallback(() => {
-                let selectionIds = this.selectionManager.getSelectionIds() as ISelectionId[];
-                this.chartSelection.each(element => console.log({element}));
                 syncSelectionState(this.chartSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
             });
 
@@ -493,7 +491,7 @@ module powerbi.extensibility.visual {
                     this.selectionManager
                         .clear()
                         .then(() => {
-                            syncSelectionState(this.chartSelection, [])
+                            syncSelectionState(this.chartSelection, []);
                         });
                 }
             });
@@ -615,7 +613,7 @@ module powerbi.extensibility.visual {
             this.chartSelection
                 .enter()
                 .append("g")
-                .classed(BoxWhiskerChart.ChartNode.selectorName, true);
+                .classed(BoxWhiskerChart.ChartNode.className, true);
 
             let timerAxis = telemetry.PerfTimer.start(this.traceEvents.drawAxis, this.settings.general.telemetry);
             drawAxis(
@@ -649,6 +647,9 @@ module powerbi.extensibility.visual {
                 this.data.referenceLines,
                 axisSettings,
                 true);
+            this.chartSelection
+                .exit()
+                .remove();
         }
 
         public getColumnColorByIndex(category: DataViewCategoryColumn, index: number, queryName: string, colorPalette: ISandboxExtendedColorPalette): string {
