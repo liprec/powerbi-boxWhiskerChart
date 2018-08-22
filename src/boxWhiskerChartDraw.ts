@@ -356,9 +356,11 @@ module powerbi.extensibility.visual {
         }
 
         if (!selectionIds.length) {
-            selections.style({
-                "opacity": null
-            });
+            selections
+                .style("opacity", datapoint => {
+                    const isHighlight: boolean = datapoint[0].highlight;
+                    return isHighlight === undefined ? null : isHighlight ? highlightOpacity : backgroundOpacity;
+                });
             return;
         }
 

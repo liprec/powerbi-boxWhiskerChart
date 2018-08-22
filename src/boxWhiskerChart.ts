@@ -350,7 +350,7 @@ module powerbi.extensibility.visual {
                                         category: i,
                                         color: dataPointColor,
                                         value: value,
-                                        highlight: t === 1 || !hasHighlight,
+                                        highlight: t === 0 && hasHighlight ? false : t === 1 ? true : undefined,
                                         tooltipInfo: [
                                             {
                                                 displayName: "Category",
