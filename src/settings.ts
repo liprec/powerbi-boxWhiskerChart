@@ -49,6 +49,7 @@ module powerbi.extensibility.visual {
         public shapes: ShapeSettings = new ShapeSettings();
         public gridLines: GridLinesSettings = new GridLinesSettings();
         public labels: LabelsSettings = new LabelsSettings();
+        public dataLoad: DataLoadSettings = new DataLoadSettings();
     }
 
     class GeneralSettings {
@@ -179,6 +180,17 @@ module powerbi.extensibility.visual {
         public minorGrid: boolean = false;
         public minorGridSize: number = 1;
         public minorGridColor: string = "#EEE";
+    }
+
+    class DataLoadSettings {
+        public enablePaging: boolean = true;
+        public showProgress: boolean = true;
+        public progressColor: string = "#777";
+        public progressText: string = "Data loading in progress";
+        public showWarning: boolean = true;
+        public warningColor: string = "#FF7900";
+        public warningText: string = "Not all datapoints could be loaded";
+        public backgroundColor: string = "#FFF";
     }
 
 }

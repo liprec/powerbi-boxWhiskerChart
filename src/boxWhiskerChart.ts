@@ -95,6 +95,10 @@ module powerbi.extensibility.visual {
 
         private static VisualClassName = "boxWhiskerChart";
 
+        public static Text: ClassAndSelector = createClassAndSelector("text");
+        public static WarningText: ClassAndSelector = createClassAndSelector("warning");
+        public static InfoText: ClassAndSelector = createClassAndSelector("info");
+
         public static Axis: ClassAndSelector = createClassAndSelector("axis");
         public static AxisX: ClassAndSelector = createClassAndSelector("axisX");
         public static AxisY: ClassAndSelector = createClassAndSelector("axisY");
@@ -132,6 +136,9 @@ module powerbi.extensibility.visual {
         private axisMajorGrid: Selection<any>;
         private axisMinorGrid: Selection<any>;
 
+        private warningText: Selection<any>;
+        private infoText: Selection<any>;
+
         private mainGroupElement: Selection<any>;
         private colorPalette: ISandboxExtendedColorPalette;
         private selectionIdBuilder: ISelectionIdBuilder;
@@ -146,16 +153,7 @@ module powerbi.extensibility.visual {
 
         public converter(dataView: DataView, colors: ISandboxExtendedColorPalette): BoxWhiskerChartData {
             let timer = telemetry.PerfTimer.start(this.traceEvents.convertor, this.settings.general.telemetry);
-            if (!dataView ||
-                !dataView.categorical ||
-                !dataView.categorical.categories ||
-                !dataView.categorical.categories[0] ||
-                !dataView.categorical.categories[0].values ||
-                !(dataView.categorical.categories[0].values.length > 0) ||
-                !dataView.categorical.values ||
-                !dataView.categorical.values[0] ||
-                !dataView.categorical.values[0].values ||
-                !(dataView.categorical.values[0].values.length > 0)) {
+            if (!this.checkFullDataset(dataView)) {
                 return {
                     dataPoints: [],
                     dataPointLength: 0,
@@ -175,6 +173,7 @@ module powerbi.extensibility.visual {
             let categories = [];
             let sampleValues = [];
             let highlightValues = [];
+
             rawValues.map((value: PrimitiveValue, index: number) => {
                 if (categories.indexOf(rawCategories[index]) === -1) {
                     categories.push(rawCategories[index]);
@@ -191,7 +190,6 @@ module powerbi.extensibility.visual {
                     highlightValues[i].push(rawHighlightValues[index]);
                 }
             });
-
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
             let selectedIds = [];
@@ -235,13 +233,13 @@ module powerbi.extensibility.visual {
             });
 
             this.dataType = ValueType.fromDescriptor(valueSource.type);
-            let hasStaticColor = categories.length > 15;
-            let properties = {};
-            let colorHelper: ColorHelper = new ColorHelper(
-                colors,
-                this.settings.general.ColorProperties,
-                this.settings.general.defaultColor
-            );
+            // let hasStaticColor = this.categories.length > 15;
+            // let properties = {};
+            // let colorHelper: ColorHelper = new ColorHelper(
+            //     colors,
+            //     this.settings.general.ColorProperties,
+            //     this.settings.general.defaultColor
+            // );
 
             let categoryIdentities = categories.map((category) => {
                 let sqlExpr = powerbi["data"].SQExprBuilder.equal(dataView.metadata.columns[0].expr, powerbi["data"].SQExprBuilder.text(category));
@@ -480,6 +478,16 @@ module powerbi.extensibility.visual {
                 syncSelectionState(this.chartSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
             });
 
+            this.warningText = d3.select(this.root.get(0))
+                .append("text")
+                .classed(BoxWhiskerChart.Text.className, true)
+                .classed(BoxWhiskerChart.WarningText.className, true);
+
+            this.infoText = d3.select(this.root.get(0))
+                .append("text")
+                .classed(BoxWhiskerChart.Text.className, true)
+                .classed(BoxWhiskerChart.InfoText.className, true);
+
             if (!this.svg) {
                 this.svg = d3.select(this.root.get(0))
                     .append("svg")
@@ -556,10 +564,46 @@ module powerbi.extensibility.visual {
                 return;
             }
 
+            let dataView = this.dataView = options.dataViews[0],
+                firstCall = options.operationKind === VisualDataChangeOperationKind.Create,
+                lastCall = (dataView.metadata.segment) ? false : true,
+                validDataset = this.checkFullDataset(this.dataView);
+
             this.settings = BoxWhiskerChart.parseSettings(this.dataView);
 
-            let dataView = this.dataView = options.dataViews[0],
-                data = this.data = this.converter(dataView, this.colorPalette),
+            if (firstCall) {
+                this.warningText
+                    .style("color", null)
+                    .style("background", null)
+                    .text("");
+            }
+
+            if (validDataset && !lastCall && this.settings.dataLoad.enablePaging) {
+                if (this.settings.dataLoad.showProgress) {
+                    this.infoText
+                        .style("color", this.settings.dataLoad.progressColor)
+                        .style("background", this.settings.dataLoad.backgroundColor)
+                        .text(this.settings.dataLoad.progressText);
+                }
+                let moreData: boolean = this.hostServices.fetchMoreData();
+                if ((moreData)) {
+                    return;
+                } else {
+                    if (this.settings.dataLoad.showWarning) {
+                        this.warningText
+                            .style("color", this.settings.dataLoad.warningColor)
+                            .style("background", this.settings.dataLoad.backgroundColor)
+                            .text(this.settings.dataLoad.warningText);
+                    }
+                }
+            }
+
+            this.infoText
+                .style("color", null)
+                .style("background", null)
+                .text("");
+
+            let data = this.data = this.converter(dataView, this.colorPalette),
                 dataPoints = data.dataPoints;
 
             this.settings.general.viewport = {
@@ -652,6 +696,60 @@ module powerbi.extensibility.visual {
                 .remove();
         }
 
+        public sizeof(object) {
+            // initialise the list of objects and size
+            let objects = [object];
+            let size    = 0;
+            // loop over the objects
+            for (let index = 0; index < objects.length; index ++) {
+              // determine the type of the object
+              switch (typeof objects[index]) {
+                // the object is a boolean
+                case "boolean": size += 4; break;
+                // the object is a number
+                case "number": size += 8; break;
+                // the object is a string
+                case "string": size += 2 * objects[index].length; break;
+                // the object is a generic object
+                case "object":
+                  // if the object is not an array, add the sizes of the keys
+                  if (Object.prototype.toString.call(objects[index]) !== "[object Array]") {
+                    for (let key in objects[index]) size += 2 * key.length;
+                  }
+                  // loop over the keys
+                  for (let key in objects[index]) {
+                    // determine whether the value has already been processed
+                    let processed = false;
+                    for (let search = 0; search < objects.length; search ++) {
+                      if (objects[search] === objects[index][key]) {
+                        processed = true;
+                        break;
+                      }
+                    }
+                    // queue the value to be processed if appropriate
+                    if (!processed) objects.push(objects[index][key]);
+
+                  }
+              }
+            }
+            // return the calculated size
+            return size;
+          }
+
+        public checkFullDataset(dataView: DataView) {
+            return !(
+                !dataView ||
+                !dataView.categorical ||
+                !dataView.categorical.categories ||
+                !dataView.categorical.categories[0] ||
+                !dataView.categorical.categories[0].values ||
+                !(dataView.categorical.categories[0].values.length > 0) ||
+                !dataView.categorical.values ||
+                !dataView.categorical.values[0] ||
+                !dataView.categorical.values[0].values ||
+                !(dataView.categorical.values[0].values.length > 0)
+            );
+        }
         public getColumnColorByIndex(category: DataViewCategoryColumn, index: number, queryName: string, colorPalette: ISandboxExtendedColorPalette): string {
             if (colorPalette.isHighContrast) {
                 return colorPalette.foreground.value;
@@ -733,6 +831,16 @@ module powerbi.extensibility.visual {
                 case "dataPoint":
                     if (this.settings.dataPoint.showAll) {
                          instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.showAll);
+                    }
+                    break;
+                case "dataLoad":
+                    if (!this.settings.dataLoad.showProgress) {
+                        this.removeEnumerateObject(instanceEnumeration, "progressColor");
+                        this.removeEnumerateObject(instanceEnumeration, "progressText");
+                    }
+                    if (!this.settings.dataLoad.showWarning) {
+                        this.removeEnumerateObject(instanceEnumeration, "warningColor");
+                        this.removeEnumerateObject(instanceEnumeration, "warningText");
                     }
                     break;
                 case "y1AxisReferenceLine":

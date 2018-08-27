@@ -43,7 +43,6 @@
         }],
         "categorical": {
             "categories": {
-                "dataReductionAlgorithm": { "top": { "count": 30000 } },
                 "select": [
                     {
                         "for": {
@@ -55,13 +54,13 @@
                             "in": "Samples"   
                         }
                     }
-                ]
+                ],
+                "dataReductionAlgorithm": { "window": { "count": 30000 } }
             },
             "values": {
-                "dataReductionAlgorithm": { "top": { "count": 30000 } },
                 "select": [{
-                    "bind": {
-                        "to": "Values"   
+                    "for": {
+                        "in": "Values"   
                     }
                 }]
             }
@@ -522,6 +521,59 @@
                     "displayName": "Color",
                     "description": "Color of the minor gridlines",
                     "type": { "fill": { "solid": { "color": true } } }
+                }
+            }
+        },
+        "dataLoad": {
+            "displayName": "Data loading",
+            "description": "Settings related to loading large datasets",
+            "properties": {
+                "enablePaging": {
+                    "displayName": "Enable paging",
+                    "description": "Enable loading of more data points then +/- 30.000 rows",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showProgress": {
+                    "displayName": "Show progress",
+                    "description": "Show message when additional data loading is in progress",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "progressColor" : {
+                    "displayName": "Progress color",
+                    "type" : { "fill": { "solid": { "color": true } } }
+                },
+                "progressText": {
+                    "displayName": "Progress text",
+                    "description": "Text of the data loading progress",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "showWarning": {
+                    "displayName": "Show warning",
+                    "description": "Show warning if there is more data available, but not loaded",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "warningColor" : {
+                    "displayName": "Warning color",
+                    "type" : { "fill": { "solid": { "color": true } } }
+                },
+                "warningText": {
+                    "displayName": "Warning text",
+                    "description": "Text of the warning",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "backgroundColor" : {
+                    "displayName": "Background color",
+                    "type" : { "fill": { "solid": { "color": true } } }
                 }
             }
         },
