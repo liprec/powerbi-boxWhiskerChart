@@ -619,18 +619,6 @@ module powerbi.extensibility.visual {
 
             let axisSettings: BoxWhiskerAxisSettings = calcAxisSettings(this.settings, this.data);
 
-            if (this.settings.yAxis.start !== undefined) {
-                if (this.settings.yAxis.start !== axisSettings.axisOptions.min) {
-                    this.settings.yAxis.start = axisSettings.axisOptions.min;
-                }
-            }
-
-            if (this.settings.yAxis.end !== undefined) {
-                if (this.settings.yAxis.end !== axisSettings.axisOptions.max) {
-                    this.settings.yAxis.end = axisSettings.axisOptions.max;
-                }
-            }
-
             this.settings.general.margin.top = this.settings.formatting.valuesFormatter ?
             textMeasurementService.measureSvgTextHeight(
                 this.settings.yAxis.axisTextProperties,

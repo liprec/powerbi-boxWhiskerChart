@@ -56,6 +56,12 @@ module powerbi.extensibility.visual {
             Diagonal,
             Vertical
         }
+
+        export enum ScaleType {
+            Linear,
+            Log
+        }
+
         export module ReferenceLine {
             export enum Style {
                 dashed,

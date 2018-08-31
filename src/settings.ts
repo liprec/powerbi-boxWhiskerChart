@@ -116,6 +116,7 @@ module powerbi.extensibility.visual {
 
     class YAxisSettings {
         public show: boolean = true;
+        public scaleType: number = 0;
         public start: number = undefined;
         public end: number = undefined;
         public fontColor: string = "#777";
@@ -192,5 +193,4 @@ module powerbi.extensibility.visual {
         public warningText: string = "Not all datapoints could be loaded";
         public backgroundColor: string = "#FFF";
     }
-
 }

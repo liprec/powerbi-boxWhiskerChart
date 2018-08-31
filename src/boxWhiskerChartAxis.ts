@@ -156,9 +156,37 @@ module powerbi.extensibility.visual {
             }
         }
 
-        axisSettings.axisScaleValue = d3.scale.linear()
-            .domain([axisSettings.axisOptions.min || 0, axisSettings.axisOptions.max || 0])
-            .range([settings.general.margin.bottom + axisSettings.axisCategoryHeight, settings.general.viewport.height - settings.general.margin.top]);
+        if ((settings.yAxis.start !== undefined) && (settings.yAxis.scaleType === BoxWhiskerEnums.ScaleType.Linear)) {
+            if (settings.yAxis.start !== axisSettings.axisOptions.min) {
+                settings.yAxis.start = axisSettings.axisOptions.min;
+            }
+        }
+
+        if (settings.yAxis.scaleType === BoxWhiskerEnums.ScaleType.Log) {
+            if (axisSettings.axisOptions.min <= 0) {
+                axisSettings.axisOptions.min = settings.yAxis.start = settings.yAxis.start || 1;
+            }
+        }
+
+        if (settings.yAxis.end !== undefined) {
+            if (settings.yAxis.end !== axisSettings.axisOptions.max) {
+                settings.yAxis.end = axisSettings.axisOptions.max;
+            }
+        }
+
+        switch (settings.yAxis.scaleType) {
+            case BoxWhiskerEnums.ScaleType.Linear:
+                axisSettings.axisScaleValue = d3.scale.linear()
+                    .domain([axisSettings.axisOptions.min || 0, axisSettings.axisOptions.max || 0]);
+                break;
+            case BoxWhiskerEnums.ScaleType.Log:
+                axisSettings.axisScaleValue = d3.scale.log()
+                    .domain([axisSettings.axisOptions.min || 1, axisSettings.axisOptions.max || 1]);
+                break;
+        }
+
+        axisSettings.axisScaleValue
+                        .range([settings.general.margin.bottom + axisSettings.axisCategoryHeight, settings.general.viewport.height - settings.general.margin.top]);
 
         axisSettings.axisScaleCategory = d3.scale.linear()
             .domain([0, data.dataPointLength])
@@ -219,7 +247,7 @@ module powerbi.extensibility.visual {
                 valueScale(axisSettings.axisOptions.min) :
                 axisSettings.axisOptions.max < 0 ?
                     valueScale(axisSettings.axisOptions.min) :
-                    valueScale(0);
+                    settings.yAxis.scaleType === BoxWhiskerEnums.ScaleType.Log ? valueScale(1) : valueScale(0);
 
         if (settings.xAxis.show) {
             let categoryAxis = d3.svg.axis()

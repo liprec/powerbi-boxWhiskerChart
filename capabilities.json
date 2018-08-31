@@ -284,6 +284,19 @@
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
+                "scaleType": {
+                    "displayName": "Scale type",
+                    "type" : { "enumeration": [
+                        {
+                            "value": "0",
+                            "displayName": "Linear"
+                        },
+                        {
+                            "value": "1",
+                            "displayName": "Log"
+                        }
+                    ]}
+                },
                 "start": {
                     "displayName": "Start",
                     "description": "Start value of the axis",

@@ -90,10 +90,10 @@ module powerbi.extensibility.visual {
                 let x1 = axisSettings.axisScaleCategory(value.category + leftBoxMargin);
                 let x2 = axisSettings.axisScaleCategory(value.category + boxMiddle);
                 let x3 = axisSettings.axisScaleCategory(value.category + rightBoxMargin);
-                let y1 = axisSettings.axisScaleValue(value.min);
-                let y2 = value.samples <= 3 ? axisSettings.axisScaleValue(value.min) : axisSettings.axisScaleValue(value.quartile1);
-                let y3 = value.samples <= 3 ? axisSettings.axisScaleValue(value.max) : axisSettings.axisScaleValue(value.quartile3);
-                let y4 = axisSettings.axisScaleValue(value.max);
+                let y1 = axisSettings.axisScaleValue(value.min) || axisSettings.axisScaleValue(axisSettings.axisOptions.min * .9);
+                let y4 = axisSettings.axisScaleValue(value.max) || axisSettings.axisScaleValue(axisSettings.axisOptions.max * .9);
+                let y2 = value.samples <= 3 ? y1 : axisSettings.axisScaleValue(value.quartile1);
+                let y3 = value.samples <= 3 ? y4 : axisSettings.axisScaleValue(value.quartile3);
                 return `M ${x1},${y1}L${x3},${y1}L${x2},${y1}L${x2},${y2} L${x1},${y2}L${x1},${y3}L${x2},${y3} L${x2},${y4}L${x1},${y4}L${x3},${y4}L${x2},${y4}L${x2},${y3} L${x3},${y3}L${x3},${y2}L${x2},${y2}L${x2},${y1}`;
             }).join(" ");
         };
