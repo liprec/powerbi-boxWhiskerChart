@@ -63,6 +63,7 @@ module powerbi.extensibility.visual {
 
         let fontSize = settings.labels.fontSize + "pt";
         let dataLabelsShow = settings.labels.show;
+        let highlightZoom = data.isHighLighted && data.dataPoints.length !== data.dataPointLength;
 
         let dataLabelwidth = axisSettings.axisScaleCategory.invert(axisSettings.axisScaleCategory(0) +
             (Math.ceil(
@@ -86,10 +87,10 @@ module powerbi.extensibility.visual {
         let boxMiddle = dataLabelsShow ? leftBoxMargin + ((rightBoxMargin - leftBoxMargin) / 2.) : 0.5;
 
         let quartileData = (points) => {
-            return points.map((value) => {
-                let x1 = axisSettings.axisScaleCategory(value.category + leftBoxMargin);
+            return points.map((value: BoxWhiskerChartDatapoint) => {
+                let x1 = axisSettings.axisScaleCategory(value.category + leftBoxMargin + (highlightZoom && value.highlight ? .15 : 0));
                 let x2 = axisSettings.axisScaleCategory(value.category + boxMiddle);
-                let x3 = axisSettings.axisScaleCategory(value.category + rightBoxMargin);
+                let x3 = axisSettings.axisScaleCategory(value.category + rightBoxMargin + (highlightZoom && value.highlight ? -.15 : 0));
                 let y1 = axisSettings.axisScaleValue(value.min) || axisSettings.axisScaleValue(axisSettings.axisOptions.min * .9);
                 let y4 = axisSettings.axisScaleValue(value.max) || axisSettings.axisScaleValue(axisSettings.axisOptions.max * .9);
                 let y2 = value.samples <= 3 ? y1 : axisSettings.axisScaleValue(value.quartile1);
@@ -99,17 +100,17 @@ module powerbi.extensibility.visual {
         };
 
         let medianData = (points) => {
-            return points.map((value) => {
-                let x1 = axisSettings.axisScaleCategory(value.category + leftBoxMargin);
+            return points.map((value: BoxWhiskerChartDatapoint) => {
+                let x1 = axisSettings.axisScaleCategory(value.category + leftBoxMargin + (highlightZoom && value.highlight ? .15 : 0));
                 let y1 = axisSettings.axisScaleValue(value.median);
-                let x2 = axisSettings.axisScaleCategory(value.category + rightBoxMargin);
+                let x2 = axisSettings.axisScaleCategory(value.category + rightBoxMargin + (highlightZoom && value.highlight ? -.15 : 0));
                 let y2 = axisSettings.axisScaleValue(value.median);
                 return `M ${x1},${y1} L${x2},${y2}`;
             }).join(" ");
         };
 
         let avgData = (points) => {
-            return points.map((value) => {
+            return points.map((value: BoxWhiskerChartDatapoint) => {
                 let x1 = axisSettings.axisScaleCategory(value.category + boxMiddle);
                 let y1 = axisSettings.axisScaleValue(value.average);
                 let r = settings.shapes.dotRadius;
@@ -118,7 +119,7 @@ module powerbi.extensibility.visual {
             }).join(" ");
         };
 
-        let outlierData = (value) => {
+        let outlierData = (value: BoxWhiskerChartOutlier) => {
                 let x1 = axisSettings.axisScaleCategory(value.category + boxMiddle);
                 let y1 = axisSettings.axisScaleValue(value.value);
                 let r = settings.shapes.dotRadius;
