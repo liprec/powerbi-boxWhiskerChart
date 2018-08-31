@@ -20,6 +20,9 @@
             "kind": "Measure"
         }
     ],
+    "sorting": {
+        "default": {   }
+    },
     "supportsHighlight": true,
     "tooltips": {
         "supportedTypes": {
