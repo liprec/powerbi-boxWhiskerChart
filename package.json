@@ -11,7 +11,7 @@
         "url": "git+https://github.com/liprec/"
     },
     "scripts": {
-        "postinstall": "pbiviz update 1.11.0",
+        "postinstall": "pbiviz update 1.13.0",
         "pbiviz": "pbiviz",
         "start": "pbiviz start",
         "package": "pbiviz package",
