@@ -54,7 +54,9 @@ module powerbi.extensibility.visual {
                 min: 0,
                 ticks: 0,
                 tickSize: 0
-            }
+            },
+            drawScaleCategory: undefined,
+            drawScaleValue: undefined
         };
         let sin, cos, tan;
 
@@ -186,7 +188,7 @@ module powerbi.extensibility.visual {
         }
 
         axisSettings.axisScaleValue
-                        .range([settings.general.margin.bottom + axisSettings.axisCategoryHeight, settings.general.viewport.height - settings.general.margin.top]);
+            .range([settings.general.margin.bottom + axisSettings.axisCategoryHeight, settings.general.viewport.height - settings.general.margin.top]);
 
         axisSettings.axisScaleCategory = d3.scale.linear()
             .domain([0, data.dataPointLength])
@@ -472,10 +474,12 @@ module powerbi.extensibility.visual {
     }
 
     export function getAxisOptions(min: number, max: number, fixedMin: number, fixedMax: number): BoxWhiskerAxisOptions {
-        let isFixedMin = fixedMin !== undefined;
+        let isFixedMin = fixedMin !== undefined ;
         let isFixedMax = fixedMax !== undefined;
-        let min1 = isFixedMin ? fixedMin : (min === 0 ? 0 : min > 0 ? (min * .99) - ((max - min) / 100) : (min * 1.01) - ((max - min) / 100));
-        let max1 = isFixedMax ? fixedMax : (max === 0 ? min === 0 ? 1 : 0 : max < 0 ? (max * .99) + ((max - min) / 100) : (max * 1.01) + ((max - min) / 100));
+        // let min1 = isFixedMin ? fixedMin < max ? fixedMin : max : (min === 0 ? 0 : min > 0 ? (min * .99) - ((max - min) / 100) : (min * 1.01) - ((max - min) / 100));
+        // let max1 = isFixedMax ? fixedMax > min ? fixedMax : min : (max === 0 ? min === 0 ? 1 : 0 : max < 0 ? (max * .99) + ((max - min) / 100) : (max * 1.01) + ((max - min) / 100));
+        let min1 = (min === 0 ? 0 : min > 0 ? (min * .99) - ((max - min) / 100) : (min * 1.01) - ((max - min) / 100));
+        let max1 = (max === 0 ? min === 0 ? 1 : 0 : max < 0 ? (max * .99) + ((max - min) / 100) : (max * 1.01) + ((max - min) / 100));
 
         let p = Math.log(max1 - min1) / Math.log(10);
         let f = Math.pow(10, p - Math.floor(p));
@@ -495,8 +499,10 @@ module powerbi.extensibility.visual {
 
         return {
             tickSize: tickSize,
-            max: maxValue,
-            min: minValue,
+            // max: maxValue,
+            // min: minValue,
+            min: isFixedMin ? fixedMin < max ? fixedMin : minValue : minValue,
+            max: isFixedMax ? fixedMax > min ? fixedMax : maxValue : maxValue,
             ticks: ticks,
         };
     }

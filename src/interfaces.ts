@@ -126,5 +126,7 @@ module powerbi.extensibility.visual {
         axisLabelSizeValue: number;
         axisScaleValue: d3.scale.Linear<number, number>;
         axisOptions: BoxWhiskerAxisOptions;
+        drawScaleCategory: d3.scale.Linear<number, number>;
+        drawScaleValue: d3.scale.Linear<number, number>;
     }
 }

@@ -125,8 +125,10 @@ module powerbi.extensibility.visual {
         private root: JQuery;
         private svg: Selection<any>;
         private axis: Selection<any>;
+        private chartMainGroup: Selection<any>;
         private chartMain: Selection<any>;
         private settings: BoxWhiskerChartSettings;
+        private axisSettings: BoxWhiskerAxisSettings;
         private chart: Selection<any>;
         private chartSelection: Update<BoxWhiskerChartDatapoint[]>;
         private axisX: Selection<any>;
@@ -165,7 +167,9 @@ module powerbi.extensibility.visual {
 
             let valueSource = dataView.categorical.values[0].source;
             let hasHighlight = this.settings.shapes.highlight && dataView.categorical.values[0].highlights !== undefined;
-            let rawValues = dataView.categorical.values[0].values;
+            // New dataViewMapping
+            // let rawValues = dataView.categorical.values[0].values;
+            let rawValues = dataView.categorical.values;
             let rawHighlightValues = dataView.categorical.values[0].highlights || [];
             let rawCategories = dataView.categorical.categories[0].source.roles.Samples === true ?
                     dataView.categorical.categories[0].values.map(() => { return valueSource.displayName; }) :
@@ -174,21 +178,40 @@ module powerbi.extensibility.visual {
             let sampleValues = [];
             let highlightValues = [];
 
-            rawValues.map((value: PrimitiveValue, index: number) => {
-                if (categories.indexOf(rawCategories[index]) === -1) {
-                    categories.push(rawCategories[index]);
-                    sampleValues.push([]);
-                    if (hasHighlight) {
-                        highlightValues.push([]);
+            // New dataViewMapping
+            // rawValues.map((value: PrimitiveValue, index: number) => {
+            //     if (categories.indexOf(rawCategories[index]) === -1) {
+            //         categories.push(rawCategories[index]);
+            //         sampleValues.push([]);
+            //         if (hasHighlight) {
+            //             highlightValues.push([]);
+            //         }
+            //     }
+            //     let i = categories.indexOf(rawCategories[index]);
+            //     if (this.settings.chartOptions.includeEmpty || value !== null) {
+            //         sampleValues[i].push(value);
+            //     }
+            //     if (hasHighlight && rawHighlightValues[index] !== null) {
+            //         highlightValues[i].push(rawHighlightValues[index]);
+            //     }
+            // });
+            rawValues.map((valueArray) => {
+                valueArray.values.map((value: PrimitiveValue, index: number) => {
+                    if (categories.indexOf(rawCategories[index]) === -1) {
+                        categories.push(rawCategories[index]);
+                        sampleValues.push([]);
+                        if (hasHighlight) {
+                            highlightValues.push([]);
+                        }
                     }
-                }
-                let i = categories.indexOf(rawCategories[index]);
-                if (this.settings.chartOptions.includeEmpty || value !== null) {
-                    sampleValues[i].push(value);
-                }
-                if (hasHighlight && rawHighlightValues[index] !== null) {
-                    highlightValues[i].push(rawHighlightValues[index]);
-                }
+                    let i = categories.indexOf(rawCategories[index]);
+                    if (this.settings.chartOptions.includeEmpty || value !== null) {
+                        sampleValues[i].push(value);
+                    }
+                    if (hasHighlight && rawHighlightValues[index] !== null) {
+                        highlightValues[i].push(rawHighlightValues[index]);
+                    }
+                });
             });
             let dataPoints: BoxWhiskerChartDatapoint[][] = [];
             let referenceLines: BoxWhiskerChartReferenceLine[] = referenceLineReadDataView(dataView.metadata.objects, colors);
@@ -233,13 +256,6 @@ module powerbi.extensibility.visual {
             });
 
             this.dataType = ValueType.fromDescriptor(valueSource.type);
-            // let hasStaticColor = this.categories.length > 15;
-            // let properties = {};
-            // let colorHelper: ColorHelper = new ColorHelper(
-            //     colors,
-            //     this.settings.general.ColorProperties,
-            //     this.settings.general.defaultColor
-            // );
 
             let categoryIdentities = categories.map((category) => {
                 let sqlExpr = powerbi["data"].SQExprBuilder.equal(dataView.metadata.columns[0].expr, powerbi["data"].SQExprBuilder.text(category));
@@ -252,7 +268,7 @@ module powerbi.extensibility.visual {
             };
 
             if (this.settings.dataPoint.oneFill === undefined) {
-                this.settings.dataPoint.oneFill = this.getColumnColorByIndex(category, -1, "", this.colorPalette);
+                this.settings.dataPoint.oneFill = this.getColumnColorByIndex(category, -1, "", colors);
             }
 
             for (let t = 0; t < types; t++) {
@@ -337,7 +353,7 @@ module powerbi.extensibility.visual {
                                 break;
                         }
 
-                        let dataPointColor: string = this.getColumnColorByIndex(category, this.settings.dataPoint.showAll ? i : -1, queryName, this.colorPalette);
+                        let dataPointColor: string = this.getColumnColorByIndex(category, i, i.toString(), colors);
 
                         let outliers: BoxWhiskerChartOutlier[] = this.settings.chartOptions.outliers ?
                             sortedValue
@@ -534,8 +550,11 @@ module powerbi.extensibility.visual {
                 .append("text")
                 .classed(BoxWhiskerChart.AxisYLabel.className, true);
 
-            this.chartMain = this.mainGroupElement
-                .append("g")
+            this.chartMainGroup = this.mainGroupElement
+                .append("g");
+
+            this.chartMain = this.chartMainGroup
+                .append("svg")
                 .classed(BoxWhiskerChart.ChartMain.className, true);
 
             let backRefLine = this.chartMain
@@ -611,18 +630,17 @@ module powerbi.extensibility.visual {
                 width: options.viewport.width > 0 ? options.viewport.width : 0
             };
 
+            this.axisSettings = calcAxisSettings(this.settings, this.data);
             this.svg
                 .attr({
                     "height": this.settings.general.viewport.height,
                     "width": this.settings.general.viewport.width
                 });
 
-            let axisSettings: BoxWhiskerAxisSettings = calcAxisSettings(this.settings, this.data);
-
             this.settings.general.margin.top = this.settings.formatting.valuesFormatter ?
             textMeasurementService.measureSvgTextHeight(
                 this.settings.yAxis.axisTextProperties,
-                this.settings.formatting.valuesFormatter.format(axisSettings.axisOptions.max || 0)
+                this.settings.formatting.valuesFormatter.format(this.axisSettings.axisOptions.max || 0)
             ) / 2. : 5;
 
             // Overwrite High Contrast colors
@@ -652,14 +670,14 @@ module powerbi.extensibility.visual {
                 this.axis,
                 this.settings,
                 this.data,
-                axisSettings);
+                this.axisSettings);
             timerAxis();
-            timer();
+            this.setChartDimensions();
             drawReferenceLines(
                 this.svg,
                 this.settings,
                 this.data.referenceLines,
-                axisSettings,
+                this.axisSettings,
                 false);
             let timerChart = telemetry.PerfTimer.start(this.traceEvents.drawChart, this.settings.general.telemetry);
             drawChart(
@@ -670,59 +688,40 @@ module powerbi.extensibility.visual {
                 this.allowInteractions,
                 this.tooltipServiceWrapper,
                 this.data,
-                axisSettings);
+                this.axisSettings);
             syncSelectionState(this.chartSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
             timerChart();
             drawReferenceLines(
                 this.svg,
                 this.settings,
                 this.data.referenceLines,
-                axisSettings,
+                this.axisSettings,
                 true);
             this.chartSelection
                 .exit()
                 .remove();
+            timer();
         }
 
-        public sizeof(object) {
-            // initialise the list of objects and size
-            let objects = [object];
-            let size    = 0;
-            // loop over the objects
-            for (let index = 0; index < objects.length; index ++) {
-              // determine the type of the object
-              switch (typeof objects[index]) {
-                // the object is a boolean
-                case "boolean": size += 4; break;
-                // the object is a number
-                case "number": size += 8; break;
-                // the object is a string
-                case "string": size += 2 * objects[index].length; break;
-                // the object is a generic object
-                case "object":
-                  // if the object is not an array, add the sizes of the keys
-                  if (Object.prototype.toString.call(objects[index]) !== "[object Array]") {
-                    for (let key in objects[index]) size += 2 * key.length;
-                  }
-                  // loop over the keys
-                  for (let key in objects[index]) {
-                    // determine whether the value has already been processed
-                    let processed = false;
-                    for (let search = 0; search < objects.length; search ++) {
-                      if (objects[search] === objects[index][key]) {
-                        processed = true;
-                        break;
-                      }
-                    }
-                    // queue the value to be processed if appropriate
-                    if (!processed) objects.push(objects[index][key]);
-
-                  }
-              }
-            }
-            // return the calculated size
-            return size;
-          }
+        private setChartDimensions() {
+            this.axisSettings.drawScaleCategory = this.axisSettings.axisScaleCategory.copy()
+                .range([0, this.axisSettings.axisScaleCategory.range()[1] - this.axisSettings.axisScaleCategory.range()[0]]);
+            this.axisSettings.drawScaleValue = this.axisSettings.axisScaleValue.copy()
+                .range([this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.min) - this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.max), 0]);
+            let chartX = this.axisSettings.axisScaleCategory.range()[0] - this.settings.general.margin.right,
+                chartY = this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.max),
+                chartWidth = this.axisSettings.axisScaleCategory.range()[1] - this.axisSettings.axisScaleCategory.range()[0],
+                chartHeight = this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.min) - chartY;
+            this.chartMainGroup
+                .attr({
+                    "transform": `translate(${chartX}, ${chartY})`,
+                });
+            this.chartMain
+                .attr({
+                    "height": chartHeight,
+                    "width": chartWidth,
+                });
+        }
 
         public checkFullDataset(dataView: DataView) {
             return !(
@@ -743,6 +742,9 @@ module powerbi.extensibility.visual {
                 return colorPalette.foreground.value;
             }
             if (index === -1) {
+                if (this.settings.dataPoint.oneFill) {
+                    return this.settings.dataPoint.oneFill;
+                }
                 return colorPalette.getColor("0").value;
             }
 
@@ -759,7 +761,12 @@ module powerbi.extensibility.visual {
                     }
                 }
             }
-
+            if (this.settings.general.dataPointColors) {
+                let colors = this.settings.general.dataPointColors.split(",");
+                if (colors[index] !== "") {
+                    return colors[index];
+                }
+            }
             return colorPalette.getColor(queryName).value;
         }
 
@@ -818,7 +825,8 @@ module powerbi.extensibility.visual {
                     break;
                 case "dataPoint":
                     if (this.settings.dataPoint.showAll) {
-                         instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.showAll);
+                        this.removeEnumerateObject(instanceEnumeration, "oneFill");
+                        instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.showAll);
                     }
                     break;
                 case "dataLoad":
@@ -888,6 +896,20 @@ module powerbi.extensibility.visual {
             if (settings.chartOptions.higher < 75) { settings.chartOptions.higher = 75; }
             if (settings.chartOptions.lower > 25) { settings.chartOptions.lower = 25; }
             if (settings.chartOptions.lower < 0) { settings.chartOptions.lower = 0; }
+
+            if (settings.xAxis.labelPrecision > 30) { settings.xAxis.labelPrecision = 30; }
+            if (settings.yAxis.labelPrecision > 30) { settings.yAxis.labelPrecision = 30; }
+            if (settings.toolTip.labelPrecision > 30) { settings.toolTip.labelPrecision = 30; }
+            if (settings.labels.labelPrecision > 30) { settings.labels.labelPrecision = 30; }
+
+            if (dataView &&
+                dataView.categorical &&
+                dataView.categorical.categories &&
+                dataView.categorical.categories[0].objects &&
+                !(dataView.metadata.objects && dataView.metadata.objects.dataPoint && dataView.metadata.objects.dataPoint.showAll !== undefined)) {
+                    settings.dataPoint.showAll = true;
+                    settings.general.dataPointColors = dataView.categorical.categories[0].objects.map((object: any) => { return object.dataPoint ? object.dataPoint.fill.solid.color : ""; }).toString();
+            }
             return settings;
         }
     }

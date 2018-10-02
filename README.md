@@ -22,7 +22,7 @@ Some changes are needed before this visual can be build:
 
 Changes to `.api/v1.13.0/schema.capablities.json`:
 
-Replace row 90:
+Replace row 95:
 ```
 },
 "cartesianKind": {
@@ -30,7 +30,7 @@ Replace row 90:
     "description" : "The cartesion kind for analytical support"
 }
 ```
-Replace (now) row 1006:
+Replace (now) row 1019:
 ```
 },
 "fontFamily": {
@@ -39,7 +39,7 @@ Replace (now) row 1006:
 }
 ```
 
-Replace (now) row 1024:
+Replace (now) row 1041:
 ```
 },
 {

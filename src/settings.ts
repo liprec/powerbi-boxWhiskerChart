@@ -70,6 +70,7 @@ module powerbi.extensibility.visual {
         };
         public telemetry: boolean = false;
         public maxPoints: number = 30000;
+        public dataPointColors: string;
     }
 
     class FormattingSettings {

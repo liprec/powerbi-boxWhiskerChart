@@ -46,26 +46,21 @@
         }],
         "categorical": {
             "categories": {
-                "select": [
-                    {
-                        "for": {
-                            "in": "Groups"
-                        }
-                    },
-                    {
-                        "for": {
-                            "in": "Samples"   
-                        }
-                    }
-                ],
-                "dataReductionAlgorithm": { "window": { "count": 30000 } }
+                "for": {
+                    "in": "Groups"
+                },
+                "dataReductionAlgorithm": { "top": { "count": 100 } }
             },
             "values": {
-                "select": [{
-                    "for": {
-                        "in": "Values"   
-                    }
-                }]
+                "group": {
+                    "by": "Samples",
+                    "dataReductionAlgorithm": { "top": { "count": 30000 } },
+                    "select": [{
+                        "for": {
+                            "in": "Values"   
+                        }
+                    }]
+                }
             }
         }
     }],
@@ -81,6 +76,11 @@
                     "description": "Enable telemetry logging",
                     "type": {
                         "bool": true
+                    }
+                },
+                "dataPointColors": {
+                    "type": {
+                        "text": true
                     }
                 }
             }
