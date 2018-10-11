@@ -146,7 +146,7 @@ module powerbi.extensibility.visual {
         public meanColor: string = "#111";
         public medianColor: string = "#111";
         public oneFill: string = undefined;
-        public showAll: boolean = false;
+        public showAll: boolean = true;
     }
 
     class ToolTipSettings {
