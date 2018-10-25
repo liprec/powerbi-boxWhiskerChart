@@ -774,13 +774,12 @@ module powerbi.extensibility.visual {
             const instanceEnumeration: VisualObjectInstanceEnumeration = BoxWhiskerChartSettings.enumerateObjectInstances(
                 this.settings || BoxWhiskerChartSettings.getDefault(),
                 options);
-            if (options.objectName === "general") {
-                // return;
-            }
-
             let instances: VisualObjectInstance[] = [];
 
             switch (options.objectName) {
+                case "general":
+                    this.removeEnumerateObject(instanceEnumeration, "dataPointColors");
+                    break;
                 case "chartOptions":
                     this.removeEnumerateObject(instanceEnumeration, "orientation");
                     switch (this.settings.chartOptions.whisker) {
