@@ -321,11 +321,7 @@ module powerbi.extensibility.visual {
             .attr("x", dataLabel => dataLabel.x)
             .attr("y", dataLabel => dataLabel.y)
             .attr("fill", settings.labels.fontColor)
-            .style("opacity", dataLabel => dataLabel.visible);
-
-        chartElement
-            .selectAll("text")
-            .style("fill", settings.labels.fontColor)
+            .style("opacity", dataLabel => dataLabel.visible)
             .style("font-family", settings.labels.fontFamily)
             .style("font-size", fontSize);
 
