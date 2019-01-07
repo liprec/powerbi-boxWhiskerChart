@@ -150,10 +150,10 @@ module powerbi.extensibility.visual {
         });
 
         let referenceLineData = (refLine) => {
-            let x1 = settings.general.margin.left + axisSettings.axisValueWidth;
-            let y1 = axisSettings.axisScaleValue(refLine.value);
-            let x2 = settings.general.viewport.width - settings.general.margin.left;
-            let y2 = axisSettings.axisScaleValue(refLine.value);
+            let x1 = 0;
+            let y1 = axisSettings.drawScaleValue(refLine.value);
+            let x2 = axisSettings.drawScaleCategory.range()[1];
+            let y2 = axisSettings.drawScaleValue(refLine.value);
             return `M ${x1},${y1} L${x2},${y2}`;
         };
 
@@ -190,10 +190,7 @@ module powerbi.extensibility.visual {
 
         let referenceLineLabel = selection.selectAll(BoxWhiskerChart.ChartReferenceLineLabel.selectorName).data(d => {
             if (d && d.length > 0) {
-                return d.map((refLine: BoxWhiskerChartReferenceLine) => {
-                    if (refLine.showLabel) {
-                        return refLine;
-                    }});
+                return d.filter((d: BoxWhiskerChartReferenceLine) => d.showLabel);
             }
             return [];
         });
@@ -207,8 +204,8 @@ module powerbi.extensibility.visual {
             if (!refLine) { return; }
             let x0 = refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
                     ? 0
-                    : settings.general.viewport.width - settings.general.margin.left;
-            let y0 = axisSettings.axisScaleValue(refLine.value);
+                    : axisSettings.drawScaleCategory.range()[1];;
+            let y0 = axisSettings.drawScaleValue(refLine.value);
             return `translate(${x0} ${y0})`;
         };
 
@@ -263,13 +260,8 @@ module powerbi.extensibility.visual {
                 }
                 return label;
             })
-            .attr("x", function(value) { // no lambda because of the 'getBBox()'
-                let refLine = <BoxWhiskerChartReferenceLine>value;
-                let width = this.getBBox().width;
-                return refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
-                    ? settings.general.margin.left + axisSettings.axisValueWidth
-                    : -width;
-            })
+            .attr("text-anchor", (refLine: BoxWhiskerChartReferenceLine) => refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left ? "start" : "end")
+            .attr("x", 0)
             .attr("y", function(value) { // no lambda because of the 'getBBox()'
                 let refLine = <BoxWhiskerChartReferenceLine>value;
                 let height = this.getBBox().height;

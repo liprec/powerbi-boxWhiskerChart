@@ -414,7 +414,7 @@ module powerbi.extensibility.visual {
                 .duration(settings.general.duration)
                 .style("stroke", settings.gridLines.majorGridColor)
                 .style("stroke-width", settings.gridLines.majorGridSize)
-                .attr("x2", settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right + settings.general.margin.left);
+                .attr("x2", settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right - settings.general.margin.left);
 
             if (settings.gridLines.minorGrid) {
                 let yMinorGrid = d3.svg.axis()

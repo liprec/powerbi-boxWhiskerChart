@@ -708,7 +708,7 @@ module powerbi.extensibility.visual {
                 .range([0, this.axisSettings.axisScaleCategory.range()[1] - this.axisSettings.axisScaleCategory.range()[0]]);
             this.axisSettings.drawScaleValue = this.axisSettings.axisScaleValue.copy()
                 .range([this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.min) - this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.max), 0]);
-            let chartX = this.axisSettings.axisScaleCategory.range()[0] - this.settings.general.margin.right,
+            let chartX = this.axisSettings.axisScaleCategory.range()[0],
                 chartY = this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.max),
                 chartWidth = this.axisSettings.axisScaleCategory.range()[1] - this.axisSettings.axisScaleCategory.range()[0],
                 chartHeight = this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.min) - chartY;

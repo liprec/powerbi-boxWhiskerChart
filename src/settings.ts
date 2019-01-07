@@ -35,7 +35,7 @@ module powerbi.extensibility.visual {
     // utils.svg
     import IMargin = powerbi.extensibility.utils.svg.IMargin;
 
-    const fontFamily: string = "\"Segoe UI\",wf_segoe-ui_normal,helvetica,arial,sans-serif";
+    const fontFamily: string = "'Segoe UI',wf_segoe-ui_normal,helvetica,arial,sans-serif";
 
     export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 
