@@ -204,7 +204,7 @@ module powerbi.extensibility.visual {
             if (!refLine) { return; }
             let x0 = refLine.hPosition === BoxWhiskerEnums.ReferenceLine.HPosition.left
                     ? 0
-                    : axisSettings.drawScaleCategory.range()[1];;
+                    : axisSettings.drawScaleCategory.range()[1];
             let y0 = axisSettings.drawScaleValue(refLine.value);
             return `translate(${x0} ${y0})`;
         };
