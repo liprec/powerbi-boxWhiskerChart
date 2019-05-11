@@ -1,32 +1,29 @@
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "ES5",
-    "sourceMap": true,
-    "out": "./.tmp/build/boxWhiskerChart.js"
-  },
-  "files": [
-    ".api/v1.13.0/PowerBI-visuals.d.ts",
-    "node_modules/powerbi-models/dist/models-noexports.d.ts",
-    "node_modules/powerbi-visuals-utils-formattingutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-typeutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-svgutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-interactivityutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-colorutils/lib/index.d.ts",
-    "node_modules/powerbi-visuals-utils-tooltiputils/lib/index.d.ts",
-    "src/selectionId.ts",
-    "src/objectEnumerationUtility.ts",
-    "src/enums.ts",
-    "src/interfaces.ts",
-    "src/settings.ts",
-    "src/perfTimer.ts",
-    "src/boxWhiskerRefLineHelper.ts",
-    "src/boxWhiskerDataPointHelper.ts",
-    "src/boxWhiskerChartAxis.ts",
-    "src/boxWhiskerChartDraw.ts",
-    "src/boxWhiskerChart.ts"
-  ]
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "*": [
+                "types/*"
+            ]
+        },
+        "allowJs": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "module": "es6",
+        "target": "ES6",
+        "sourceMap": true,
+        "outDir": "./.tmp/build/",
+        "moduleResolution": "node",
+        "declaration": true,
+        "noImplicitThis": false,
+        "noImplicitAny": false,
+        "alwaysStrict": true,
+        "strictBindCallApply": false,
+        "strictNullChecks": false,
+        "strictFunctionTypes": false,
+        "strictPropertyInitialization": false
+    },
+    "files": [
+        "src/boxWhiskerChart.ts"
+    ]
 }

@@ -1,132 +1,133 @@
 /*
-*
-* Copyright (c) 2018 Jan Pieter Posthuma / DataScenarios
-*
-* All rights reserved.
-*
-* MIT License.
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-*  of this software and associated documentation files (the "Software"), to deal
-*  in the Software without restriction, including without limitation the rights
-*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-*  copies of the Software, and to permit persons to whom the Software is
-*  furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-*  all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-*  THE SOFTWARE.
-*/
+ *
+ * Copyright (c) 2019 Jan Pieter Posthuma / DataScenarios
+ *
+ * All rights reserved.
+ *
+ * MIT License.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ *  all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ *  THE SOFTWARE.
+ */
 
-module powerbi.extensibility.visual {
+"use strict";
+import powerbi from "powerbi-visuals-api";
+import { IMargin } from "powerbi-visuals-utils-svgutils";
+import { Selection } from "d3";
 
-    // utils.svg
-    import IMargin = powerbi.extensibility.utils.svg.IMargin;
+import { ReferenceLine } from "./enums";
 
-    // powerbi.extensibility
-    import TooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import DataViewObject = powerbi.DataViewObject;
+import ISelectionId = powerbi.visuals.ISelectionId;
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import Linear = d3.scale.Linear;
 
-    // d3
-    import Selection = d3.Selection;
+export interface BoxWhiskerChartConstructorOptions {
+    svg?: Selection<any>;
+    margin?: IMargin;
+}
 
-    export interface BoxWhiskerChartConstructorOptions {
-        svg?: Selection<any>;
-        margin?: IMargin;
-    }
+export interface IBoxWhiskerChartDatapoint {
+    min: number;
+    max: number;
+    median: number;
+    quartile1: number;
+    quartile3: number;
+    average: number;
+    samples: number;
+    category: number;
+    color?: string;
+    fillColor?: string;
+    label?: string;
+    highlight: boolean;
+    outliers: IBoxWhiskerChartOutlier[];
+    dataLabels: IBoxWhiskerDataLabel[];
+    selectionId: ISelectionId;
+    tooltipInfo?: VisualTooltipDataItem[];
+    x: number;
+    y: number;
+}
 
-    export interface BoxWhiskerChartDatapoint {
-        min: number;
-        max: number;
-        median: number;
-        quartile1: number;
-        quartile3: number;
-        average: number;
-        samples: number;
-        category: number;
-        color?: string;
-        fillColor?: string;
-        label?: string;
-        highlight: boolean;
-        outliers: BoxWhiskerChartOutlier[];
-        dataLabels: BoxWhiskerDataLabel[];
-        selectionId: powerbi.visuals.ISelectionId;
-        tooltipInfo?: TooltipDataItem[];
-        x: number;
-        y: number;
-    }
+export interface IBoxWhiskerChartOutlier {
+    category: number;
+    color?: string;
+    value: number;
+    highlight: boolean;
+    selectionId: ISelectionId;
+    tooltipInfo?: VisualTooltipDataItem[];
+}
 
-    export interface BoxWhiskerChartOutlier {
-        category: number;
-        color?: string;
-        value: number;
-        highlight: boolean;
-        tooltipInfo?: TooltipDataItem[];
-    }
+export interface IBoxWhiskerChartReferenceLine extends DataViewObject {
+    selector: ISelectionId;
+    type: string;
+    show: boolean;
+    displayName: string;
+    value: number;
+    lineColor: string;
+    transparency: number;
+    style: ReferenceLine.Style;
+    position: ReferenceLine.Position;
+    showLabel: boolean;
+    labelColor: string;
+    labelFontSize: number;
+    labelFontFamily: string;
+    labelType: ReferenceLine.LabelType;
+    hPosition: ReferenceLine.HPosition;
+    vPosition: ReferenceLine.VPosition;
+    labelDisplayUnits: number;
+    labelPrecision: number;
+    x: number;
+    y: number;
+}
 
-    export interface BoxWhiskerChartReferenceLine extends DataViewObject {
-        selector: ISelectionId;
-        type: string;
-        show: boolean;
-        displayName: string;
-        value: number;
-        lineColor: string;
-        transparency: number;
-        style: BoxWhiskerEnums.ReferenceLine.Style;
-        position: BoxWhiskerEnums.ReferenceLine.Position;
-        showLabel: boolean;
-        labelColor: string;
-        labelFontSize: number;
-        labelFontFamily: string;
-        labelType: BoxWhiskerEnums.ReferenceLine.LabelType;
-        hPosition: BoxWhiskerEnums.ReferenceLine.HPosition;
-        vPosition: BoxWhiskerEnums.ReferenceLine.VPosition;
-        labelDisplayUnits: number;
-        labelPrecision: number;
-        x: number;
-        y: number;
-    }
+export interface IBoxWhiskerChartData {
+    dataPoints: IBoxWhiskerChartDatapoint[][];
+    dataPointLength: number;
+    categories: string[];
+    isHighLighted: boolean;
+    referenceLines: IBoxWhiskerChartReferenceLine[];
+}
 
-    export interface BoxWhiskerChartData {
-        dataPoints: BoxWhiskerChartDatapoint[][];
-        dataPointLength: number;
-        categories: string[];
-        isHighLighted: boolean;
-        referenceLines: BoxWhiskerChartReferenceLine[];
-    }
+export interface IBoxWhiskerDataLabel {
+    value: number;
+    y: number;
+    x: number;
+    visible: number;
+}
 
-    export interface BoxWhiskerDataLabel {
-        value: number;
-        y: number;
-        x: number;
-        visible: number;
-    }
+export interface IBoxWhiskerAxisOptions {
+    max: number;
+    min: number;
+    ticks: number;
+    tickSize: number;
+}
 
-    export interface BoxWhiskerAxisOptions {
-        max: number;
-        min: number;
-        ticks: number;
-        tickSize: number;
-    }
-
-    export interface BoxWhiskerAxisSettings {
-        axisScaleCategory: d3.scale.Linear<number, number>;
-        axisCategoryHeight: number;
-        axisCategoryWidth: number;
-        axisLabelSizeCategory: number;
-        axisAngleCategory: number;
-        axisValueHeight: number;
-        axisValueWidth: number;
-        axisLabelSizeValue: number;
-        axisScaleValue: d3.scale.Linear<number, number>;
-        axisOptions: BoxWhiskerAxisOptions;
-        drawScaleCategory: d3.scale.Linear<number, number>;
-        drawScaleValue: d3.scale.Linear<number, number>;
-    }
+export interface IBoxWhiskerAxisSettings {
+    axisScaleCategory: Linear<number, number>;
+    axisCategoryHeight: number;
+    axisCategoryWidth: number;
+    axisLabelSizeCategory: number;
+    axisAngleCategory: number;
+    axisValueHeight: number;
+    axisValueWidth: number;
+    axisLabelSizeValue: number;
+    axisScaleValue: Linear<number, number>;
+    axisOptions: IBoxWhiskerAxisOptions;
+    drawScaleCategory: Linear<number, number>;
+    drawScaleValue: Linear<number, number>;
 }
