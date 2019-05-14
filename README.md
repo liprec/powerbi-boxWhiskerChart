@@ -1,6 +1,6 @@
 # Power BI Box and Whisker Chart
 
-[![Build Status](https://travis-ci.org/liprec/powerbi-boxWhiskerChart.svg?branch=master)](https://travis-ci.org/liprec/powerbi-boxWhiskerChart)[![Coverage Status](https://coveralls.io/repos/github/liprec/powerbi-boxWhiskerChart/badge.svg?branch=master)](https://coveralls.io/github/liprec/powerbi-boxWhiskerChart?branch=master)
+[![Build Status](https://dev.azure.com/datascenarios/GitHub%20Projects/_apis/build/status/powerbi-boxWhiskerChart?branchName=master)](https://dev.azure.com/datascenarios/GitHub%20Projects/_build/latest?definitionId=22&branchName=master)
 
 ![](assets/BoxWhiskerChart.png)
 
