@@ -12,7 +12,6 @@
         {
             "name": "Values",
             "kind": "Measure",
-            "cartesianKind": 1,
             "displayName": "Values"
         },{
             "displayName": "Tooltips",
@@ -595,6 +594,7 @@
         },
         "y1AxisReferenceLine" : {
             "displayName": "Constant line",
+            "objectCategory": 2,
             "properties": {
                 "show": {
                     "displayName": "Show",
