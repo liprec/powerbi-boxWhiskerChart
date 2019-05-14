@@ -27,7 +27,10 @@
 
 "use strict";
 import { textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/src";
-import { Selection, min as d3Min, max as d3Max, svg as d3Svg, scale as d3Scale, layout as d3Layout } from "d3";
+import { Selection } from "d3-selection";
+import { max, min } from "d3-array";
+import { scaleLinear, scaleLog, scaleBand } from "d3-scale";
+import { axisBottom, axisLeft } from "d3-axis";
 
 import textMeasurementService = TextMeasurementService.textMeasurementService;
 
@@ -81,31 +84,29 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
     tan = Math.tan(axisSettings.axisAngleCategory * (Math.PI / 180));
 
     // Caclulate optimum min/max of value axis
-    let stack = d3Layout.stack();
-    let layers = stack(data.dataPoints);
     let refLines = data.referenceLines;
     axisSettings.axisOptions = getAxisOptions(
-        d3Min([
-            d3Min(refLines, (refLine: IBoxWhiskerChartReferenceLine) => refLine.value),
-            d3Min(layers, (layer) => {
-                return d3Min(layer, (point) => {
-                    return  d3Min([
+        min([
+            min(refLines, (refLine: IBoxWhiskerChartReferenceLine) => refLine.value),
+            min(data.dataPoints, (layer) => {
+                return min(layer, (point) => {
+                    return  min([
                                 (<IBoxWhiskerChartDatapoint>point).min,
                                 (<IBoxWhiskerChartDatapoint>point).median,
                                 (<IBoxWhiskerChartDatapoint>point).average,
-                            d3Min((<IBoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
+                            min((<IBoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                 });
             })
         ]),
-        d3Max([
-            d3Max(refLines, (refLine: IBoxWhiskerChartReferenceLine) => refLine.value),
-            d3Max(layers, (layer) => {
-                return d3Max(layer, (point) => {
-                    return  d3Max([
+        max([
+            max(refLines, (refLine: IBoxWhiskerChartReferenceLine) => refLine.value),
+            max(data.dataPoints, (layer) => {
+                return max(layer, (point) => {
+                    return  max([
                                 (<IBoxWhiskerChartDatapoint>point).max,
                                 (<IBoxWhiskerChartDatapoint>point).median,
                                 (<IBoxWhiskerChartDatapoint>point).average,
-                            d3Max((<IBoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
+                            max((<IBoxWhiskerChartDatapoint>point).outliers, (outlier) => outlier.value)]);
                 });
             })
         ]),
@@ -116,7 +117,7 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
     if (data.dataPointLength > 0) {
         // calculate AxisSizeX, AxisSizeY
         if (settings.xAxis.show) { // Show category axis
-            axisSettings.axisCategoryHeight = d3Max(data.categories.map((category: string) => {
+            axisSettings.axisCategoryHeight = max(data.categories.map((category: string) => {
                 let size1 = cos * textMeasurementService.measureSvgTextHeight(
                     settings.xAxis.axisTextProperties,
                     category);
@@ -125,7 +126,7 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
                     category);
                 return size1 + size2 + 10; // Axis width/margin itself;
             }));
-            axisSettings.axisCategoryWidth = d3Max(data.categories.map((category: string) => {
+            axisSettings.axisCategoryWidth = max(data.categories.map((category: string) => {
                 return textMeasurementService.measureSvgTextWidth(
                     settings.xAxis.axisTextProperties,
                     settings.formatting.categoryFormatter.format(category));
@@ -183,11 +184,11 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
 
     switch (settings.yAxis.scaleType) {
         case ScaleType.Linear:
-            axisSettings.axisScaleValue = d3Scale.linear()
+            axisSettings.axisScaleValue = scaleLinear()
                 .domain([axisSettings.axisOptions.min || 0, axisSettings.axisOptions.max || 0]);
             break;
         case ScaleType.Log:
-            axisSettings.axisScaleValue = d3Scale.log()
+            axisSettings.axisScaleValue = scaleLog()
                 .domain([axisSettings.axisOptions.min || 1, axisSettings.axisOptions.max || 1]);
             break;
     }
@@ -195,43 +196,43 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
     axisSettings.axisScaleValue
         .range([settings.general.margin.bottom + axisSettings.axisCategoryHeight, settings.general.viewport.height - settings.general.margin.top]);
 
-    axisSettings.axisScaleCategory = d3Scale.linear()
+    axisSettings.axisScaleCategory = scaleLinear()
         .domain([0, data.dataPointLength])
         .range([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
 
     return axisSettings;
 }
 
-export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, data: IBoxWhiskerChartData, axisSettings: IBoxWhiskerAxisSettings) {
-    let axisCategory: Selection<any> = rootElement.selectAll(AxisX.selectorName);
-    let axisValue: Selection<any> = rootElement.selectAll(AxisY.selectorName);
-    let axisCategoryLabel: Selection<any> = rootElement.selectAll(AxisXLabel.selectorName);
-    let axisValueLabel: Selection<any> = rootElement.selectAll(AxisYLabel.selectorName);
-    let axisMajorGrid: Selection<any> = rootElement.select(AxisMajorGrid.selectorName);
-    let axisMinorGrid: Selection<any> = rootElement.select(AxisMinorGrid.selectorName);
+export function drawAxis(rootElement: Selection<any, any, any, any>, settings: BoxWhiskerChartSettings, data: IBoxWhiskerChartData, axisSettings: IBoxWhiskerAxisSettings) {
+    let axisCategory: Selection<any, any, any, any> = rootElement.selectAll(AxisX.selectorName);
+    let axisValue: Selection<any, any, any, any> = rootElement.selectAll(AxisY.selectorName);
+    let axisCategoryLabel: Selection<any, any, any, any> = rootElement.selectAll(AxisXLabel.selectorName);
+    let axisValueLabel: Selection<any, any, any, any> = rootElement.selectAll(AxisYLabel.selectorName);
+    let axisMajorGrid: Selection<any, any, any, any> = rootElement.select(AxisMajorGrid.selectorName);
+    let axisMinorGrid: Selection<any, any, any, any> = rootElement.select(AxisMinorGrid.selectorName);
     let sin = Math.sin(axisSettings.axisAngleCategory * (Math.PI / 180));
     let cos = Math.cos(axisSettings.axisAngleCategory * (Math.PI / 180));
 
-    let categoryScale = d3Scale.ordinal();
+    let categoryScale = scaleBand();
     // Can we draw at least one Category label?
     if (axisSettings.axisCategoryWidth < (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - axisSettings.axisValueWidth)) {
         let overSamplingX = 1;
         let visibleDataPoints = data.categories.filter((category, i) => i % overSamplingX === 0);
-        let totalXAxisWidth = d3Max(visibleDataPoints
+        let totalXAxisWidth = max(visibleDataPoints
             .map((category) => calcWidth(settings.xAxis.orientation, category))) * visibleDataPoints.length;
         while (totalXAxisWidth > (settings.general.viewport.width - settings.general.margin.right - settings.general.margin.left - axisSettings.axisValueWidth)) {
             overSamplingX += 1;
             visibleDataPoints = data.categories.filter((category, i) => i % overSamplingX === 0);
-            totalXAxisWidth = d3Max(visibleDataPoints
+            totalXAxisWidth = max(visibleDataPoints
                 .map((category) => calcWidth(settings.xAxis.orientation, category))) * visibleDataPoints.length;
         }
         categoryScale.domain(data.categories.map((category, index) => { return (index % overSamplingX === 0) ? category : null; })
             .filter((d) => d !== null)
         )
-            .rangeBands([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right], 0);
+            .range([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
     } else {
         categoryScale.domain([])
-            .rangeBands([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
+            .range([settings.general.margin.left + axisSettings.axisValueWidth, settings.general.viewport.width - settings.general.margin.right]);
     }
 
     let valueScale = axisSettings.axisScaleValue.range([settings.general.viewport.height - axisSettings.axisCategoryHeight - settings.general.margin.bottom, settings.general.margin.top]);
@@ -257,16 +258,12 @@ export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartS
                 settings.yAxis.scaleType === ScaleType.Log ? valueScale(1) : valueScale(0);
 
     if (settings.xAxis.show) {
-        let categoryAxis = d3Svg.axis()
-            .scale(categoryScale)
-            .orient("bottom")
+        let categoryAxis = axisBottom(categoryScale)
             .tickSize(settings.gridLines.show ? 1 : 0)
-            .innerTickSize(8 + ((settings.general.viewport.height - settings.general.margin.top - axisSettings.axisCategoryHeight) - xAxisTransform));
+            .tickSizeInner(8 + ((settings.general.viewport.height - settings.general.margin.top - axisSettings.axisCategoryHeight) - xAxisTransform));
 
         axisCategory
             .attr("transform", "translate(0, " + xAxisTransform + ")")
-            .transition()
-            .duration(settings.general.duration)
             .style("opacity", 1)
             .call(categoryAxis);
 
@@ -315,45 +312,34 @@ export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartS
             }
             axisCategoryLabel
                 .attr("transform", "translate(" + xTransform + ", " + yTransform + ")")
-                .transition()
-                .duration(settings.general.duration)
                 .style("opacity", 1)
                 .text(settings.xAxis.title || settings.xAxis.defaultTitle)
                 .style("fill", settings.xAxis.titleFontColor)
                 .style("font-family", settings.xAxis.titleFontFamily)
                 .style("font-size", settings.xAxis.titleFontSize + "px");
         } else {
-            axisCategoryLabel.transition()
-                .duration(settings.general.duration)
+            axisCategoryLabel
                 .style("opacity", 0);
         }
     } else {
-        axisCategory.transition()
-            .duration(settings.general.duration)
+        axisCategory
             .style("opacity", 0);
-        axisCategoryLabel.transition()
-            .duration(settings.general.duration)
+        axisCategoryLabel
             .style("opacity", 0);
     }
 
     if (settings.yAxis.show) {
-        let valueAxis = d3Svg.axis()
-            .scale(valueScale)
-            .orient("left")
+        let valueAxis = axisLeft(valueScale)
             .tickFormat(d => settings.formatting.valuesFormatter.format(d))
             .ticks(yAxisTicks);
 
         axisValue
             .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
-            .transition()
-            .duration(settings.general.duration)
             .style("opacity", 1)
             .call(valueAxis);
 
         axisValue
             .selectAll("text")
-            .transition()
-            .duration(settings.general.duration)
             .style("fill", settings.yAxis.fontColor)
             .style("font-family", settings.yAxis.fontFamily)
             .style("font-size", settings.yAxis.fontSize + "px");
@@ -381,86 +367,66 @@ export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartS
             }
             axisValueLabel
                 .attr("transform", "translate(" + xTransform + ", " + yTransform + ") rotate(-90)")
-                .transition()
-                .duration(settings.general.duration)
                 .style("opacity", 1)
                 .text(settings.yAxis.title || settings.yAxis.defaultTitle)
                 .style("fill", settings.yAxis.titleFontColor)
                 .style("font-family", settings.yAxis.titleFontFamily)
                 .style("font-size", settings.yAxis.titleFontSize + "px");
         } else {
-            axisValueLabel.transition()
-                .duration(settings.general.duration)
+            axisValueLabel
                 .style("opacity", 0);
         }
     } else {
-        axisValue.transition()
-            .duration(settings.general.duration)
+        axisValue
             .style("opacity", 0);
-        axisValueLabel.transition()
-            .duration(settings.general.duration)
+        axisValueLabel
             .style("opacity", 0);
     }
 
     if (settings.gridLines.show) {
-        let yMajorGrid = d3Svg.axis()
-            .scale(valueScale)
-            .orient("left")
+        let yMajorGrid = axisLeft(valueScale)
             .ticks(yAxisTicks)
-            .outerTickSize(0)
-            .innerTickSize(0);
+            .tickSizeOuter(0)
+            .tickSizeOuter(0);
 
         axisMajorGrid
             .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
-            .transition()
-            .duration(settings.general.duration)
             .style("opacity", 1)
             .call(yMajorGrid);
 
         axisMajorGrid
             .selectAll("line")
-            .transition()
-            .duration(settings.general.duration)
             .style("stroke", settings.gridLines.majorGridColor)
             .style("stroke-width", settings.gridLines.majorGridSize)
             .attr("x2", settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right - settings.general.margin.left);
 
         if (settings.gridLines.minorGrid) {
-            let yMinorGrid = d3Svg.axis()
-                .scale(valueScale)
-                .orient("left")
+            let yMinorGrid = axisLeft(valueScale)
                 .ticks(yAxisTicks * 5)
-                .outerTickSize(0)
-                .innerTickSize(0);
+                .tickSizeOuter(0)
+                .tickSizeInner(0);
 
             axisMinorGrid
                 .attr("transform", "translate(" + (axisSettings.axisValueWidth + settings.general.margin.left) + ", 0)")
-                .transition()
-                .duration(settings.general.duration)
                 .style("opacity", 1)
                 .call(yMinorGrid);
 
             axisMinorGrid
                 .selectAll("line")
-                .transition()
-                .duration(settings.general.duration)
                 .style("stroke", settings.gridLines.minorGridColor)
                 .style("stroke-width", settings.gridLines.minorGridSize)
                 .attr("x2", settings.general.viewport.width - axisSettings.axisValueWidth - settings.general.margin.right + settings.general.margin.left);
 
         }
         else {
-            axisMinorGrid.transition()
-                .duration(settings.general.duration)
+            axisMinorGrid
                 .style("opacity", 0);
         }
     }
     else {
-        axisMajorGrid.transition()
-            .duration(settings.general.duration)
+        axisMajorGrid
             .style("opacity", 0);
-        axisMinorGrid.transition()
-            .duration(settings.general.duration)
+        axisMinorGrid
             .style("opacity", 0);
     }
 

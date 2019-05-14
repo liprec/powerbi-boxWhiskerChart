@@ -28,17 +28,17 @@
 "use strict";
 import powerbi from "powerbi-visuals-api";
 import { IMargin } from "powerbi-visuals-utils-svgutils";
-import { Selection } from "d3";
+import { Selection } from "d3-selection";
+import { ScaleLinear } from "d3-scale";
 
 import { ReferenceLine } from "./enums";
 
 import DataViewObject = powerbi.DataViewObject;
 import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
-import Linear = d3.scale.Linear;
 
 export interface BoxWhiskerChartConstructorOptions {
-    svg?: Selection<any>;
+    svg?: Selection<any, any, any, any>;
     margin?: IMargin;
 }
 
@@ -118,7 +118,7 @@ export interface IBoxWhiskerAxisOptions {
 }
 
 export interface IBoxWhiskerAxisSettings {
-    axisScaleCategory: Linear<number, number>;
+    axisScaleCategory: ScaleLinear<number, number>;
     axisCategoryHeight: number;
     axisCategoryWidth: number;
     axisLabelSizeCategory: number;
@@ -126,8 +126,8 @@ export interface IBoxWhiskerAxisSettings {
     axisValueHeight: number;
     axisValueWidth: number;
     axisLabelSizeValue: number;
-    axisScaleValue: Linear<number, number>;
+    axisScaleValue: ScaleLinear<number, number>;
     axisOptions: IBoxWhiskerAxisOptions;
-    drawScaleCategory: Linear<number, number>;
-    drawScaleValue: Linear<number, number>;
+    drawScaleCategory: ScaleLinear<number, number>;
+    drawScaleValue: ScaleLinear<number, number>;
 }

@@ -29,10 +29,11 @@
 import powerbi from "powerbi-visuals-api";
 import { valueFormatter as ValueFormatter, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/src";
 import { dataViewObjects as DataViewObjectsModule } from "powerbi-visuals-utils-dataviewutils";
-import { ColorHelper } from "powerbi-visuals-utils-colorutils";
-import { ITooltipServiceWrapper, createTooltipServiceWrapper, TooltipEventArgs } from "powerbi-visuals-utils-tooltiputils";
+import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import { valueType } from "powerbi-visuals-utils-typeutils";
-import { Selection, selection, max as d3Max, layout as d3Layout, select as d3Select } from "d3";
+import { Selection, select } from "d3-selection";
+import { max } from "d3-array";
+import { stack } from "d3-shape";
 
 import DataView = powerbi.DataView;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
@@ -43,7 +44,6 @@ import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInst
 import VisualObjectInstanceEnumerationObject = powerbi.VisualObjectInstanceEnumerationObject;
 import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
-import Selector = powerbi.data.Selector;
 import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -52,13 +52,9 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
 import ISandboxExtendedColorPalette = powerbi.extensibility.ISandboxExtendedColorPalette;
-import TooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
-import IValueFormatter = ValueFormatter.IValueFormatter;
 import valueFormatter = ValueFormatter.valueFormatter;
 import ValueType = valueType.ValueType;
-import TextProperties = TextMeasurementService.TextProperties;
 import textMeasurementService = TextMeasurementService.textMeasurementService;
-import Update = selection.Update;
 
 import { syncSelectionState, drawChart } from "./boxWhiskerChartDraw";
 import { drawReferenceLines, referenceLineReadDataView, referenceLineEnumerateObjectInstances } from "./boxWhiskerRefLineHelper";
@@ -87,6 +83,8 @@ import InfoText = BoxWhiskerCssConstants.InfoText;
 import ChartReferenceLineFrontNode = BoxWhiskerCssConstants.ChartReferenceLineFrontNode;
 import ChartReferenceLineBackNode = BoxWhiskerCssConstants.ChartReferenceLineBackNode;
 
+import "@babel/polyfill";
+
 import "../style/visual.less";
 
 export interface ISQExpr extends powerbi.data.ISQExpr {
@@ -109,25 +107,25 @@ export class BoxWhiskerChart implements IVisual {
     };
 
     private root: HTMLElement;
-    private svg: Selection<any>;
-    private axis: Selection<any>;
-    private chartMainGroup: Selection<any>;
-    private chartMain: Selection<any>;
+    private svg: Selection<any, any, any, any>;
+    private axis: Selection<any, any, any, any>;
+    private chartMainGroup: Selection<any, any, any, any>;
+    private chartMain: Selection<any, any, any, any>;
     private settings: BoxWhiskerChartSettings;
     private axisSettings: IBoxWhiskerAxisSettings;
-    private chart: Selection<any>;
-    private chartSelection: Update<IBoxWhiskerChartDatapoint[]>;
-    private axisX: Selection<any>;
-    private axisY: Selection<any>;
-    private axisXLabel: Selection<any>;
-    private axisYLabel: Selection<any>;
-    private axisMajorGrid: Selection<any>;
-    private axisMinorGrid: Selection<any>;
+    private chart: Selection<any, any, any, any>;
+    private chartSelection: Selection<any, any, any, any>;
+    private axisX: Selection<any, any, any, any>;
+    private axisY: Selection<any, any, any, any>;
+    private axisXLabel: Selection<any, any, any, any>;
+    private axisYLabel: Selection<any, any, any, any>;
+    private axisMajorGrid: Selection<any, any, any, any>;
+    private axisMinorGrid: Selection<any, any, any, any>;
 
-    private warningText: Selection<any>;
-    private infoText: Selection<any>;
+    private warningText: Selection<any, any, any, any>;
+    private infoText: Selection<any, any, any, any>;
 
-    private mainGroupElement: Selection<any>;
+    private mainGroupElement: Selection<any, any, any, any>;
     private colorPalette: ISandboxExtendedColorPalette;
     private selectionIdBuilder: ISelectionIdBuilder;
     private selectionManager: ISelectionManager;
@@ -211,7 +209,7 @@ export class BoxWhiskerChart implements IVisual {
 
         let sampleLabels = dataView.metadata.columns.filter((d) => d.roles.Samples === true ).map((d) => { return d.displayName; });
 
-        let maxValue = d3Max(sampleValues, (sampleValue) => d3Max(sampleValue));
+        let maxValue = max(sampleValues, (sampleValue) => max(sampleValue));
 
         this.settings.formatting.valuesFormatter = valueFormatter.create({
             format: valueFormatter.getFormatStringByColumn(valueSource),
@@ -482,18 +480,18 @@ export class BoxWhiskerChart implements IVisual {
             syncSelectionState(this.chartSelection, this.selectionManager.getSelectionIds() as ISelectionId[]);
         });
 
-        this.warningText = d3Select(this.root)
+        this.warningText = select(this.root)
             .append("text")
             .classed(Text.className, true)
             .classed(WarningText.className, true);
 
-        this.infoText = d3Select(this.root)
+        this.infoText = select(this.root)
             .append("text")
             .classed(Text.className, true)
             .classed(InfoText.className, true);
 
         if (!this.svg) {
-            this.svg = d3Select(this.root)
+            this.svg = select(this.root)
                 .append("svg")
                 .classed(Visual.className, true);
         }
@@ -620,10 +618,8 @@ export class BoxWhiskerChart implements IVisual {
 
         this.axisSettings = calcAxisSettings(this.settings, this.data);
         this.svg
-            .attr({
-                "height": this.settings.general.viewport.height,
-                "width": this.settings.general.viewport.width
-            });
+            .attr("height", this.settings.general.viewport.height)
+            .attr("width", this.settings.general.viewport.width);
 
         this.settings.general.margin.top = this.settings.formatting.valuesFormatter ?
         textMeasurementService.measureSvgTextHeight(
@@ -641,12 +637,9 @@ export class BoxWhiskerChart implements IVisual {
         this.settings.shapes.dotRadius = this.colorPalette.isHighContrast ? 6 : this.settings.shapes.dotRadius;
 
         // Create ChartNodes
-        let stack = d3Layout.stack();
-        let layers = stack(dataPoints);
-
-        this.chartSelection = <Update<IBoxWhiskerChartDatapoint[]>>this.chartMain
+        this.chartSelection = this.chartMain
             .selectAll(ChartNode.selectorName)
-            .data(layers);
+            .data(dataPoints);
 
         this.chartSelection
             .enter()
@@ -701,14 +694,10 @@ export class BoxWhiskerChart implements IVisual {
             chartWidth = this.axisSettings.axisScaleCategory.range()[1] - this.axisSettings.axisScaleCategory.range()[0],
             chartHeight = this.axisSettings.axisScaleValue(this.axisSettings.axisOptions.min) - chartY;
         this.chartMainGroup
-            .attr({
-                "transform": `translate(${chartX}, ${chartY})`,
-            });
+            .attr("transform", `translate(${chartX}, ${chartY})`);
         this.chartMain
-            .attr({
-                "height": chartHeight,
-                "width": chartWidth,
-            });
+            .attr("height", chartHeight)
+            .attr("width", chartWidth);
     }
 
     public checkFullDataset(dataView: DataView) {

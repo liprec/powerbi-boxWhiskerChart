@@ -29,7 +29,7 @@
 import powerbi from "powerbi-visuals-api";
 import { dataViewObjects as DataViewObjectsModule } from "powerbi-visuals-utils-dataviewutils";
 import { valueFormatter as ValueFormatter } from "powerbi-visuals-utils-formattingutils/lib/src";
-import { Selection, layout } from "d3";
+import { Selection } from "d3-selection";
 
 import { BoxWhiskerChartSettings } from "./settings";
 import { IBoxWhiskerChartReferenceLine, IBoxWhiskerAxisSettings } from "./interfaces";
@@ -142,12 +142,10 @@ export function referenceLineEnumerateObjectInstances(referenceLines: IBoxWhiske
     return instances;
 }
 
-export function drawReferenceLines(rootElement: Selection<any>, settings: BoxWhiskerChartSettings, referenceLines: IBoxWhiskerChartReferenceLine[], axisSettings: IBoxWhiskerAxisSettings, front: boolean) {
-    let referenceLineElement: Selection<any> = rootElement.selectAll(ChartMain.selectorName);
-    let stack = layout.stack();
-    let layers = stack([referenceLines]);
+export function drawReferenceLines(rootElement: Selection<any, any, any, any>, settings: BoxWhiskerChartSettings, referenceLines: IBoxWhiskerChartReferenceLine[], axisSettings: IBoxWhiskerAxisSettings, front: boolean) {
+    let referenceLineElement: Selection<any, any, any, any> = rootElement.selectAll(ChartMain.selectorName);
     let classSelector = front ? ChartReferenceLineFrontNode : ChartReferenceLineBackNode;
-    let selection = rootElement.selectAll(classSelector.selectorName).data(layers);
+    let selection = rootElement.selectAll(classSelector.selectorName).data(referenceLines);
 
     selection
         .enter()
@@ -194,8 +192,6 @@ export function drawReferenceLines(rootElement: Selection<any>, settings: BoxWhi
                 default:
                     return null;
             }})
-        .transition()
-        .duration(settings.general.duration)
         .attr("d", referenceLineData);
 
     let referenceLineLabel = selection.selectAll(ChartReferenceLineLabel.selectorName).data((d: any) => {
@@ -274,13 +270,11 @@ export function drawReferenceLines(rootElement: Selection<any>, settings: BoxWhi
         .attr("x", 0)
         .attr("y", function(value) { // no lambda because of the 'getBBox()'
             let refLine = <IBoxWhiskerChartReferenceLine>value;
-            let height = this.getBBox().height;
+            let height = 10; // this.getBBox().height;
             return refLine.vPosition === ReferenceLine.VPosition.above
                 ? -4
                 : 0.75 * height;
-        })
-        .transition()
-        .duration(settings.general.duration);
+        });
 
     referenceLineLabel.exit().remove();
 

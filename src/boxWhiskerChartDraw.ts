@@ -29,12 +29,12 @@
 import powerbi from "powerbi-visuals-api";
 import { textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/src";
 import { ITooltipServiceWrapper, TooltipEventArgs } from "powerbi-visuals-utils-tooltiputils";
-import { Selection, selection, max as d3Max, event as d3Event } from "d3";
+import { Selection, event } from "d3-selection";
+import { max } from "d3-array";
 
 import ISelectionId = powerbi.visuals.ISelectionId;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 import textMeasurementService = TextMeasurementService.textMeasurementService;
-import Update = selection.Update;
 
 import { IBoxWhiskerChartDatapoint, IBoxWhiskerAxisSettings, IBoxWhiskerChartData, IBoxWhiskerChartOutlier } from "./interfaces";
 import { BoxWhiskerChartSettings } from "./settings";
@@ -47,7 +47,7 @@ import ChartMedianLine = BoxWhiskerCssConstants.ChartMedianLine;
 import ChartOutlierDot = BoxWhiskerCssConstants.ChartOutlierDot;
 import ChartQuartileBox = BoxWhiskerCssConstants.ChartQuartileBox;
 
-export function drawChart(chartElement: Selection<any>, chartSelection: Update<any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, allowInteractions: boolean, tooltipServiceWrapper: ITooltipServiceWrapper, data: IBoxWhiskerChartData, axisSettings: IBoxWhiskerAxisSettings): void {
+export function drawChart(chartElement: Selection<any, any, any, any>, chartSelection: Selection<any, any, any, any>, settings: BoxWhiskerChartSettings, selectionManager: ISelectionManager, allowInteractions: boolean, tooltipServiceWrapper: ITooltipServiceWrapper, data: IBoxWhiskerChartData, axisSettings: IBoxWhiskerAxisSettings): void {
     let dataPoints: IBoxWhiskerChartDatapoint[][] = data.dataPoints;
     let highlightOpacity = 1;
     let backgroundOpacity = 0.1;
@@ -74,9 +74,9 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
 
     let dataLabelwidth = axisSettings.axisScaleCategory.invert(axisSettings.axisScaleCategory(0) +
         (Math.ceil(
-            d3Max(dataPoints, (value) => {
-                return d3Max(value, (point) => {
-                    return d3Max((point.dataLabels), (dataLabel) => {
+            max(dataPoints, (value) => {
+                return max(value, (point) => {
+                    return max((point.dataLabels), (dataLabel) => {
                         return textMeasurementService.measureSvgTextWidth(
                             settings.labels.axisTextProperties,
                             settings.formatting.labelFormatter.format(dataLabel.value)
@@ -134,7 +134,8 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         return `M ${x1},${y1} m -${r}, 0 a ${r},${r} 0 1,1 ${r2},0 a ${r},${r} 0 1,1 -${r2},0`;
     };
 
-    let quartile: Update<IBoxWhiskerChartDatapoint[]> = <Update<IBoxWhiskerChartDatapoint[]>>chartSelection.selectAll(ChartQuartileBox.selectorName).data(d => {
+    let quartile = chartSelection.selectAll(ChartQuartileBox.selectorName).data(d => {
+        console.log(d);
         if (d && d.length > 0) { return [d]; }
         return [];
     });
@@ -150,7 +151,7 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         .style("stroke-width", 2)
         .on("click", function (d) {
             if (allowInteractions) {
-                let isCtrlPressed: boolean = (d3Event as MouseEvent).ctrlKey;
+                let isCtrlPressed: boolean = (event as MouseEvent).ctrlKey;
                 let dataPoint: IBoxWhiskerChartDatapoint = <IBoxWhiskerChartDatapoint>d[0];
                 let currentSelectedIds = selectionManager.getSelectionIds()[0];
                 if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
@@ -161,16 +162,14 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
                     .then((ids: ISelectionId[]) => {
                         syncSelectionState(chartSelection, ids);
                     });
-                (<Event>d3Event).stopPropagation();
+                (<Event>event).stopPropagation();
             }
         })
-        .transition()
-        .duration(settings.general.duration)
         .attr("d", quartileData);
 
     quartile.exit().remove();
 
-    let average: Update<IBoxWhiskerChartDatapoint[]> = <Update<IBoxWhiskerChartDatapoint[]>>chartSelection.selectAll(ChartAverageDot.selectorName).data(d => {
+    let average = chartSelection.selectAll(ChartAverageDot.selectorName).data(d => {
         if (d && d.length > 0 && settings.shapes.showMean) { return [d]; }
         return [];
     });
@@ -184,7 +183,7 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         .style("fill", settings.dataPoint.meanColor)
         .on("click", function (d) {
             if (allowInteractions) {
-                let isCtrlPressed: boolean = (d3Event as MouseEvent).ctrlKey;
+                let isCtrlPressed: boolean = (event as MouseEvent).ctrlKey;
                 let dataPoint: IBoxWhiskerChartDatapoint = <IBoxWhiskerChartDatapoint>d[0];
                 let currentSelectedIds = selectionManager.getSelectionIds()[0];
                 if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
@@ -195,16 +194,14 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
                     .then((ids: ISelectionId[]) => {
                         syncSelectionState(chartSelection, ids);
                     });
-                (<Event>d3Event).stopPropagation();
+                (<Event>event).stopPropagation();
             }
         })
-        .transition()
-        .duration(settings.general.duration)
         .attr("d", avgData);
 
     average.exit().remove();
 
-    let median: Update<IBoxWhiskerChartDatapoint[]> = <Update<IBoxWhiskerChartDatapoint[]>>chartSelection.selectAll(ChartMedianLine.selectorName).data(d => {
+    let median = chartSelection.selectAll(ChartMedianLine.selectorName).data(d => {
         if (d && d.length > 0 && settings.shapes.showMedian) { return [d]; }
         return [];
     });
@@ -219,7 +216,7 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         .style("stroke-width", 2)
         .on("click", function (d) {
             if (allowInteractions) {
-                let isCtrlPressed: boolean = (d3Event as MouseEvent).ctrlKey;
+                let isCtrlPressed: boolean = (event as MouseEvent).ctrlKey;
                 let dataPoint: IBoxWhiskerChartDatapoint = <IBoxWhiskerChartDatapoint>d[0];
                 let currentSelectedIds = selectionManager.getSelectionIds()[0];
                 if ((dataPoint.selectionId !== currentSelectedIds) && !isCtrlPressed) {
@@ -230,11 +227,9 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
                     .then((ids: ISelectionId[]) => {
                         syncSelectionState(chartSelection, ids);
                     });
-                (<Event>d3Event).stopPropagation();
+                (<Event>event).stopPropagation();
             }
         })
-        .transition()
-        .duration(settings.general.duration)
         .attr("d", medianData);
 
     median.exit().remove();
@@ -250,8 +245,6 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         .classed(ChartOutlierDot.className, true);
     outliers
         .style("fill", value => settings.dataPoint.showAll ? value.color : settings.dataPoint.oneFill)
-        .transition()
-        .duration(settings.general.duration)
         .style("opacity", value => value.highlight ? highlightOpacity : backgroundOpacity)
         .attr("d", outlierData);
 
@@ -322,8 +315,6 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         .classed(ChartDataLabel.className, true);
 
     dataLabels
-        .transition()
-        .duration(settings.general.duration)
         .text(dataLabel => settings.formatting.labelFormatter.format(dataLabel.value))
         .attr("x", dataLabel => dataLabel.x)
         .attr("y", dataLabel => dataLabel.y)
@@ -351,7 +342,7 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
         (tooltipEvent: TooltipEventArgs<IBoxWhiskerChartOutlier>) => tooltipEvent.data.selectionId);
 }
 
-export function syncSelectionState(selections: d3.Selection<IBoxWhiskerChartDatapoint[]>, selectionIds: ISelectionId[]) {
+export function syncSelectionState(selections: Selection<any, any, any, any>, selectionIds: ISelectionId[]) {
     let highlightOpacity = 1;
     let backgroundOpacity = 0.1;
 
