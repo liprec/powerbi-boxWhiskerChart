@@ -64,26 +64,6 @@
         }
     }],
     "objects": {
-        "general": {
-            "displayName": "General",
-            "properties": {
-                "formatString": {
-                    "type": { "formatting": { "labelDisplayUnits": false } }
-                },
-                "telemetry": {
-                    "displayName": "Telemetry",
-                    "description": "Enable telemetry logging",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "dataPointColors": {
-                    "type": {
-                        "text": true
-                    }
-                }
-            }
-        },
         "chartOptions": {
             "displayName": "Chart Options",
             "properties": {
@@ -729,6 +709,26 @@
                             "displayName": "Under"
                         }
                     ]}
+                }
+            }
+        },
+        "general": {
+            "displayName": "General",
+            "properties": {
+                "formatString": {
+                    "type": { "formatting": { "labelDisplayUnits": false } }
+                },
+                "telemetry": {
+                    "displayName": "Telemetry",
+                    "description": "Enable telemetry logging",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "dataPointColors": {
+                    "type": {
+                        "text": true
+                    }
                 }
             }
         }

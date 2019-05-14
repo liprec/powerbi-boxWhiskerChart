@@ -109,8 +109,8 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
                 });
             })
         ]),
-        settings.yAxis.start,
-        settings.yAxis.end
+        settings.yAxis.start === null ? undefined : settings.yAxis.start,
+        settings.yAxis.end === null ? undefined : settings.yAxis.end
     );
 
     if (data.dataPointLength > 0) {
@@ -163,7 +163,7 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
         }
     }
 
-    if ((settings.yAxis.start !== undefined) && (settings.yAxis.scaleType === ScaleType.Linear)) {
+    if ((settings.yAxis.start !== null) && (settings.yAxis.scaleType === ScaleType.Linear)) {
         if (settings.yAxis.start !== axisSettings.axisOptions.min) {
             settings.yAxis.start = axisSettings.axisOptions.min;
         }
@@ -175,7 +175,7 @@ export function calcAxisSettings(settings: BoxWhiskerChartSettings, data: IBoxWh
         }
     }
 
-    if (settings.yAxis.end !== undefined) {
+    if (settings.yAxis.end !== null) {
         if (settings.yAxis.end !== axisSettings.axisOptions.max) {
             settings.yAxis.end = axisSettings.axisOptions.max;
         }
@@ -260,7 +260,7 @@ export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartS
         let categoryAxis = d3Svg.axis()
             .scale(categoryScale)
             .orient("bottom")
-            .tickSize(0)
+            .tickSize(settings.gridLines.show ? 1 : 0)
             .innerTickSize(8 + ((settings.general.viewport.height - settings.general.margin.top - axisSettings.axisCategoryHeight) - xAxisTransform));
 
         axisCategory
@@ -269,6 +269,10 @@ export function drawAxis(rootElement: Selection<any>, settings: BoxWhiskerChartS
             .duration(settings.general.duration)
             .style("opacity", 1)
             .call(categoryAxis);
+
+        axisCategory
+            .selectAll("path")
+            .style("fill", settings.gridLines.majorGridColor);
 
         axisCategory
             .selectAll("text")

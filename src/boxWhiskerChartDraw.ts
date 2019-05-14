@@ -171,7 +171,7 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
     quartile.exit().remove();
 
     let average: Update<IBoxWhiskerChartDatapoint[]> = <Update<IBoxWhiskerChartDatapoint[]>>chartSelection.selectAll(ChartAverageDot.selectorName).data(d => {
-        if (d && d.length > 0) { return [d]; }
+        if (d && d.length > 0 && settings.shapes.showMean) { return [d]; }
         return [];
     });
 
@@ -205,7 +205,7 @@ export function drawChart(chartElement: Selection<any>, chartSelection: Update<a
     average.exit().remove();
 
     let median: Update<IBoxWhiskerChartDatapoint[]> = <Update<IBoxWhiskerChartDatapoint[]>>chartSelection.selectAll(ChartMedianLine.selectorName).data(d => {
-        if (d && d.length > 0) { return [d]; }
+        if (d && d.length > 0 && settings.shapes.showMedian) { return [d]; }
         return [];
     });
 

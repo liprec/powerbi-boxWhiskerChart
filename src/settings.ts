@@ -39,7 +39,7 @@ import TextProperties = TextMeasurementService.TextProperties;
 
 import { ChartOrientation, QuartileType, WhiskerType, MarginType, LabelOrientation } from "./enums";
 
-const fontFamily: string = "'Segoe UI',wf_segoe-ui_normal,helvetica,arial,sans-serif";
+const fontFamily: string = "wf_standard-font, helvetica, arial, sans-serif";
 
 export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 
@@ -68,10 +68,12 @@ class GeneralSettings {
     public formatString: string = "";
     public duration: number = 100;
     public defaultColor: string = "#01B8AA";
-    public ColorProperties: DataViewObjectPropertyIdentifier = {
-        objectName: "dataPoint",
-        propertyName: "fill"
-    };
+    public get ColorProperties(): DataViewObjectPropertyIdentifier {
+        return {
+            objectName: "dataPoint",
+            propertyName: "fill"
+        };
+    }
     public telemetry: boolean = false;
     public maxPoints: number = 30000;
     public dataPointColors: string;
@@ -81,15 +83,16 @@ class FormattingSettings {
     public valuesFormatter: IValueFormatter;
     public categoryFormatter: IValueFormatter;
     public labelFormatter: IValueFormatter;
-    public toolTipFormatter: IValueFormatter;    }
+    public toolTipFormatter: IValueFormatter;
+}
 
 class ChartOptionsSettings {
     public orientation: ChartOrientation = ChartOrientation.Vertical;
     public quartile: QuartileType = QuartileType.Inclusive;
     public includeEmpty: boolean = false;
     public whisker: WhiskerType = WhiskerType.MinMax;
-    public lower: number = undefined;
-    public higher: number = undefined;
+    public lower: number = null;
+    public higher: number = null;
     public outliers: boolean = false;
     public margin: MarginType = MarginType.Medium;
 }
@@ -100,62 +103,70 @@ class XAxisSettings {
     public fontSize: number = 11;
     public fontFamily: string = fontFamily;
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = undefined;
+    public labelPrecision: number = null;
     public orientation: LabelOrientation = LabelOrientation.Horizontal;
     public showTitle: boolean = false;
-    public title: string = undefined;
-    public defaultTitle: string = undefined;
+    public title: string = null;
+    public defaultTitle: string = null;
     public titleFontColor: string = "#777";
     public titleFontSize: number = 11;
     public titleFontFamily: string = fontFamily;
     public titleAlignment: string = "center";
-    public axisTextProperties: TextProperties = {
-        fontFamily: this.fontFamily,
-        fontSize: this.fontSize + "px"
-    };
-    public titleTextProperties: TextProperties = {
-        fontFamily: this.titleFontFamily,
-        fontSize: this.titleFontSize + "px"
-    };
+    public get axisTextProperties(): TextProperties {
+        return {
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize + "px"
+        };
+    }
+    public get titleTextProperties(): TextProperties {
+        return {
+            fontFamily: this.titleFontFamily,
+            fontSize: this.titleFontSize + "px"
+        };
+    }
 }
 
 class YAxisSettings {
     public show: boolean = true;
     public scaleType: number = 0;
-    public start: number = undefined;
-    public end: number = undefined;
+    public start: number = null;
+    public end: number = null;
     public fontColor: string = "#777";
     public fontSize: number = 11;
     public fontFamily: string = fontFamily;
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = undefined;
+    public labelPrecision: number = null;
     public showTitle: boolean = false;
-    public title: string = undefined;
-    public defaultTitle: string = undefined;
+    public title: string = null;
+    public defaultTitle: string = null;
     public titleFontColor: string = "#777";
     public titleFontSize: number = 11;
     public titleFontFamily: string = fontFamily;
     public titleAlignment: string = "center";
-    public axisTextProperties: TextProperties = {
-        fontFamily: this.fontFamily,
-        fontSize: this.fontSize + "px"
-    };
-    public titleTextProperties: TextProperties = {
-        fontFamily: this.titleFontFamily,
-        fontSize: this.titleFontSize + "px"
-    };
+    public get axisTextProperties(): TextProperties {
+        return {
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize + "px"
+        };
+    }
+    public get titleTextProperties(): TextProperties {
+        return {
+            fontFamily: this.titleFontFamily,
+            fontSize: this.titleFontSize + "px"
+        };
+    }
 }
 
 class DataPointSettings {
     public meanColor: string = "#111";
     public medianColor: string = "#111";
-    public oneFill: string = undefined;
+    public oneFill: string = null;
     public showAll: boolean = true;
 }
 
 class ToolTipSettings {
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = undefined;
+    public labelPrecision: number = null;
 }
 
 class LabelsSettings {
@@ -164,11 +175,13 @@ class LabelsSettings {
     public fontSize: number = 11;
     public fontFamily: string = fontFamily;
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = undefined;
-    public axisTextProperties: TextProperties = {
-        fontFamily: this.fontFamily,
-        fontSize: this.fontSize + "px"
-    };
+    public labelPrecision: number = null;
+    public get axisTextProperties(): TextProperties {
+        return {
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize + "px"
+        };
+    }
 }
 
 class ShapeSettings {

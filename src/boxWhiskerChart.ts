@@ -816,6 +816,11 @@ export class BoxWhiskerChart implements IVisual {
                     instances = dataPointEnumerateObjectInstances(this.data.dataPoints, this.colorPalette, this.settings.dataPoint.showAll);
                 }
                 break;
+            case "gridLines":
+                if (!this.settings.gridLines.minorGrid) {
+                    this.removeEnumerateObject(instanceEnumeration, "minorGridSize");
+                    this.removeEnumerateObject(instanceEnumeration, "minorGridColor");
+                }
             case "dataLoad":
                 if (!this.settings.dataLoad.showProgress) {
                     this.removeEnumerateObject(instanceEnumeration, "progressColor");
@@ -858,34 +863,17 @@ export class BoxWhiskerChart implements IVisual {
 
     private static parseSettings(dataView: DataView): BoxWhiskerChartSettings {
         let settings: BoxWhiskerChartSettings = BoxWhiskerChartSettings.parse<BoxWhiskerChartSettings>(dataView);
-        settings.yAxis.axisTextProperties = {
-            fontFamily: settings.yAxis.fontFamily,
-            fontSize: settings.yAxis.fontSize + "px"
-        };
-        settings.yAxis.titleTextProperties = {
-            fontFamily: settings.yAxis.titleFontFamily,
-            fontSize: settings.yAxis.titleFontSize + "px"
-        };
-        settings.xAxis.axisTextProperties = {
-            fontFamily: settings.xAxis.fontFamily,
-            fontSize: settings.xAxis.fontSize + "px"
-        };
-        settings.xAxis.titleTextProperties = {
-            fontFamily: settings.xAxis.titleFontFamily,
-            fontSize: settings.xAxis.titleFontSize + "px"
-        };
-        settings.labels.axisTextProperties = {
-            fontFamily: settings.labels.fontFamily,
-            fontSize: settings.labels.fontSize + "px"
-        };
 
         // if (settings.yAxis.start >= Number.MAX_VALUE) settings.yAxis.start = Number.MAX_VALUE;
         // if (settings.yAxis.end >= Number.MAX_VALUE) settings.yAxis.end = Number.MAX_VALUE;
         // if (settings.yAxis.start <= Number.MIN_VALUE) settings.yAxis.start = Number.MIN_VALUE;
         // if (settings.yAxis.end <= Number.MIN_VALUE) settings.yAxis.end = Number.MIN_VALUE;
 
-        if (settings.chartOptions.higher > 100) { settings.chartOptions.higher = 100; }
-        if (settings.chartOptions.higher < 75) { settings.chartOptions.higher = 75; }
+        if (settings.chartOptions.higher !== null) {
+            if (settings.chartOptions.higher > 100) { settings.chartOptions.higher = 100; }
+            if (settings.chartOptions.higher < 75) { settings.chartOptions.higher = 75; }
+        }
+
         if (settings.chartOptions.lower > 25) { settings.chartOptions.lower = 25; }
         if (settings.chartOptions.lower < 0) { settings.chartOptions.lower = 0; }
 
