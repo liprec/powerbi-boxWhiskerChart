@@ -27,32 +27,35 @@
 
 "use strict";
 
-export class PerfTimer {
-    public static START(name: string, enabled: boolean = false) {
-        let performance: Performance = window.performance;
-        if (!performance || !performance.mark || !enabled) return () => {};
-        if (console.time) console.time(name);
-        let startMark: string = name + " start";
-        performance.mark(startMark);
-        console.log(startMark);
-        return () => {
-            let end: string = name + " end";
-            performance.mark(end);
-            // NOTE: Chromium supports performance.mark but not performance.measure.
-            if (performance.measure) performance.measure(name, startMark, end);
-            if (console.timeEnd) console.timeEnd(name);
-        };
-    }
+import { ValueAxisOptions } from "./data";
 
-    public static LOGTIME(action: any) {
-        // Desktop"s old Chromium doesn"t support use of Performance Markers yet
-        let start: number = Date.now();
-        action();
-        return Date.now() - start;
-    }
+export function calculateAxisOptions(min: number, max: number, fixedMin: number, fixedMax: number): ValueAxisOptions {
+    let isFixedMin = fixedMin !== undefined;
+    let isFixedMax = fixedMax !== undefined;
+    let min1 = min === 0 ? 0 : min > 0 ? min * 0.99 - (max - min) / 100 : min * 1.01 - (max - min) / 100;
+    let max1 =
+        max === 0 ? (min === 0 ? 1 : 0) : max < 0 ? max * 0.99 + (max - min) / 100 : max * 1.01 + (max - min) / 100;
 
-    public static LOGMSG(message: string, enabled: boolean = false) {
-        if (!enabled) return () => {};
-        console.log(message);
-    }
+    let p = Math.log(max1 - min1) / Math.log(10);
+    let f = Math.pow(10, p - Math.floor(p));
+
+    let scale = 0.2;
+
+    if (f <= 1.2) scale = 0.2;
+    else if (f <= 2.5) scale = 0.2;
+    else if (f <= 5) scale = 0.5;
+    else if (f <= 10) scale = 1;
+    else scale = 2;
+
+    let tickSize = scale * Math.pow(10, Math.floor(p));
+    let maxValue = tickSize * (Math.floor(max1 / tickSize) + 1);
+    let minValue = tickSize * Math.floor(min1 / tickSize);
+    let ticks = (maxValue - minValue) / tickSize + 1;
+
+    return {
+        tickSize,
+        min: isFixedMin ? (fixedMin < max ? fixedMin : minValue) : minValue,
+        max: isFixedMax ? (fixedMax > min ? fixedMax : maxValue) : maxValue,
+        ticks,
+    };
 }

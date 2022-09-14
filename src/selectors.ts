@@ -61,3 +61,34 @@ export module BoxWhiskerCssConstants {
     export const ChartReferenceLine: ClassAndSelector = createClassAndSelector("chartReferenceLine");
     export const ChartReferenceLineLabel: ClassAndSelector = createClassAndSelector("chartReferenceLineLabel");
 }
+
+export class Selectors {
+    public static Svg: ClassAndSelector = createClassAndSelector("svg");
+    public static PlotArea: ClassAndSelector = createClassAndSelector("plotarea");
+
+    public static Axis: ClassAndSelector = createClassAndSelector("axis");
+    public static AxisCategory: ClassAndSelector = createClassAndSelector("axisCategory");
+    public static AxisValue: ClassAndSelector = createClassAndSelector("axisValue");
+    public static AxisCategoryLabel: ClassAndSelector = createClassAndSelector("axisCategoryLabel");
+    public static AxisValueLabel: ClassAndSelector = createClassAndSelector("axisValueLabel");
+    public static Grid: ClassAndSelector = createClassAndSelector("grid");
+
+    public static Chart: ClassAndSelector = createClassAndSelector("chart");
+    public static ChartNode: ClassAndSelector = createClassAndSelector("chartNode");
+    public static ChartNodeOutliers: ClassAndSelector = createClassAndSelector("chartNodeOutliers");
+    public static ChartNodeHighLight: ClassAndSelector = createClassAndSelector("chartNodeHighLight");
+    public static ChartQuartileBox: ClassAndSelector = createClassAndSelector("chartQuartileBox");
+    public static ChartQuartileBoxHighlight: ClassAndSelector = createClassAndSelector("chartQuartileBoxHighlight");
+    public static ChartMedianLine: ClassAndSelector = createClassAndSelector("chartMedianLine");
+    public static ChartAverageDot: ClassAndSelector = createClassAndSelector("chartAverageDot");
+    public static ChartOutlierDot: ClassAndSelector = createClassAndSelector("chartOutlierDot");
+    public static ChartDataLabel: ClassAndSelector = createClassAndSelector("chartDataLabel");
+    public static ChartReferenceLineBackNode: ClassAndSelector = createClassAndSelector("chartReferenceLineBackNode");
+    public static ChartReferenceLineFrontNode: ClassAndSelector = createClassAndSelector("chartReferenceLineFrontNode");
+    public static ChartReferenceLine: ClassAndSelector = createClassAndSelector("chartReferenceLine");
+    public static ChartReferenceLineLabel: ClassAndSelector = createClassAndSelector("chartReferenceLineLabel");
+
+    public static Text: ClassAndSelector = createClassAndSelector("text");
+    public static WarningText: ClassAndSelector = createClassAndSelector("warning");
+    public static InfoText: ClassAndSelector = createClassAndSelector("info");
+}

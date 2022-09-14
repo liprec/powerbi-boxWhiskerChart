@@ -9,7 +9,7 @@
     "supportUrl": "https://azurebi.jppp.org/box-and-whisker-chart/",
     "gitHubUrl": "https://github.com/liprec/powerbi-boxWhiskerChart"
   },
-  "apiVersion": "2.5.0",
+  "apiVersion": "3.7.0",
   "author": {
     "name": "Jan Pieter Posthuma",
     "email": "mail@jppp.org"

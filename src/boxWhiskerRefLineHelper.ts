@@ -28,18 +28,17 @@
 "use strict";
 import powerbi from "powerbi-visuals-api";
 import { dataViewObjects as DataViewObjectsModule } from "powerbi-visuals-utils-dataviewutils";
-import { valueFormatter as ValueFormatter } from "powerbi-visuals-utils-formattingutils/lib/src";
+import { valueFormatter } from "powerbi-visuals-utils-formattingutils/lib/src";
 import { Selection } from "d3-selection";
 
-import { BoxWhiskerChartSettings } from "./settings";
+import { Settings as BoxWhiskerChartSettings } from "./settings";
 import { IBoxWhiskerChartReferenceLine, IBoxWhiskerAxisSettings } from "./interfaces";
 import { ReferenceLine } from "./enums";
-import { BoxWhiskerCssConstants } from "./cssConstants";
+import { BoxWhiskerCssConstants } from "./selectors";
 
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 import DataViewObjects = powerbi.DataViewObjects;
 import ISandboxExtendedColorPalette = powerbi.extensibility.ISandboxExtendedColorPalette;
-import valueFormatter = ValueFormatter.valueFormatter;
 
 import ChartMain = BoxWhiskerCssConstants.ChartMain;
 import ChartReferenceLine = BoxWhiskerCssConstants.ChartReferenceLine;
@@ -47,9 +46,12 @@ import ChartReferenceLineLabel = BoxWhiskerCssConstants.ChartReferenceLineLabel;
 import ChartReferenceLineFrontNode = BoxWhiskerCssConstants.ChartReferenceLineFrontNode;
 import ChartReferenceLineBackNode = BoxWhiskerCssConstants.ChartReferenceLineBackNode;
 
-export function referenceLineReadDataView(objects: DataViewObjects, colors: ISandboxExtendedColorPalette): IBoxWhiskerChartReferenceLine[] {
+export function referenceLineReadDataView(
+    objects?: DataViewObjects,
+    colors?: ISandboxExtendedColorPalette
+): IBoxWhiskerChartReferenceLine[] {
     let referenceLines: IBoxWhiskerChartReferenceLine[] = [];
-
+    if (!colors) return [];
     if (objects) {
         let refLines = DataViewObjectsModule.getObject(objects, "y1AxisReferenceLine");
         if (refLines) {
@@ -57,11 +59,11 @@ export function referenceLineReadDataView(objects: DataViewObjects, colors: ISan
             for (let id in refLines) {
                 let refLine: IBoxWhiskerChartReferenceLine = refLines[id] as IBoxWhiskerChartReferenceLine;
                 let selector: any = { id: id, metadata: undefined };
-                let lineColor: any = (refLine.lineColor as any);
+                let lineColor: any = refLine.lineColor as any;
                 if (lineColor) {
                     lineColor = colors.isHighContrast ? colors.foreground.value : lineColor.solid.color;
                 }
-                let labelColor: any = (refLine.labelColor as any);
+                let labelColor: any = refLine.labelColor as any;
                 if (labelColor) {
                     labelColor = colors.isHighContrast ? colors.foreground.value : labelColor.solid.color;
                 }
@@ -73,13 +75,14 @@ export function referenceLineReadDataView(objects: DataViewObjects, colors: ISan
                     displayName: refLine.displayName || undefined,
                     value: refLine.value || 0,
                     lineColor: lineColor || defaultColor,
-                    transparency: colors.isHighContrast ? 100 : (refLine.transparency || 50),
+                    transparency: colors.isHighContrast ? 100 : refLine.transparency || 50,
                     style: refLine.style || ReferenceLine.Style.dashed,
                     position: refLine.position || ReferenceLine.Position.front,
                     showLabel: refLine.showLabel || false,
                     labelColor: labelColor || defaultColor,
                     labelFontSize: refLine.labelFontSize || 11,
-                    labelFontFamily: refLine.labelFontFamily || "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif",
+                    labelFontFamily:
+                        refLine.labelFontFamily || '"Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif',
                     labelType: refLine.labelType || ReferenceLine.LabelType.value,
                     labelDisplayUnits: refLine.labelDisplayUnits || 0,
                     labelPrecision: refLine.labelPrecision || undefined,
@@ -94,9 +97,13 @@ export function referenceLineReadDataView(objects: DataViewObjects, colors: ISan
     return referenceLines;
 }
 
-export function referenceLineEnumerateObjectInstances(referenceLines: IBoxWhiskerChartReferenceLine[], colors: any): VisualObjectInstance[] {
+export function referenceLineEnumerateObjectInstances(
+    referenceLines: IBoxWhiskerChartReferenceLine[],
+    colors: any
+): VisualObjectInstance[] {
     let instances: VisualObjectInstance[] = [];
-    if (referenceLines.length === 0) { // Default refLine settings
+    if (referenceLines.length === 0) {
+        // Default refLine settings
         instances.push({
             objectName: "y1AxisReferenceLine",
             selector: { id: "0" },
@@ -108,11 +115,11 @@ export function referenceLineEnumerateObjectInstances(referenceLines: IBoxWhiske
                 style: ReferenceLine.Style.dashed,
                 position: ReferenceLine.Position.front,
                 showLabel: false,
-            }
+            },
         });
     } else {
         referenceLines.forEach((refLine: IBoxWhiskerChartReferenceLine) => {
-            let instance = {
+            let instance: any = {
                 objectName: refLine.type,
                 selector: refLine.selector,
                 properties: {
@@ -124,7 +131,7 @@ export function referenceLineEnumerateObjectInstances(referenceLines: IBoxWhiske
                     style: refLine.style,
                     position: refLine.position,
                     showLabel: refLine.showLabel,
-                }
+                },
             };
             if (refLine.showLabel) {
                 instance.properties["labelColor"] = { solid: { color: refLine.labelColor } };
@@ -142,18 +149,23 @@ export function referenceLineEnumerateObjectInstances(referenceLines: IBoxWhiske
     return instances;
 }
 
-export function drawReferenceLines(rootElement: Selection<any, any, any, any>, settings: BoxWhiskerChartSettings, referenceLines: IBoxWhiskerChartReferenceLine[], axisSettings: IBoxWhiskerAxisSettings, front: boolean) {
+export function drawReferenceLines(
+    rootElement: Selection<any, any, any, any>,
+    settings: BoxWhiskerChartSettings,
+    referenceLines: IBoxWhiskerChartReferenceLine[],
+    axisSettings: IBoxWhiskerAxisSettings,
+    front: boolean
+) {
     let referenceLineElement: Selection<any, any, any, any> = rootElement.selectAll(ChartMain.selectorName);
     let classSelector = front ? ChartReferenceLineFrontNode : ChartReferenceLineBackNode;
     let selection = rootElement.selectAll(classSelector.selectorName).data(referenceLines);
 
-    selection
-        .enter()
-        .append("g")
-        .classed(classSelector.className, true);
+    selection.enter().append("g").classed(classSelector.className, true);
 
     let referenceLine = selection.selectAll(ChartReferenceLine.selectorName).data((d: any) => {
-        if (d && d.length > 0) { return d; }
+        if (d && d.length > 0) {
+            return d;
+        }
         return [];
     });
 
@@ -165,24 +177,19 @@ export function drawReferenceLines(rootElement: Selection<any, any, any, any>, s
         return `M ${x1},${y1} L${x2},${y2}`;
     };
 
-    referenceLine
-        .enter()
-        .append("path")
-        .classed(ChartReferenceLine.className, true);
+    referenceLine.enter().append("path").classed(ChartReferenceLine.className, true);
 
     referenceLine
-        .style("fill", value => (<IBoxWhiskerChartReferenceLine>value).lineColor)
-        .style("opacity", value => {
-            let refLine = (<IBoxWhiskerChartReferenceLine>value);
-            return refLine.position === (front ?
-                ReferenceLine.Position.front :
-                ReferenceLine.Position.back) ?
-                    refLine.transparency / 100 :
-                    0;
+        .style("fill", (value) => (<IBoxWhiskerChartReferenceLine>value).lineColor)
+        .style("opacity", (value) => {
+            let refLine = <IBoxWhiskerChartReferenceLine>value;
+            return refLine.position === (front ? ReferenceLine.Position.front : ReferenceLine.Position.back)
+                ? refLine.transparency / 100
+                : 0;
         })
-        .style("stroke", value => (<IBoxWhiskerChartReferenceLine>value).lineColor)
+        .style("stroke", (value) => (<IBoxWhiskerChartReferenceLine>value).lineColor)
         .style("stroke-width", 3)
-        .style("stroke-dasharray", value => {
+        .style("stroke-dasharray", (value) => {
             switch ((<IBoxWhiskerChartReferenceLine>value).style) {
                 case ReferenceLine.Style.dashed:
                     return "5, 5";
@@ -191,7 +198,8 @@ export function drawReferenceLines(rootElement: Selection<any, any, any, any>, s
                 case ReferenceLine.Style.solid:
                 default:
                     return null;
-            }})
+            }
+        })
         .attr("d", referenceLineData);
 
     let referenceLineLabel = selection.selectAll(ChartReferenceLineLabel.selectorName).data((d: any) => {
@@ -201,16 +209,13 @@ export function drawReferenceLines(rootElement: Selection<any, any, any, any>, s
         return [];
     });
 
-    referenceLineLabel
-        .enter()
-        .append("text")
-        .classed(ChartReferenceLineLabel.className, true);
+    referenceLineLabel.enter().append("text").classed(ChartReferenceLineLabel.className, true);
 
     let referenceLabelTransform = (refLine: any) => {
-        if (!refLine) { return; }
-        let x0 = refLine.hPosition === ReferenceLine.HPosition.left
-                ? 0
-                : axisSettings.drawScaleCategory.range()[1];
+        if (!refLine) {
+            return;
+        }
+        let x0 = refLine.hPosition === ReferenceLine.HPosition.left ? 0 : axisSettings.drawScaleCategory.range()[1];
         let y0 = axisSettings.drawScaleValue(refLine.value);
         return `translate(${x0} ${y0})`;
     };
@@ -219,38 +224,46 @@ export function drawReferenceLines(rootElement: Selection<any, any, any, any>, s
 
     referenceLineLabel
         .attr("transform", referenceLabelTransform)
-        .attr("fill", value => {
-            let refLine = (<IBoxWhiskerChartReferenceLine>value);
-            if (!refLine) { return "#000"; }
+        .attr("fill", (value) => {
+            let refLine = <IBoxWhiskerChartReferenceLine>value;
+            if (!refLine) {
+                return "#000";
+            }
             return refLine.labelColor;
         })
-        .style("opacity", value => {
-            let refLine = (<IBoxWhiskerChartReferenceLine>value);
-            if (!refLine) { return 0; }
-            return refLine.position === (front ?
-                ReferenceLine.Position.front :
-                ReferenceLine.Position.back) ?
-                    refLine.transparency / 100 :
-                    0;
+        .style("opacity", (value) => {
+            let refLine = <IBoxWhiskerChartReferenceLine>value;
+            if (!refLine) {
+                return 0;
+            }
+            return refLine.position === (front ? ReferenceLine.Position.front : ReferenceLine.Position.back)
+                ? refLine.transparency / 100
+                : 0;
         })
-        .style("font-family", value => {
-            let refLine = (<IBoxWhiskerChartReferenceLine>value);
-            if (!refLine) { return 0; }
+        .style("font-family", (value) => {
+            let refLine = <IBoxWhiskerChartReferenceLine>value;
+            if (!refLine) {
+                return 0;
+            }
             return refLine.labelFontFamily;
         })
-        .style("font-size", value => {
-            let refLine = (<IBoxWhiskerChartReferenceLine>value);
-            if (!refLine) { return 0; }
+        .style("font-size", (value) => {
+            let refLine = <IBoxWhiskerChartReferenceLine>value;
+            if (!refLine) {
+                return 0;
+            }
             return refLine.labelFontSize + "px";
         })
-        .text(value => {
-            let refLine = (<IBoxWhiskerChartReferenceLine>value);
-            if (!refLine) { return ""; }
+        .text((value) => {
+            let refLine = <IBoxWhiskerChartReferenceLine>value;
+            if (!refLine) {
+                return "";
+            }
             let formatter = valueFormatter.create({
                 format: settings.formatting.valuesFormatter.options.format,
                 precision: refLine.labelPrecision,
                 value: refLine.labelDisplayUnits || refLine.value,
-                cultureSelector: settings.general.locale
+                cultureSelector: settings.general.locale,
             });
             let label;
             switch (refLine.labelType) {
@@ -266,14 +279,15 @@ export function drawReferenceLines(rootElement: Selection<any, any, any, any>, s
             }
             return label;
         })
-        .attr("text-anchor", (refLine: IBoxWhiskerChartReferenceLine) => refLine.hPosition === ReferenceLine.HPosition.left ? "start" : "end")
+        // .attr("text-anchor", (refLine: IBoxWhiskerChartReferenceLine) =>
+        //     refLine.hPosition === ReferenceLine.HPosition.left ? "start" : "end"
+        // )
         .attr("x", 0)
-        .attr("y", function(value) { // no lambda because of the 'getBBox()'
+        .attr("y", function (value) {
+            // no lambda because of the 'getBBox()'
             let refLine = <IBoxWhiskerChartReferenceLine>value;
             let height = 10; // this.getBBox().height;
-            return refLine.vPosition === ReferenceLine.VPosition.above
-                ? -4
-                : 0.75 * height;
+            return refLine.vPosition === ReferenceLine.VPosition.above ? -4 : 0.75 * height;
         });
 
     referenceLineLabel.exit().remove();

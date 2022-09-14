@@ -1,5 +1,6 @@
 {
-    "dataRoles": [{
+    "dataRoles": [
+        {
             "name": "Groups",
             "kind": "Grouping",
             "displayName": "Category"
@@ -13,56 +14,53 @@
             "name": "Values",
             "kind": "Measure",
             "displayName": "Values"
-        },{
+        },
+        {
             "displayName": "Tooltips",
             "name": "Tooltips",
             "kind": "Measure"
         }
     ],
-    "sorting": {
-        "default": {   }
-    },
-    "supportsHighlight": true,
-    "tooltips": {
-        "supportedTypes": {
-            "default": true,
-            "canvas": true
-        },
-        "roles": [
-            "Tooltips"
-        ]
-    },
-    "dataViewMappings": [{
-        "conditions": [{
-            "Groups": {
-                "min": 0,
-                "max": 1
-            },
-            "Values": {
-                "min": 0,
-                "max": 1
-            }
-        }],
-        "categorical": {
-            "categories": {
-                "for": {
-                    "in": "Groups"
+    "dataViewMappings": [
+        {
+            "conditions": [
+                {
+                    "Groups": {
+                        "min": 0,
+                        "max": 2
+                    },
+                    "Values": {
+                        "min": 0,
+                        "max": 1
+                    }
+                }
+            ],
+            "matrix": {
+                "rows": {
+                    "for": {
+                        "in": "Groups"
+                    },
+                    "dataReductionAlgorithm": { "top": { "count": 100 } }
                 },
-                "dataReductionAlgorithm": { "top": { "count": 100 } }
-            },
-            "values": {
-                "group": {
-                    "by": "Samples",
-                    "dataReductionAlgorithm": { "top": { "count": 30000 } },
-                    "select": [{
-                        "for": {
-                            "in": "Values"   
+                "columns": {
+                    "for": {
+                        "in": "Samples"
+                    },
+                    "dataReductionAlgorithm": { "top": { "count": 30000 } }
+                },
+                "values": {
+                    "select": [
+                        {
+                            "for": {
+                                "in": "Values"
+                            }
                         }
-                    }]
+                    ],
+                    "dataReductionAlgorithm": { "top": { "count": 30000 } }
                 }
             }
         }
-    }],
+    ],
     "objects": {
         "chartOptions": {
             "displayName": "Chart Options",
@@ -71,7 +69,8 @@
                     "displayName": "Orientation",
                     "description": "Orientation of the chart, horizontal or viertical",
                     "type": {
-                        "enumeration": [{
+                        "enumeration": [
+                            {
                                 "value": "0",
                                 "displayName": "Horizontal"
                             },
@@ -86,7 +85,8 @@
                     "displayName": "Quartile",
                     "description": "The way of how the quartiles are calculated, inclusive or exclusive",
                     "type": {
-                        "enumeration": [{
+                        "enumeration": [
+                            {
                                 "value": "0",
                                 "displayName": "Exclusive"
                             },
@@ -106,7 +106,8 @@
                     "displayName": "Whisker type",
                     "description": "Determines the type of whiskers",
                     "type": {
-                        "enumeration": [{
+                        "enumeration": [
+                            {
                                 "value": "0",
                                 "displayName": "Min/Max"
                             },
@@ -146,7 +147,8 @@
                     "displayName": "Chart margin",
                     "description": "The margin between the different boxes.\nOnly used when no datalabels are shown",
                     "type": {
-                        "enumeration": [{
+                        "enumeration": [
+                            {
                                 "value": "0",
                                 "displayName": "Small"
                             },
@@ -166,7 +168,7 @@
         "xAxis": {
             "displayName": "Category Axis",
             "properties": {
-                "show": { 
+                "show": {
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
@@ -184,6 +186,40 @@
                         "formatting": {
                             "fontFamily": true
                         }
+                    }
+                },
+                "fontStyle": {
+                    "displayName": "Font style",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "0"
+                            },
+                            {
+                                "displayName": "Italic",
+                                "value": "1"
+                            }
+                        ]
+                    }
+                },
+                "fontWeight": {
+                    "displayName": "Font weight",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "400"
+                            },
+                            {
+                                "displayName": "Semi bold",
+                                "value": "600"
+                            },
+                            {
+                                "displayName": "Bold",
+                                "value": "800"
+                            }
+                        ]
                     }
                 },
                 "labelDisplayUnits": {
@@ -249,6 +285,40 @@
                         }
                     }
                 },
+                "titleFontStyle": {
+                    "displayName": "Title Font style",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "0"
+                            },
+                            {
+                                "displayName": "Italic",
+                                "value": "1"
+                            }
+                        ]
+                    }
+                },
+                "titleFontWeight": {
+                    "displayName": "Title Font weight",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "400"
+                            },
+                            {
+                                "displayName": "Semi bold",
+                                "value": "600"
+                            },
+                            {
+                                "displayName": "Bold",
+                                "value": "800"
+                            }
+                        ]
+                    }
+                },
                 "titleAlignment": {
                     "displayName": "Title Alignment",
                     "type": {
@@ -262,22 +332,24 @@
         "yAxis": {
             "displayName": "Value Axis",
             "properties": {
-                "show": { 
+                "show": {
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
                 "scaleType": {
                     "displayName": "Scale type",
-                    "type" : { "enumeration": [
-                        {
-                            "value": "0",
-                            "displayName": "Linear"
-                        },
-                        {
-                            "value": "1",
-                            "displayName": "Log"
-                        }
-                    ]}
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Linear"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Log"
+                            }
+                        ]
+                    }
                 },
                 "start": {
                     "displayName": "Start",
@@ -305,6 +377,40 @@
                         "formatting": {
                             "fontFamily": true
                         }
+                    }
+                },
+                "fontStyle": {
+                    "displayName": "Font style",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "0"
+                            },
+                            {
+                                "displayName": "Italic",
+                                "value": "1"
+                            }
+                        ]
+                    }
+                },
+                "fontWeight": {
+                    "displayName": "Font weight",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "400"
+                            },
+                            {
+                                "displayName": "Semi bold",
+                                "value": "600"
+                            },
+                            {
+                                "displayName": "Bold",
+                                "value": "800"
+                            }
+                        ]
                     }
                 },
                 "labelDisplayUnits": {
@@ -350,6 +456,40 @@
                         }
                     }
                 },
+                "titleFontStyle": {
+                    "displayName": "Title Font style",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "0"
+                            },
+                            {
+                                "displayName": "Italic",
+                                "value": "1"
+                            }
+                        ]
+                    }
+                },
+                "titleFontWeight": {
+                    "displayName": "Title Font weight",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "400"
+                            },
+                            {
+                                "displayName": "Semi bold",
+                                "value": "600"
+                            },
+                            {
+                                "displayName": "Bold",
+                                "value": "800"
+                            }
+                        ]
+                    }
+                },
                 "titleAlignment": {
                     "displayName": "Title Alignment",
                     "type": {
@@ -366,12 +506,12 @@
                 "meanColor": {
                     "displayName": "Mean Color",
                     "description": "Color of the mean dot",
-                    "type": { "fill": {"solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 },
                 "medianColor": {
                     "displayName": "Median Color",
                     "description": "Color of the median line",
-                    "type": { "fill": {"solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 },
                 "oneFill": {
                     "displayName": "Default Color",
@@ -455,7 +595,7 @@
                 }
             }
         },
-        "shapes" :{
+        "shapes": {
             "displayName": "Shapes",
             "properties": {
                 "showMean": {
@@ -481,7 +621,7 @@
                     "type": {
                         "bool": true
                     }
-                }              
+                }
             }
         },
         "gridLines": {
@@ -500,6 +640,11 @@
                 "majorGridColor": {
                     "displayName": "Color",
                     "description": "Color of the major gridlines",
+                    "type": { "fill": { "solid": { "color": true } } }
+                },
+                "zeroColor": {
+                    "displayName": "'0'-Color",
+                    "description": "Color of the '0' (zero) lines",
                     "type": { "fill": { "solid": { "color": true } } }
                 },
                 "minorGrid": {
@@ -537,9 +682,9 @@
                         "bool": true
                     }
                 },
-                "progressColor" : {
+                "progressColor": {
                     "displayName": "Progress color",
-                    "type" : { "fill": { "solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 },
                 "progressText": {
                     "displayName": "Progress text",
@@ -555,9 +700,9 @@
                         "bool": true
                     }
                 },
-                "warningColor" : {
+                "warningColor": {
                     "displayName": "Warning color",
-                    "type" : { "fill": { "solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 },
                 "warningText": {
                     "displayName": "Warning text",
@@ -566,13 +711,13 @@
                         "text": true
                     }
                 },
-                "backgroundColor" : {
+                "backgroundColor": {
                     "displayName": "Background color",
-                    "type" : { "fill": { "solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 }
             }
         },
-        "y1AxisReferenceLine" : {
+        "y1AxisReferenceLine": {
             "displayName": "Constant line",
             "objectCategory": 2,
             "properties": {
@@ -580,7 +725,7 @@
                     "displayName": "Show",
                     "type": { "bool": true }
                 },
-                "displayName" : {
+                "displayName": {
                     "displayName": "Name",
                     "description": "Set reference line name",
                     "type": { "text": true }
@@ -589,45 +734,49 @@
                     "displayName": "Value",
                     "type": { "numeric": true }
                 },
-                "lineColor" : {
+                "lineColor": {
                     "displayName": "Color",
-                    "type" : { "fill": { "solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 },
                 "transparency": {
                     "displayName": "Transparency",
-                    "type" : { "numeric": true }
+                    "type": { "numeric": true }
                 },
-                "style" : {
-                    "displayName" : "Style",
+                "style": {
+                    "displayName": "Style",
                     "description": "Set reference line style",
-                    "type" : { "enumeration": [
-                        {
-                            "value": "0",
-                            "displayName": "Dashed"
-                        },
-                        {
-                            "value": "1",
-                            "displayName": "Solid"
-                        },
-                        {
-                            "value": "2",
-                            "displayName": "Dotted"
-                        }
-                    ]}
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Dashed"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Solid"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "Dotted"
+                            }
+                        ]
+                    }
                 },
-                "position" : {
+                "position": {
                     "displayName": "Position",
                     "description": "Arrange relative to chart data points",
-                    "type" : { "enumeration": [
-                        {
-                            "value": "0",
-                            "displayName": "In Front"
-                        },
-                        {
-                            "value": "1",
-                            "displayName": "Behind"
-                        }
-                    ]}
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "In Front"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Behind"
+                            }
+                        ]
+                    }
                 },
                 "showLabel": {
                     "displayName": "Data Label",
@@ -635,24 +784,26 @@
                 },
                 "labelColor": {
                     "displayName": "Color",
-                    "type" : { "fill": { "solid": { "color": true } } }
+                    "type": { "fill": { "solid": { "color": true } } }
                 },
                 "labelType": {
                     "displayName": "Text",
-                    "type" : { "enumeration": [
-                        {
-                            "value": "0",
-                            "displayName": "Value"
-                        },
-                        {
-                            "value": "1",
-                            "displayName": "Name"
-                        },
-                        {
-                            "value": "2",
-                            "displayName": "Name and Value"
-                        }
-                    ]}
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Value"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Name"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "Name and Value"
+                            }
+                        ]
+                    }
                 },
                 "labelFontSize": {
                     "displayName": "Label Text Size",
@@ -686,29 +837,33 @@
                 },
                 "hPosition": {
                     "displayName": "Horizontal Position",
-                    "type" : { "enumeration": [
-                        {
-                            "value": "0",
-                            "displayName": "Left"
-                        },
-                        {
-                            "value": "1",
-                            "displayName": "Right"
-                        }
-                    ]}
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Right"
+                            }
+                        ]
+                    }
                 },
                 "vPosition": {
                     "displayName": "Vertical Position",
-                    "type" : { "enumeration": [
-                        {
-                            "value": "0",
-                            "displayName": "Above"
-                        },
-                        {
-                            "value": "1",
-                            "displayName": "Under"
-                        }
-                    ]}
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Above"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Under"
+                            }
+                        ]
+                    }
                 }
             }
         },
@@ -732,5 +887,17 @@
                 }
             }
         }
+    },
+    "sorting": {
+        "default": {}
+    },
+    "supportsHighlight": true,
+    "suppressDefaultTitle": true,
+    "tooltips": {
+        "supportedTypes": {
+            "default": true,
+            "canvas": true
+        },
+        "roles": ["Tooltips"]
     }
 }

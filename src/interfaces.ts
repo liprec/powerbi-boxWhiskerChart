@@ -131,3 +131,14 @@ export interface IBoxWhiskerAxisSettings {
     drawScaleCategory: ScaleLinear<number, number>;
     drawScaleValue: ScaleLinear<number, number>;
 }
+
+
+// rebuild
+export interface BoxWhiskerChartDataSerie {
+    dataPoints: IBoxWhiskerChartDatapoint[];
+    referenceLines?: IBoxWhiskerChartReferenceLine[];
+}
+export interface BoxWhiskerChartModel {
+    series: BoxWhiskerChartDataSerie[];
+    seriesMax: number;
+}

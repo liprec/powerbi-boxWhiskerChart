@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2021 Jan Pieter Posthuma / DataScenarios
+ * Copyright (c) 2019 Jan Pieter Posthuma / DataScenarios
  *
  * All rights reserved.
  *
@@ -26,33 +26,43 @@
  */
 
 "use strict";
+import powerbi from "powerbi-visuals-api";
 
-export class PerfTimer {
-    public static START(name: string, enabled: boolean = false) {
-        let performance: Performance = window.performance;
-        if (!performance || !performance.mark || !enabled) return () => {};
-        if (console.time) console.time(name);
-        let startMark: string = name + " start";
-        performance.mark(startMark);
-        console.log(startMark);
-        return () => {
-            let end: string = name + " end";
-            performance.mark(end);
-            // NOTE: Chromium supports performance.mark but not performance.measure.
-            if (performance.measure) performance.measure(name, startMark, end);
-            if (console.timeEnd) console.timeEnd(name);
-        };
-    }
+import DataView = powerbi.DataView;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 
-    public static LOGTIME(action: any) {
-        // Desktop"s old Chromium doesn"t support use of Performance Markers yet
-        let start: number = Date.now();
-        action();
-        return Date.now() - start;
-    }
+import { converter } from "../src/convertor";
 
-    public static LOGMSG(message: string, enabled: boolean = false) {
-        if (!enabled) return () => {};
-        console.log(message);
-    }
-}
+import { VisualData } from "./visualData";
+
+describe("Box and Whisker chart unit tests =>", () => {
+    let defaultDataViewBuilder: VisualData;
+    let dataView: DataView;
+
+    beforeEach(() => {
+        defaultDataViewBuilder = new VisualData();
+        dataView = defaultDataViewBuilder.getDataView();
+    });
+
+    describe("convertor", () => {
+        it("runs", (done) => {
+            defaultDataViewBuilder = new VisualData();
+            dataView = defaultDataViewBuilder.getDataView();
+
+            const options: VisualUpdateOptions = {
+                dataViews: [
+                    dataView
+                ],
+                viewport: {
+                    height: 100,
+                    width: 100
+                },
+                type: 62
+            };
+            converter(options, null);
+
+            expect(1).toBe(1);
+            done();
+        });
+    });
+});

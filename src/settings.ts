@@ -29,20 +29,30 @@
 import powerbi from "powerbi-visuals-api";
 import { IMargin } from "powerbi-visuals-utils-svgutils";
 import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
-import { valueFormatter as ValueFormatter, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils/lib/src";
+import { interfaces, valueFormatter } from "powerbi-visuals-utils-formattingutils";
 
+import DataView = powerbi.DataView;
 import IViewport = powerbi.IViewport;
 import DataViewObjectPropertyIdentifier = powerbi.DataViewObjectPropertyIdentifier;
 import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
-import IValueFormatter = ValueFormatter.IValueFormatter;
-import TextProperties = TextMeasurementService.TextProperties;
 
-import { ChartOrientation, QuartileType, WhiskerType, MarginType, LabelOrientation } from "./enums";
+import IValueFormatter = valueFormatter.IValueFormatter;
+import TextProperties = interfaces.TextProperties;
 
-const fontFamily: string = "wf_standard-font, helvetica, arial, sans-serif";
+import { AxisDimensions, PlotDimensions, Scales } from "./data";
+import {
+    ChartOrientation,
+    QuartileType,
+    WhiskerType,
+    MarginType,
+    LabelOrientation,
+    FontWeight,
+    FontStyle,
+} from "./enums";
 
-export class BoxWhiskerChartSettings extends DataViewObjectsParser {
+const fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
 
+export class Settings extends DataViewObjectsParser {
     public general: GeneralSettings = new GeneralSettings();
     public formatting: FormattingSettings = new FormattingSettings();
     public chartOptions: ChartOptionsSettings = new ChartOptionsSettings();
@@ -57,24 +67,61 @@ export class BoxWhiskerChartSettings extends DataViewObjectsParser {
 }
 
 class GeneralSettings {
+    public padding: number = 5;
+    public x: number = this.padding;
+    public y: number = this.padding;
+    public width: number;
+    public height: number;
+    public axisDimensions: AxisDimensions;
+    public telemetry: boolean = false;
+    public locale: string = "1033";
+    public scales: Scales;
+    public orientation: ChartOrientation = ChartOrientation.Vertical;
+
+    public get plotDimensions(): PlotDimensions {
+        return {
+            x1:
+                this.x +
+                (this.orientation === ChartOrientation.Vertical
+                    ? (this.axisDimensions.valueAxisLabel.width as number)
+                    : (this.axisDimensions.categoryAxisLabel.width as number)),
+            x2:
+                this.width -
+                this.padding -
+                (this.orientation === ChartOrientation.Vertical
+                    ? 0
+                    : (this.axisDimensions.valueAxisLabel.width as number) / 2),
+            y1:
+                this.y +
+                (this.orientation === ChartOrientation.Vertical
+                    ? (this.axisDimensions.valueAxisLabel.height as number) / 2
+                    : 0),
+            y2:
+                this.y +
+                this.height -
+                (this.orientation === ChartOrientation.Vertical
+                    ? (this.axisDimensions.categoryAxisLabel.height as number)
+                    : (this.axisDimensions.valueAxisLabel.height as number)),
+        };
+    }
+
+    // old settings
     public viewport: IViewport;
     public margin: IMargin = {
         top: 5,
         bottom: 5,
         right: 5,
-        left: 5
+        left: 5,
     };
-    public locale: string = undefined;
     public formatString: string = "";
     public duration: number = 100;
     public defaultColor: string = "#01B8AA";
     public get ColorProperties(): DataViewObjectPropertyIdentifier {
         return {
             objectName: "dataPoint",
-            propertyName: "fill"
+            propertyName: "fill",
         };
     }
-    public telemetry: boolean = false;
     public maxPoints: number = 30000;
     public dataPointColors: string;
 }
@@ -91,68 +138,162 @@ class ChartOptionsSettings {
     public quartile: QuartileType = QuartileType.Inclusive;
     public includeEmpty: boolean = false;
     public whisker: WhiskerType = WhiskerType.MinMax;
-    public lower: number = null;
-    public higher: number = null;
+    public lower: number | null = null;
+    public higher: number | null = null;
     public outliers: boolean = false;
     public margin: MarginType = MarginType.Medium;
 }
 
+// Category Axis
 class XAxisSettings {
     public show: boolean = true;
     public fontColor: string = "#777";
     public fontSize: number = 11;
     public fontFamily: string = fontFamily;
-    public labelDisplayUnits: number = 0;
-    public labelPrecision: number = null;
+    public fontStyle: number = FontStyle.Normal;
+    public fontWeight: number = FontWeight.Normal;
     public orientation: LabelOrientation = LabelOrientation.Horizontal;
     public showTitle: boolean = false;
-    public title: string = null;
-    public defaultTitle: string = null;
+    public title: string | null = null;
+    public defaultTitle: string | null = null;
     public titleFontColor: string = "#777";
     public titleFontSize: number = 11;
     public titleFontFamily: string = fontFamily;
+    public titleFontStyle: number = FontStyle.Normal;
+    public titleFontWeight: number = FontWeight.Normal;
     public titleAlignment: string = "center";
+
+    public get FontStyle(): string {
+        switch (this.fontStyle) {
+            default:
+            case FontStyle.Normal:
+                return "Normal";
+            case FontStyle.Italic:
+                return "Italic";
+        }
+    }
+    public get TitleFontStyle(): string {
+        switch (this.titleFontStyle) {
+            default:
+            case FontStyle.Normal:
+                return "Normal";
+            case FontStyle.Italic:
+                return "Italic";
+        }
+    }
+    public get FontSize(): string {
+        return `${this.fontSize}pt`;
+    }
+    public get TitleFontSize(): string {
+        return `${this.titleFontSize}pt`;
+    }
+    public get TextProperties(): TextProperties {
+        return {
+            fontFamily: this.fontFamily,
+            fontSize: this.FontSize,
+            fontStyle: this.FontStyle,
+            fontWeight: this.fontWeight.toString(),
+        };
+    }
+    public get TitleTextProperties(): TextProperties {
+        return {
+            fontFamily: this.titleFontFamily,
+            fontSize: this.TitleFontSize,
+            fontStyle: this.TitleFontStyle,
+            fontWeight: this.titleFontWeight.toString(),
+        };
+    }
+
+    // old
     public get axisTextProperties(): TextProperties {
         return {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "px"
+            fontSize: this.fontSize + "px",
         };
     }
     public get titleTextProperties(): TextProperties {
         return {
             fontFamily: this.titleFontFamily,
-            fontSize: this.titleFontSize + "px"
+            fontSize: this.titleFontSize + "px",
         };
     }
 }
 
+// Value Axis
 class YAxisSettings {
     public show: boolean = true;
     public scaleType: number = 0;
-    public start: number = null;
-    public end: number = null;
+    public start: number | null = null;
+    public end: number | null = null;
     public fontColor: string = "#777";
     public fontSize: number = 11;
     public fontFamily: string = fontFamily;
+    public fontStyle: number = FontStyle.Normal;
+    public fontWeight: number = FontWeight.Normal;
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = null;
+    public labelPrecision: number | null = null;
     public showTitle: boolean = false;
-    public title: string = null;
-    public defaultTitle: string = null;
+    public title: string | null = null;
+    public defaultTitle: string | null = null;
     public titleFontColor: string = "#777";
     public titleFontSize: number = 11;
     public titleFontFamily: string = fontFamily;
+    public titleFontStyle: number = FontStyle.Normal;
+    public titleFontWeight: number = FontWeight.Normal;
     public titleAlignment: string = "center";
+
+    public get FontStyle(): string {
+        switch (this.fontStyle) {
+            default:
+            case FontStyle.Normal:
+                return "Normal";
+            case FontStyle.Italic:
+                return "Italic";
+        }
+    }
+    public get TitleFontStyle(): string {
+        switch (this.titleFontStyle) {
+            default:
+            case FontStyle.Normal:
+                return "Normal";
+            case FontStyle.Italic:
+                return "Italic";
+        }
+    }
+    public get FontSize(): string {
+        return `${this.fontSize}pt`;
+    }
+    public get TitleFontSize(): string {
+        return `${this.titleFontSize}pt`;
+    }
+    public get TextProperties(): TextProperties {
+        return {
+            fontFamily: this.fontFamily,
+            fontSize: this.FontSize,
+            fontStyle: this.FontStyle,
+            fontWeight: this.fontWeight.toString(),
+        };
+    }
+    public get TitleTextProperties(): TextProperties {
+        return {
+            fontFamily: this.titleFontFamily,
+            fontSize: this.TitleFontSize,
+            fontStyle: this.TitleFontStyle,
+            fontWeight: this.titleFontWeight.toString(),
+        };
+    }
+
+    // old
     public get axisTextProperties(): TextProperties {
         return {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "px"
+            fontSize: this.fontSize + "px",
         };
     }
     public get titleTextProperties(): TextProperties {
         return {
             fontFamily: this.titleFontFamily,
-            fontSize: this.titleFontSize + "px"
+            fontSize: this.titleFontSize + "px",
         };
     }
 }
@@ -160,13 +301,13 @@ class YAxisSettings {
 class DataPointSettings {
     public meanColor: string = "#111";
     public medianColor: string = "#111";
-    public oneFill: string = null;
+    public oneFill: string | null = null;
     public showAll: boolean = true;
 }
 
 class ToolTipSettings {
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = null;
+    public labelPrecision: number | null = null;
 }
 
 class LabelsSettings {
@@ -175,11 +316,11 @@ class LabelsSettings {
     public fontSize: number = 11;
     public fontFamily: string = fontFamily;
     public labelDisplayUnits: number = 0;
-    public labelPrecision: number = null;
+    public labelPrecision: number | null = null;
     public get axisTextProperties(): TextProperties {
         return {
             fontFamily: this.fontFamily,
-            fontSize: this.fontSize + "px"
+            fontSize: this.fontSize + "px",
         };
     }
 }
@@ -196,6 +337,7 @@ class GridLinesSettings {
     public show: boolean = true;
     public majorGridSize: number = 1;
     public majorGridColor: string = "#DDD";
+    public zeroColor: string = "#777";
     public minorGrid: boolean = false;
     public minorGridSize: number = 1;
     public minorGridColor: string = "#EEE";
@@ -210,4 +352,34 @@ class DataLoadSettings {
     public warningColor: string = "#FF7900";
     public warningText: string = "Not all datapoints could be loaded";
     public backgroundColor: string = "#FFF";
+}
+
+export function parseSettings(dataView: DataView): Settings {
+    const settings = Settings.parse(dataView) as Settings;
+    // Correct % inputs (high)
+    if (settings.chartOptions.higher && settings.chartOptions.higher > 100) {
+        settings.chartOptions.higher = 100;
+    }
+    if (settings.chartOptions.higher && settings.chartOptions.higher < 75) {
+        settings.chartOptions.higher = 75;
+    }
+    // Correct % inputs (low)
+    if (settings.chartOptions.lower && settings.chartOptions.lower > 25) {
+        settings.chartOptions.lower = 25;
+    }
+    if (settings.chartOptions.lower && settings.chartOptions.lower < 0) {
+        settings.chartOptions.lower = 0;
+    }
+    // Reset out of bound percisions
+    if (settings.yAxis.labelPrecision && settings.yAxis.labelPrecision > 30) {
+        settings.yAxis.labelPrecision = 30;
+    }
+    if (settings.toolTip.labelPrecision && settings.toolTip.labelPrecision > 30) {
+        settings.toolTip.labelPrecision = 30;
+    }
+    if (settings.labels.labelPrecision && settings.labels.labelPrecision > 30) {
+        settings.labels.labelPrecision = 30;
+    }
+
+    return settings;
 }

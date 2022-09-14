@@ -29,47 +29,58 @@
 
 export enum ChartOrientation {
     Horizontal,
-    Vertical
+    Vertical,
 }
 
 export enum QuartileType {
     Exclusive,
-    Inclusive
+    Inclusive,
 }
 
 export enum WhiskerType {
     MinMax,
     Standard,
     IQR,
-    Custom
+    Custom,
 }
 
 export enum MarginType {
     Small,
     Medium,
-    Large
+    Large,
 }
 
 export enum LabelOrientation {
     Horizontal,
     Diagonal,
-    Vertical
+    Vertical,
 }
 
 export enum ScaleType {
     Linear,
-    Log
+    Log,
+}
+
+export enum FontWeight {
+    Normal = 400,
+    SemiBold = 600,
+    Bold = 800,
+}
+
+export enum FontStyle {
+    Normal,
+    Italic,
 }
 
 export module ReferenceLine {
     export enum Style {
         dashed,
         solid,
-        dotted
+        dotted,
     }
     export enum Position {
         front,
-        back
+        back,
     }
     export enum LabelType {
         value,
@@ -78,10 +89,16 @@ export module ReferenceLine {
     }
     export enum HPosition {
         left,
-        right
+        right,
     }
     export enum VPosition {
         above,
-        under
+        under,
     }
+}
+
+export enum TraceEvents {
+    constructor = "BoxWhiskerChart: Constructor",
+    convertor = "BoxWhiskerChart: Convertor method",
+    update = "BoxWhiskerChart: Update method",
 }
