@@ -29,24 +29,37 @@
 
 import { scaleBand, scaleTime, min, max, scaleLinear, scaleLog } from "d3";
 
-import { BoxWhiskerChartData, ValueAxisOptions, BoxPlot } from "./data";
+import { BoxWhiskerChartData, ValueAxisOptions, BoxPlot, BoxPlotSeries } from "./data";
 import { Settings } from "./settings";
 import { calculateAxisOptions } from "./calculateAxisOptions";
-import { ChartOrientation, ScaleType } from "./enums";
+import { ChartOrientation, MarginType, ScaleType, TraceEvents } from "./enums";
+import { PerfTimer } from "./perfTimer";
 
-export function calculateScale(data: BoxWhiskerChartData, settings: Settings): Settings {
+function calculateValues(data: BoxWhiskerChartData, func: (iterable: Iterable<number>) => number | undefined): number {
+    return <number>(
+        func(
+            data.series.map(
+                (series: BoxPlotSeries) =>
+                    <number>(
+                        func(
+                            series.boxPlots.map(
+                                (boxPlot: BoxPlot) =>
+                                    <number>func([boxPlot.boxValues.min, boxPlot.boxValues.mean, boxPlot.boxValues.max])
+                            )
+                        )
+                    )
+            )
+        )
+    );
+}
+
+export function calculateScale(data: BoxWhiskerChartData, settings: Settings): void {
+    const timer = PerfTimer.START(TraceEvents.calculateScale, true);
+
     const plotDimensions = settings.general.plotDimensions;
     const axisOptions: ValueAxisOptions = calculateAxisOptions(
-        min(
-            data.boxPlots.map((boxPlot: BoxPlot) =>
-                min([boxPlot.dataPoint.min, boxPlot.dataPoint.average, boxPlot.dataPoint.median])
-            )
-        ),
-        max(
-            data.boxPlots.map((boxPlot: BoxPlot) =>
-                max([boxPlot.dataPoint.max, boxPlot.dataPoint.average, boxPlot.dataPoint.median])
-            )
-        ),
+        calculateValues(data, min),
+        calculateValues(data, max),
         settings.yAxis.start === null ? undefined : settings.yAxis.start,
         settings.yAxis.end === null ? undefined : settings.yAxis.end
     );
@@ -72,21 +85,41 @@ export function calculateScale(data: BoxWhiskerChartData, settings: Settings): S
         }
     }
 
-    let categoryScale;
+    const getChartMargin = (margin: MarginType): number => {
+        switch (margin) {
+            case MarginType.Large:
+                return 0.4;
+            case MarginType.Small:
+                return 0.1;
+            case MarginType.Medium:
+            default:
+                return 0.2;
+        }
+    };
+
     let valueScale;
 
-    categoryScale = scaleBand()
-        .domain(data.boxPlots.map((boxPlot: BoxPlot) => boxPlot.name))
-        .paddingInner(0.1)
-        .paddingOuter(0.2)
-        .align(0.5);
+    let categoryScale = scaleBand()
+        .domain(data.categories)
+        .paddingInner(getChartMargin(settings.chartOptions.margin))
+        .paddingOuter(0.2);
+
+    let subCategoryScale = scaleBand()
+        .domain(
+            settings.general.hasSeries
+                ? data.series.map((series: BoxPlotSeries) => series.name)
+                : [<string>settings.xAxis.defaultTitle]
+        )
+        .paddingInner(settings.general.hasSeries ? getChartMargin(settings.chartOptions.internalMargin) : 0)
+        .paddingOuter(0);
 
     switch (settings.yAxis.scaleType) {
-        case ScaleType.Linear:
-            valueScale = scaleLinear().domain([axisOptions.min, axisOptions.max]);
-            break;
         case ScaleType.Log:
             valueScale = scaleLog().domain([axisOptions.min, axisOptions.max]);
+            break;
+        case ScaleType.Linear:
+        default:
+            valueScale = scaleLinear().domain([axisOptions.min, axisOptions.max]);
             break;
     }
 
@@ -102,6 +135,12 @@ export function calculateScale(data: BoxWhiskerChartData, settings: Settings): S
             break;
     }
 
-    settings.general.scales = { categoryScale, valueScale };
-    return settings;
+    subCategoryScale = subCategoryScale.range([0, categoryScale.bandwidth()]);
+    settings.general.scales = {
+        categoryScale: categoryScale.round(true),
+        subCategoryScale: subCategoryScale.round(true),
+        valueScale,
+    };
+
+    timer();
 }

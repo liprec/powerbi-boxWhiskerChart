@@ -25,16 +25,10 @@ jobs:
           npm test
         env:
           CI: true
-      - name: code coverage results
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage-report
-          path: coverage/
   build:
     name: buid, package and release
     runs-on: ubuntu-latest
     if: ${{ endsWith(github.ref, 'certification') }}
-    needs: [test]
     steps:
       - uses: actions/checkout@v2
       - name: use Node.js 12

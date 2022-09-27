@@ -60,21 +60,29 @@ export function syncSelectionState(selections: Selection<any, any, any, any>, se
 
     selections
         .style("opacity", (boxPlot: BoxPlot) => {
-            const isSelected: boolean = isSelectionIdInArray(selectionIds, boxPlot.selectionId);
+            const isSelected: boolean = isSelectionIdInArray(selectionIds, [
+                boxPlot.selectionId,
+                boxPlot.seriesSelectionId,
+                boxPlot.legendselectionId,
+            ]);
             return isSelected ? highlightOpacity : backgroundOpacity;
         })
         .style("stroke-opacity", (boxPlot: BoxPlot) => {
-            const isSelected: boolean = isSelectionIdInArray(selectionIds, boxPlot.selectionId);
+            const isSelected: boolean = isSelectionIdInArray(selectionIds, [
+                boxPlot.selectionId,
+                boxPlot.seriesSelectionId,
+                boxPlot.legendselectionId,
+            ]);
             return isSelected ? highlightOpacity : backgroundOpacity;
         });
     timer();
 }
 
-function isSelectionIdInArray(selectionIds: ISelectionId[], selectionId?: ISelectionId): boolean {
+function isSelectionIdInArray(selectionIds: ISelectionId[], selectionId?: (ISelectionId | undefined)[]): boolean {
     if (!selectionIds || !selectionId) {
         return false;
     }
-    return selectionIds.some((currentSelectionId: ISelectionId) => {
-        return currentSelectionId.getKey() === selectionId.getKey();
-    });
+    return selectionIds.some((currentSelectionId: ISelectionId) =>
+        selectionId.some((id: ISelectionId | undefined) => currentSelectionId.getKey() === (id && id.getKey()))
+    );
 }

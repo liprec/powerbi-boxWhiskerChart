@@ -72,6 +72,15 @@ export enum FontStyle {
     Italic,
 }
 
+export enum LegendPosition {
+    TopLeft,
+    TopCenter,
+    TopRight,
+    BottomLeft,
+    BottomCenter,
+    BottomRight,
+}
+
 export module ReferenceLine {
     export enum Style {
         dashed,
@@ -98,7 +107,11 @@ export module ReferenceLine {
 }
 
 export enum TraceEvents {
-    constructor = "BoxWhiskerChart: Constructor",
-    convertor = "BoxWhiskerChart: Convertor method",
-    update = "BoxWhiskerChart: Update method",
+    constructor = "BoxWhiskerChart: constructor()",
+    convertor = "BoxWhiskerChart: convertor() method",
+    update = "BoxWhiskerChart: update() method",
+    calculateData = "BoxWhiskerChart: calculateData() method",
+    calculatePlot = "BoxWhiskerChart: calculatePlot() method",
+    calculateScale = "BoxWhiskerChart: calculateScale() method",
+    calculateAxis = "BoxWhiskerChart: calculateAxis() method",
 }

@@ -32,6 +32,7 @@ import "./../style/visual.less";
 
 import powerbi from "powerbi-visuals-api";
 import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { getObject } from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjects";
 import { select, Selection, selectAll } from "d3-selection";
 import { isEqual } from "lodash";
 
@@ -41,8 +42,9 @@ import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInst
 import ISandboxExtendedColorPalette = powerbi.extensibility.ISandboxExtendedColorPalette;
 import ISelectionId = powerbi.visuals.ISelectionId;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
-import IViewPort = powerbi.IViewport;
-import IVisual = powerbi.extensibility.visual.IVisual;
+import IViewport = powerbi.IViewport;
+import IVisual = powerbi.extensibility.IVisual;
+import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import Selector = powerbi.data.Selector;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
@@ -55,39 +57,48 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualUpdateType = powerbi.VisualUpdateType;
 
 import { PerfTimer } from "./perfTimer";
-import { TraceEvents } from "./enums";
-import { BoxPlot, BoxWhiskerChartData } from "./data";
+import { TraceEvents, WhiskerType } from "./enums";
+import { BoxPlot, BoxWhiskerChartData, Legend } from "./data";
 import { Settings } from "./settings";
 import { syncSelectionState } from "./syncSelectionState";
 import { Selectors } from "./selectors";
 import { converter } from "./convertor";
 import { calculateAxis } from "./calculateAxis";
+import { calculateData } from "./calculateData";
+import { calculatePlot } from "./calculatePlot";
 import { calculateScale } from "./calculateScale";
-import { drawAxis } from "./drawAxis";
-import { drawGridLines } from "./drawGridLines";
+// import { drawAxis } from "./drawAxis";
+// import { drawGridLines } from "./drawGridLines";
+import { drawLegend } from "./drawLegend";
+import { drawPlot } from "./drawPlot";
+import { BaseType } from "d3";
 
 export class BoxWhiskerChart implements IVisual {
     private target: HTMLElement;
-    private border: Selection<any, any, any, any>;
-    private svg: Selection<any, any, any, any>;
-    private plotArea: Selection<any, any, any, any>;
-    private axis: Selection<any, any, any, any>;
-    private axisCategory: Selection<any, any, any, any>;
-    private axisValue: Selection<any, any, any, any>;
-    private axisCategoryLabel: Selection<any, any, any, any>;
-    private axisValueLabel: Selection<any, any, any, any>;
-    private grid: Selection<any, any, any, any>;
-    private boxes: Selection<any, any, any, any>;
-    private backRefLine: Selection<any, any, any, any>;
-    private frontRefLine: Selection<any, any, any, any>;
-    private warningText: Selection<any, any, any, any>;
-    private infoText: Selection<any, any, any, any>;
+    private border: Selection<BaseType, any, BaseType, any>;
+    private svg: Selection<BaseType, any, BaseType, any>;
+    private plotArea: Selection<BaseType, any, BaseType, any>;
+    private axis: Selection<BaseType, any, BaseType, any>;
+    private axisCategory: Selection<BaseType, any, BaseType, any>;
+    private axisValue: Selection<BaseType, any, BaseType, any>;
+    private axisCategoryLabel: Selection<BaseType, any, BaseType, any>;
+    private axisValueLabel: Selection<BaseType, any, BaseType, any>;
+    private grid: Selection<BaseType, any, BaseType, any>;
+    private series: Selection<BaseType, any, BaseType, any>;
+    private backRefLine: Selection<BaseType, any, BaseType, any>;
+    private frontRefLine: Selection<BaseType, any, BaseType, any>;
+    private warningText: Selection<BaseType, any, any, any>;
+    private infoText: Selection<BaseType, any, any, any>;
+    private legendArea: Selection<BaseType, unknown, BaseType, unknown>;
+    private legendBorder: Selection<BaseType, unknown, BaseType, unknown>;
+    private legend: Selection<BaseType, unknown, BaseType, unknown>;
     private locale: string;
     private data: BoxWhiskerChartData;
 
+    private events: IVisualEventService;
     private settings: Settings;
     private dataView: DataView;
-    private viewPort: IViewPort;
+    private viewPort: IViewport;
     private colorPalette: ISandboxExtendedColorPalette;
     private host: IVisualHost;
     private selectionManager: ISelectionManager;
@@ -97,18 +108,20 @@ export class BoxWhiskerChart implements IVisual {
     private colorConfig: any[];
     private styleConfig: any[];
 
-    constructor(options: VisualConstructorOptions) {
+    constructor(options?: VisualConstructorOptions) {
+        if (!options) return;
         const timer = PerfTimer.START(TraceEvents.constructor, true);
+        this.events = options.host.eventService;
         this.locale = options.host.locale;
         this.host = options.host;
         this.selectionManager = options.host.createSelectionManager();
         this.selectionManager.registerOnSelectCallback(() => {
             syncSelectionState(
-                this.svg.selectAll(Selectors.ChartNode.selectorName),
-                this.selectionManager.getSelectionIds() as ISelectionId[]
+                this.svg.selectAll(Selectors.BoxPlot.selectorName),
+                <ISelectionId[]>this.selectionManager.getSelectionIds()
             );
         });
-        this.allowInteractions = options.host.allowInteractions;
+        this.allowInteractions = <boolean>options.host.hostCapabilities.allowInteractions;
         this.tooltipServiceWrapper = createTooltipServiceWrapper(options.host.tooltipService, options.element);
         this.colorPalette = options.host.colorPalette;
         this.target = options.element;
@@ -126,73 +139,119 @@ export class BoxWhiskerChart implements IVisual {
         this.svg.on("click", () => {
             if (this.allowInteractions) {
                 this.selectionManager.clear().then(() => {
-                    syncSelectionState(this.svg.selectAll(Selectors.ChartNode.selectorName), []);
+                    syncSelectionState(this.svg.selectAll(Selectors.BoxPlot.selectorName), []);
                 });
             }
         });
         this.plotArea = this.svg.append("g").classed(Selectors.PlotArea.className, true);
         this.axis = this.svg.append("g").classed(Selectors.Axis.className, true);
+        this.legendArea = this.svg.append("g").classed(Selectors.LegendArea.className, true);
 
         this.grid = this.plotArea.append("g").classed(Selectors.Grid.className, true);
-        this.backRefLine = this.plotArea.append("g").classed(Selectors.ChartReferenceLineBackNode.className, true);
-        this.boxes = this.plotArea.append("g").classed(Selectors.ChartNode.className, true).attr("fill", "none");
-        this.frontRefLine = this.plotArea.append("g").classed(Selectors.ChartReferenceLineFrontNode.className, true);
+        this.backRefLine = this.plotArea.append("g").classed(Selectors.ReferenceLinesBack.className, true);
+        this.series = this.plotArea.append("g").classed(Selectors.Series.className, true).attr("fill", "none");
+        this.frontRefLine = this.plotArea.append("g").classed(Selectors.ReferenceLinesFront.className, true);
 
         this.axisCategory = this.axis.append("g").classed(Selectors.AxisCategory.className, true);
         this.axisValue = this.axis.append("g").classed(Selectors.AxisValue.className, true);
         this.axisCategoryLabel = this.axis.append("g").classed(Selectors.AxisCategoryLabel.className, true);
         this.axisValueLabel = this.axis.append("g").classed(Selectors.AxisValueLabel.className, true);
 
+        this.legendBorder = this.legendArea.append("rect").classed(Selectors.LegendBorder.className, true);
+        this.legend = this.legendArea.append("g").classed(Selectors.Legend.className, true);
+
         timer();
     }
 
     update(options: VisualUpdateOptions): void {
         const timer = PerfTimer.START(TraceEvents.update, true);
+        this.events.renderingStarted(options);
+
         if (
             isEqual(this.dataView, options && options.dataViews && options.dataViews[0]) &&
             isEqual(this.viewPort, options && options.viewport)
         ) {
+            this.events.renderingFinished(options);
             timer();
             return;
         }
         this.viewPort = options && options.viewport;
         this.dataView = options && options.dataViews && options.dataViews[0];
-        this.data = converter(
-            this.dataView,
-            options.viewport,
-            this.host,
-            this.colorPalette,
-            this.locale
-        ) as BoxWhiskerChartData;
+
+        this.data = <BoxWhiskerChartData>(
+            converter(this.dataView, options.viewport, this.host, this.colorPalette, this.locale)
+        );
+
         if (!this.data) {
+            this.grid.selectAll("*").remove();
+            this.backRefLine.selectAll("*").remove();
+            this.frontRefLine.selectAll("*").remove();
+            this.series.selectAll("*").remove();
+
+            this.axisCategory.selectAll("*").remove();
+            this.axisValue.selectAll("*").remove();
+            this.axisCategoryLabel.selectAll("*").remove();
+            this.axisValueLabel.selectAll("*").remove();
+
+            this.legend.selectAll("*").remove();
+
+            this.events.renderingFinished(options);
             timer();
+            return;
         }
+
         this.settings = this.data.settings;
-        this.settings = calculateAxis(this.data, this.settings);
-        this.settings = calculateScale(this.data, this.settings);
-        // this.data = calculateData(this.data, this.settings);
 
         this.svg.attr("viewBox", `0,0,${options.viewport.width},${options.viewport.height}`);
 
-        drawAxis(this.axis, this.settings, (event: MouseEvent, boxPlotName: string) => {
-            const currentBoxPlot = this.data.boxPlots.filter((boxPlot: BoxPlot) => boxPlot.name === boxPlotName);
-            if (currentBoxPlot.length === 0 || !currentBoxPlot[0].selectionId) return;
-            this.processClickEvent(event, currentBoxPlot[0].selectionId);
-        });
-        drawGridLines(this.grid, this.settings);
+        calculatePlot(this.data, this.settings);
+        calculateAxis(this.data, this.settings);
+        calculateScale(this.data, this.settings);
+        calculateData(this.data, this.settings);
 
+        if (this.settings.dataPoint.persist) {
+            this.settings.dataPoint.persist = false;
+            this.host.persistProperties({
+                merge: [
+                    {
+                        objectName: "dataPoint",
+                        selector: <Selector>(<unknown>null),
+                        properties: {
+                            persist: false,
+                            colorConfig: this.settings.dataPoint.colorConfig,
+                        },
+                    },
+                ],
+            });
+        }
+        drawPlot(this.series, this.data, this.settings, (event: MouseEvent, boxPlot: BoxPlot) => {
+            const isShiftPressed: boolean = event.shiftKey;
+            if (!boxPlot.selectionId) return;
+            this.processClickEvent(
+                event,
+                isShiftPressed && boxPlot.seriesSelectionId ? boxPlot.seriesSelectionId : boxPlot.selectionId
+            );
+        });
+
+        drawLegend(this.legend, this.data, this.settings, (event: MouseEvent, legend: Legend) => {
+            if (!legend.selectionId) return;
+            this.processClickEvent(event, legend.selectionId);
+        });
+
+        this.events.renderingFinished(options);
         timer();
     }
 
     private processClickEvent(event: MouseEvent, selectionId: ISelectionId) {
         const isCtrlPressed: boolean = event.ctrlKey;
+
         const currentSelectedIds = this.selectionManager.getSelectionIds()[0];
         if (!selectionId) return;
         if (selectionId !== currentSelectedIds && !isCtrlPressed) {
             this.selectionManager.clear();
         }
         this.selectionManager.select(selectionId, isCtrlPressed).then((ids: ISelectionId[]) => {
-            syncSelectionState(this.boxes.selectAll(Selectors.ChartNode.selectorName), ids);
+            syncSelectionState(this.series.selectAll(Selectors.BoxPlot.selectorName), ids);
         });
 
         event.stopPropagation();
@@ -207,10 +266,22 @@ export class BoxWhiskerChart implements IVisual {
         );
 
         let instances: VisualObjectInstance[] = [];
+        let beginning: number | undefined;
 
         switch (options.objectName) {
             case "general":
                 return [];
+            case "chartOptions":
+                this.removeEnumerateObject(instanceEnumeration, "outliers"); // Old setting
+                switch (this.settings.chartOptions.whisker) {
+                    case WhiskerType.MinMax:
+                    case WhiskerType.IQR:
+                    case WhiskerType.Standard:
+                        this.removeEnumerateObject(instanceEnumeration, "lower");
+                        this.removeEnumerateObject(instanceEnumeration, "higher");
+                }
+                if (!this.settings.general.hasSeries) this.removeEnumerateObject(instanceEnumeration, "internalMargin");
+                break;
             case "xAxis":
                 if (!this.settings.xAxis.showTitle) {
                     this.removeEnumerateObject(instanceEnumeration, "title");
@@ -233,30 +304,80 @@ export class BoxWhiskerChart implements IVisual {
                     this.removeEnumerateObject(instanceEnumeration, "titleAlignment");
                 }
                 break;
+            case "dataPoint":
+                this.removeEnumerateObject(instanceEnumeration, "oneFill"); // Old setting
+                this.removeEnumerateObject(instanceEnumeration, "showAll"); // Old setting
+                if (this.settings.dataPoint.colorConfig === "[]") {
+                    this.removeEnumerateObject(instanceEnumeration, "colorConfig");
+                }
+                instances = this.colorEnumerateObjectInstances(this.data.legend);
+                beginning = 1;
+                break;
+            case "shapes":
+                if (this.settings.chartOptions.whisker === WhiskerType.MinMax) {
+                    this.removeEnumerateObject(instanceEnumeration, "showOutliers");
+                    this.removeEnumerateObject(instanceEnumeration, "outlierRadius");
+                }
+                if (!this.settings.shapes.showMean) this.removeEnumerateObject(instanceEnumeration, "dotRadius");
+                break;
         }
 
-        instances.forEach((instance: VisualObjectInstance) => {
-            this.addAnInstanceToEnumeration(instanceEnumeration, instance);
-        });
+        this.addInstancesToEnumeration(instanceEnumeration, instances, beginning);
+
         return instanceEnumeration;
     }
 
-    public addAnInstanceToEnumeration(
+    public addInstancesToEnumeration(
         instanceEnumeration: VisualObjectInstanceEnumeration,
-        instance: VisualObjectInstance
+        instances: VisualObjectInstance[],
+        beginning?: number
     ): void {
-        if ((instanceEnumeration as VisualObjectInstanceEnumerationObject).instances) {
-            (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances.push(instance);
-        } else {
-            (instanceEnumeration as VisualObjectInstance[]).push(instance);
+        if (instances.length === 0) return;
+        let enumeration = (<VisualObjectInstanceEnumerationObject>instanceEnumeration).instances
+            ? (<VisualObjectInstanceEnumerationObject>instanceEnumeration).instances
+            : <VisualObjectInstance[]>instanceEnumeration;
+        if (enumeration.length === 1 && beginning && beginning > 0) {
+            const bProperties = Object.assign(
+                {},
+                ...Object.keys(enumeration[0].properties).map((k, i) => {
+                    if (i <= beginning) return { [k]: enumeration[0].properties[k] };
+                })
+            );
+            const eProperties = Object.assign(
+                {},
+                ...Object.keys(enumeration[0].properties).map((k, i) => {
+                    if (i > beginning) return { [k]: enumeration[0].properties[k] };
+                })
+            );
+            const returnEnumeration = enumeration.concat(instances).concat(Object.assign({}, enumeration[0]));
+            returnEnumeration[0].properties = bProperties;
+            returnEnumeration[returnEnumeration.length - 1].properties = eProperties;
+            (<VisualObjectInstanceEnumerationObject>instanceEnumeration).instances = returnEnumeration;
         }
     }
 
     public removeEnumerateObject(instanceEnumeration: VisualObjectInstanceEnumeration, objectName: string): void {
-        if ((instanceEnumeration as VisualObjectInstanceEnumerationObject).instances) {
-            delete (instanceEnumeration as VisualObjectInstanceEnumerationObject).instances[0].properties[objectName];
+        if ((<VisualObjectInstanceEnumerationObject>instanceEnumeration).instances) {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete (<VisualObjectInstanceEnumerationObject>instanceEnumeration).instances[0].properties[objectName];
         } else {
-            delete (instanceEnumeration as VisualObjectInstance[])[0].properties[objectName];
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete (<VisualObjectInstance[]>instanceEnumeration)[0].properties[objectName];
         }
+    }
+
+    public colorEnumerateObjectInstances(legend: Legend[] | undefined): VisualObjectInstance[] {
+        const instances: VisualObjectInstance[] = [];
+        legend?.forEach((legend: Legend, index: number) => {
+            instances.push({
+                displayName: legend.legend,
+                objectName: "dataPoint",
+                selector: { id: index.toString(), metadata: undefined },
+                properties: {
+                    fill: { solid: { color: legend.color } },
+                },
+            });
+        });
+        return instances;
     }
 }

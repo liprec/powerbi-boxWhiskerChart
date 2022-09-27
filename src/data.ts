@@ -35,65 +35,101 @@ import { Settings } from "./settings";
 import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
-export interface BaseValues {
-    max: number;
-    min: number;
-    average: number;
-    median: number;
-    total: number;
-    quartile1: number;
-    quartile3: number;
-    quartileCorrection: number[];
-}
-
-export interface BoxValues {
-    IQR?: number;
-    minValue: number;
-    maxValue: number;
+export interface BoxLabels {
+    sampleColumns: string[];
     minValueLabel: string;
     maxValueLabel: string;
     quartileValue: string;
     whiskerValue: string;
 }
 
+export interface BoxValues {
+    max: number;
+    min: number;
+    mean: number;
+    median: number;
+    samples: number;
+    total: number;
+    quartile1: number;
+    quartile3: number;
+}
+
 export interface BoxWhiskerChartData {
-    boxPlots: BoxPlot[];
-    referenceLines?: ReferenceLine[];
+    categories: string[];
     dataRange: number[];
+    legend: Legend[];
+    referenceLines?: ReferenceLine[];
+    series: BoxPlotSeries[];
     settings: Settings;
 }
 
-export interface BoxPlot {
+export interface BoxPlotSeries {
+    key: number;
     name: string;
-    parent?: string;
-    dataPoint?: Datapoint;
-    dataPointHightlight?: Datapoint;
-    selectionId: ISelectionId;
+    boxPlots: BoxPlot[];
+    selectionId?: ISelectionId;
 }
 
-export interface Datapoint {
-    average: number;
-    color?: string;
+export interface BoxPlot {
+    key: number;
+    boxLabels: BoxLabels;
+    boxValues: BoxValues;
+    color: string;
     dataLabels: DataLabel[];
-    fillColor?: string;
+    dataPoint?: DataPoint;
+    fillColor: string;
+    isHighlight: boolean;
     label?: string;
+    legendselectionId?: ISelectionId;
+    name: string;
+    outliers: Outlier[];
+    parent?: string;
+    selectionId: ISelectionId;
+    seriesSelectionId?: ISelectionId;
+    tooltip?: (this: BoxPlot, settings: Settings) => VisualTooltipDataItem[];
+}
+
+export interface DataPoint {
+    start: number;
+    middle: number;
+    end: number;
+    min: number;
+    q1: number;
+    q3: number;
     max: number;
     median: number;
-    min: number;
-    outliers: Outlier[];
-    quartile1: number;
-    quartile3: number;
-    samples: number;
-    tooltip?: () => VisualTooltipDataItem[];
+    mean: number;
+    r: number;
+    horizontal: boolean;
+}
+
+export interface Legend {
+    index: number;
+    legend: string;
+    color: string;
+    selectionId?: ISelectionId;
+}
+
+export interface LegendDimensions {
+    topHeight?: number;
+    bottomHeight?: number;
 }
 
 export interface Outlier {
-    category: number;
-    color?: string;
+    key: number;
+    color: string;
     value: number;
-    highlight: boolean;
-    selectionId: ISelectionId;
+    dataPoint?: OutlierDataPoint;
+    isHighlight: boolean;
+    selectionId?: ISelectionId;
     tooltip?: () => VisualTooltipDataItem[];
+}
+
+export interface OutlierDataPoint {
+    value: number;
+    middle: number;
+    r: number;
+    horizontal: boolean;
 }
 
 export interface DataLabel {
@@ -124,8 +160,14 @@ export interface ReferenceLine {
     y: number;
 }
 
+export interface LookupColor {
+    name: string;
+    color: string;
+}
+
 export interface Scales {
     categoryScale: ScaleBand<string>;
+    subCategoryScale: ScaleBand<string>;
     valueScale: ScaleContinuousNumeric<number, number>;
 }
 

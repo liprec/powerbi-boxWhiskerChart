@@ -29,9 +29,7 @@
 
 import { ValueAxisOptions } from "./data";
 
-export function calculateAxisOptions(min: number, max: number, fixedMin: number, fixedMax: number): ValueAxisOptions {
-    let isFixedMin = fixedMin !== undefined;
-    let isFixedMax = fixedMax !== undefined;
+export function calculateAxisOptions(min: number, max: number, fixedMin?: number, fixedMax?: number): ValueAxisOptions {
     let min1 = min === 0 ? 0 : min > 0 ? min * 0.99 - (max - min) / 100 : min * 1.01 - (max - min) / 100;
     let max1 =
         max === 0 ? (min === 0 ? 1 : 0) : max < 0 ? max * 0.99 + (max - min) / 100 : max * 1.01 + (max - min) / 100;
@@ -54,8 +52,8 @@ export function calculateAxisOptions(min: number, max: number, fixedMin: number,
 
     return {
         tickSize,
-        min: isFixedMin ? (fixedMin < max ? fixedMin : minValue) : minValue,
-        max: isFixedMax ? (fixedMax > min ? fixedMax : maxValue) : maxValue,
+        min: fixedMin === undefined ? minValue : fixedMin < max ? fixedMin : minValue,
+        max: fixedMax === undefined ? maxValue : fixedMax > min ? fixedMax : maxValue,
         ticks,
     };
 }

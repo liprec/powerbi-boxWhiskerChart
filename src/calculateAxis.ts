@@ -27,89 +27,77 @@
 
 "use strict";
 
-import { textMeasurementService } from "powerbi-visuals-utils-formattingutils";
+import { interfaces, textMeasurementService, valueFormatter } from "powerbi-visuals-utils-formattingutils";
 import { max } from "d3";
 
-import measureSvgTextHeight = textMeasurementService.measureSvgTextHeight;
-import measureSvgTextWidth = textMeasurementService.measureSvgTextWidth;
+import measureSvgTextRect = textMeasurementService.measureSvgTextRect;
+import TextProperties = interfaces.TextProperties;
+import IValueFormatter = valueFormatter.IValueFormatter;
 
-import { BoxWhiskerChartData, BoxPlot } from "./data";
+import { BoxWhiskerChartData, BoxPlot, BoxPlotSeries } from "./data";
 import { Settings } from "./settings";
-import { LabelOrientation } from "./enums";
+import { LabelOrientation, TraceEvents } from "./enums";
+import { PerfTimer } from "./perfTimer";
 
-export function calculateAxis(data: BoxWhiskerChartData, settings: Settings): Settings {
-    const valueTextProperties = settings.yAxis.TextProperties;
-    let valueTextHeight = settings.yAxis.show
-        ? (max(
-              data.dataRange.map((nr: number) => {
-                  valueTextProperties.text = settings.formatting.valuesFormatter.format(nr);
-                  return measureSvgTextHeight(valueTextProperties);
-              })
-          ) as number)
-        : 10;
-    let valueTextWidth = settings.yAxis.show
-        ? (max(
-              data.dataRange.map((nr: number) => {
-                  valueTextProperties.text = settings.formatting.valuesFormatter.format(nr);
-                  return measureSvgTextWidth(valueTextProperties);
-              })
-          ) as number)
-        : 10;
+function calculateRects(
+    data: number[] | string[] | string | null,
+    show: boolean,
+    textProperties: TextProperties,
+    valueFormatter?: IValueFormatter
+): { height: number; width: number } {
+    const emptyRect = new DOMRect(0, 0, 0, 0);
+    const whiteSpaceRect = new DOMRect(0, 0, 10, 10);
 
-    const categoryTextProperties = settings.xAxis.TextProperties;
-    let categoryTextHeight = settings.xAxis.show
-        ? (max(
-              data.boxPlots.map((boxPlot: BoxPlot) => {
-                  categoryTextProperties.text = settings.formatting.categoryFormatter.format(boxPlot.name);
-                  return measureSvgTextHeight(categoryTextProperties);
-              })
-          ) as number)
-        : 10;
-    let categoryTextWidth = settings.xAxis.show
-        ? (max(
-              data.boxPlots.map((boxPlot: BoxPlot) => {
-                  categoryTextProperties.text = settings.formatting.categoryFormatter.format(boxPlot.name);
-                  return measureSvgTextWidth(categoryTextProperties);
-              })
-          ) as number)
-        : 10;
+    if (Array.isArray(data)) {
+        const rects = data.map((nr: number | string) => {
+            if (show) {
+                textProperties.text = valueFormatter && valueFormatter.format(nr);
+                return measureSvgTextRect(textProperties);
+            }
+            return whiteSpaceRect;
+        });
+
+        return {
+            height: <number>max(rects.map((rect: DOMRect) => rect.height)),
+            width: <number>max(rects.map((rect: DOMRect) => rect.width)),
+        };
+    }
+
+    textProperties.text = data as string;
+
+    const rect = show ? measureSvgTextRect(textProperties) : emptyRect;
+
+    return { height: rect.height, width: rect.width };
+}
+
+export function calculateAxis(data: BoxWhiskerChartData, settings: Settings): void {
+    const timer = PerfTimer.START(TraceEvents.calculateAxis, true);
+
+    let { height: valueTextHeight, width: valueTextWidth } = calculateRects(
+        data.dataRange,
+        settings.yAxis.show,
+        settings.yAxis.TextProperties,
+        settings.formatting.valuesFormatter
+    );
+    let { height: categoryTextHeight, width: categoryTextWidth } = calculateRects(
+        data.categories,
+        settings.xAxis.show,
+        settings.xAxis.TextProperties,
+        settings.formatting.categoryFormatter
+    );
 
     // Titles
-    const valueTitleTextProperties = settings.yAxis.TitleTextProperties;
-    const valueTitleTextHeight = settings.yAxis.showTitle
-        ? (max(
-              data.dataRange.map((nr: number) => {
-                  valueTitleTextProperties.text = settings.yAxis.title;
-                  return measureSvgTextHeight(valueTitleTextProperties);
-              })
-          ) as number)
-        : 0;
-    const valueTitleTextWidth = settings.yAxis.showTitle
-        ? (max(
-              data.dataRange.map((nr: number) => {
-                  valueTitleTextProperties.text = settings.yAxis.title;
-                  return measureSvgTextWidth(valueTitleTextProperties);
-              })
-          ) as number)
-        : 0;
+    let { height: valueTitleTextHeight, width: valueTitleTextWidth } = calculateRects(
+        settings.yAxis.title,
+        settings.yAxis.showTitle,
+        settings.yAxis.TitleTextProperties
+    );
 
-    const categoryTitleTextProperties = settings.xAxis.TitleTextProperties;
-    const categoryTitleTextHeight = settings.xAxis.showTitle
-        ? (max(
-              data.boxPlots.map((boxPlot: BoxPlot) => {
-                  categoryTitleTextProperties.text = settings.xAxis.title;
-                  return measureSvgTextHeight(categoryTitleTextProperties);
-              })
-          ) as number)
-        : 0;
-    const categoryTitleTextWidth = settings.xAxis.showTitle
-        ? (max(
-              data.boxPlots.map((boxPlot: BoxPlot) => {
-                  categoryTitleTextProperties.text = settings.xAxis.title;
-                  return measureSvgTextWidth(categoryTitleTextProperties);
-              })
-          ) as number)
-        : 0;
+    let { height: categoryTitleTextHeight, width: categoryTitleTextWidth } = calculateRects(
+        settings.xAxis.title,
+        settings.xAxis.showTitle,
+        settings.xAxis.TitleTextProperties
+    );
 
     switch (settings.xAxis.orientation) {
         case LabelOrientation.Diagonal:
@@ -138,5 +126,6 @@ export function calculateAxis(data: BoxWhiskerChartData, settings: Settings): Se
         categoryAxisLabel: { height: categoryTextHeight, width: categoryTextWidth },
         valueAxisLabel: { height: valueTextHeight, width: valueTextWidth },
     };
-    return settings;
+
+    timer();
 }

@@ -1,24 +1,24 @@
 {
-  "visual": {
-    "name": "BoxWhisker(JanPieter)",
-    "displayName": "Box and Whisker chart",
-    "guid": "BoxWhiskerChart1455240051538",
-    "visualClassName": "BoxWhiskerChart",
-    "version": "3.0.0",
-    "description": "Visualize a dataset as a box and whisker chart. A box and whisker chart shows basic statistical information of a dataset: the 1st and 3rd quartile (box),  the median (line), the mean (dot) and dependent of the type either the minimum and maximum value of all values or between the 1.5x interquartile range [IQR] (whiskers).",
-    "supportUrl": "https://azurebi.jppp.org/box-and-whisker-chart/",
-    "gitHubUrl": "https://github.com/liprec/powerbi-boxWhiskerChart"
-  },
-  "apiVersion": "3.7.0",
-  "author": {
-    "name": "Jan Pieter Posthuma",
-    "email": "mail@jppp.org"
-  },
-  "assets": {
-    "icon": "assets/BoxWhisker.png"
-  },
-  "externalJS": [],
-  "style": "style/visual.less",
-  "capabilities": "capabilities.json",
-  "stringResources": []
+    "visual": {
+        "name": "BoxWhisker(JanPieter)",
+        "displayName": "Box and Whisker chart",
+        "guid": "BoxWhiskerChart1455240051538",
+        "visualClassName": "BoxWhiskerChart",
+        "version": "3.0.0",
+        "description": "Visualize a dataset as a box and whisker chart. A box and whisker chart shows basic statistical information of a dataset: the 1st and 3rd quartile (box),  the median (line), the mean (dot) and dependent of the type either the minimum and maximum value of all values or between the 1.5x interquartile range [IQR] (whiskers).",
+        "supportUrl": "https://azurebi.jppp.org/box-and-whisker-chart/",
+        "gitHubUrl": "https://github.com/liprec/powerbi-boxWhiskerChart"
+    },
+    "apiVersion": "4.7.0",
+    "author": {
+        "name": "Jan Pieter Posthuma (DataScenarios)",
+        "email": "mail@datascenarios.nl"
+    },
+    "assets": {
+        "icon": "assets/BoxWhisker.png"
+    },
+    "externalJS": [],
+    "style": "style/visual.less",
+    "capabilities": "capabilities.json",
+    "stringResources": []
 }

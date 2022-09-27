@@ -39,7 +39,7 @@ import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 import IValueFormatter = valueFormatter.IValueFormatter;
 import TextProperties = interfaces.TextProperties;
 
-import { AxisDimensions, PlotDimensions, Scales } from "./data";
+import { AxisDimensions, LegendDimensions, PlotDimensions, Scales } from "./data";
 import {
     ChartOrientation,
     QuartileType,
@@ -48,6 +48,7 @@ import {
     LabelOrientation,
     FontWeight,
     FontStyle,
+    LegendPosition,
 } from "./enums";
 
 const fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sans-serif";
@@ -55,7 +56,9 @@ const fontFamily: string = "'Segoe UI', wf_segoe-ui_normal, helvetica, arial, sa
 export class Settings extends DataViewObjectsParser {
     public general: GeneralSettings = new GeneralSettings();
     public formatting: FormattingSettings = new FormattingSettings();
+
     public chartOptions: ChartOptionsSettings = new ChartOptionsSettings();
+    public legend: LegendSettings = new LegendSettings();
     public xAxis: XAxisSettings = new XAxisSettings();
     public yAxis: YAxisSettings = new YAxisSettings();
     public dataPoint: DataPointSettings = new DataPointSettings();
@@ -72,36 +75,40 @@ class GeneralSettings {
     public y: number = this.padding;
     public width: number;
     public height: number;
+    public legendDimensions: LegendDimensions;
     public axisDimensions: AxisDimensions;
     public telemetry: boolean = false;
     public locale: string = "1033";
     public scales: Scales;
     public orientation: ChartOrientation = ChartOrientation.Vertical;
+    public hasSeries: boolean = false;
 
     public get plotDimensions(): PlotDimensions {
         return {
             x1:
                 this.x +
                 (this.orientation === ChartOrientation.Vertical
-                    ? (this.axisDimensions.valueAxisLabel.width as number)
-                    : (this.axisDimensions.categoryAxisLabel.width as number)),
+                    ? <number>this.axisDimensions.valueAxisLabel.width
+                    : <number>this.axisDimensions.categoryAxisLabel.width),
             x2:
                 this.width -
                 this.padding -
                 (this.orientation === ChartOrientation.Vertical
                     ? 0
-                    : (this.axisDimensions.valueAxisLabel.width as number) / 2),
+                    : <number>this.axisDimensions.valueAxisLabel.width / 2),
             y1:
                 this.y +
+                (this.legendDimensions?.topHeight || 0) +
                 (this.orientation === ChartOrientation.Vertical
-                    ? (this.axisDimensions.valueAxisLabel.height as number) / 2
+                    ? <number>this.axisDimensions.valueAxisLabel.height / 2
                     : 0),
             y2:
                 this.y +
                 this.height -
+                (this.legendDimensions?.bottomHeight || 0) -
                 (this.orientation === ChartOrientation.Vertical
-                    ? (this.axisDimensions.categoryAxisLabel.height as number)
-                    : (this.axisDimensions.valueAxisLabel.height as number)),
+                    ? <number>this.axisDimensions.categoryAxisLabel.height
+                    : <number>this.axisDimensions.valueAxisLabel.height),
         };
     }
 
@@ -127,11 +134,14 @@ class GeneralSettings {
 }
 
 class FormattingSettings {
+    public seriesFormatter: IValueFormatter;
     public valuesFormatter: IValueFormatter;
     public categoryFormatter: IValueFormatter;
     public labelFormatter: IValueFormatter;
     public toolTipFormatter: IValueFormatter;
 }
+
+// Formatting pane
 
 class ChartOptionsSettings {
     public orientation: ChartOrientation = ChartOrientation.Vertical;
@@ -140,8 +150,39 @@ class ChartOptionsSettings {
     public whisker: WhiskerType = WhiskerType.MinMax;
     public lower: number | null = null;
     public higher: number | null = null;
-    public outliers: boolean = false;
+    public categoryLegend: boolean = true;
     public margin: MarginType = MarginType.Medium;
+    public internalMargin: MarginType = MarginType.Medium;
+}
+
+class LegendSettings {
+    public show = true;
+    public position: LegendPosition = LegendPosition.TopLeft;
+    public fontColor = "#666666";
+    public fontSize = 11;
+    public fontFamily: string = fontFamily;
+    public fontStyle: number = FontStyle.Normal;
+    public fontWeight: number = FontWeight.Normal;
+    public get FontStyle(): string {
+        switch (this.fontStyle) {
+            default:
+            case FontStyle.Normal:
+                return "Normal";
+            case FontStyle.Italic:
+                return "Italic";
+        }
+    }
+    public get FontSize(): string {
+        return `${this.fontSize}pt`;
+    }
+    public get TextProperties(): TextProperties {
+        return {
+            fontFamily: this.fontFamily,
+            fontSize: this.FontSize,
+            fontStyle: this.FontStyle,
+            fontWeight: this.fontWeight.toString(),
+        };
+    }
 }
 
 // Category Axis
@@ -223,7 +264,7 @@ class XAxisSettings {
 class YAxisSettings {
     public show: boolean = true;
     public scaleType: number = 0;
-    public start: number | null = null;
+    public start: number | null | undefined = null;
     public end: number | null = null;
     public fontColor: string = "#777";
     public fontSize: number = 11;
@@ -303,6 +344,8 @@ class DataPointSettings {
     public medianColor: string = "#111";
     public oneFill: string | null = null;
     public showAll: boolean = true;
+    public persist = false;
+    public colorConfig = "[]";
 }
 
 class ToolTipSettings {
@@ -326,9 +369,11 @@ class LabelsSettings {
 }
 
 class ShapeSettings {
+    public showOutliers: boolean = false;
+    public outlierRadius: number = 4;
     public showMean: boolean = true;
-    public showMedian: boolean = true;
     public dotRadius: number = 4;
+    public showMedian: boolean = true;
     public highlight: boolean = true;
     public fixedCategory: boolean = true;
 }
@@ -355,7 +400,9 @@ class DataLoadSettings {
 }
 
 export function parseSettings(dataView: DataView): Settings {
-    const settings = Settings.parse(dataView) as Settings;
+    migrateOldSettings(dataView);
+    const settings = <Settings>Settings.parse(dataView);
+
     // Correct % inputs (high)
     if (settings.chartOptions.higher && settings.chartOptions.higher > 100) {
         settings.chartOptions.higher = 100;
@@ -382,4 +429,51 @@ export function parseSettings(dataView: DataView): Settings {
     }
 
     return settings;
+}
+
+function migrateOldSettings(dataView: DataView) {
+    if (dataView && dataView.metadata && dataView.metadata.objects) {
+        let chartOptions = dataView.metadata.objects["chartOptions"];
+        let dataPoint = dataView.metadata.objects["dataPoint"];
+        let shapes = dataView.metadata.objects["shapes"];
+
+        if (chartOptions) {
+            const outliers = chartOptions.outliers;
+
+            if (!shapes) {
+                dataView.metadata.objects["shapes"] = {};
+                shapes = dataView.metadata.objects["shapes"];
+            }
+            if (outliers !== undefined) {
+                shapes.showOutliers = outliers;
+                delete chartOptions.outliers;
+            }
+        }
+
+        if (dataPoint) {
+            if (!chartOptions) {
+                dataView.metadata.objects["chartOptions"] = {};
+                chartOptions = dataView.metadata.objects["chartOptions"];
+            }
+            const showAll = <boolean>(dataPoint.showAll === undefined ? true : dataPoint.showAll);
+            const oneFill = <string>(<any>dataPoint.oneFill).solid.color;
+
+            if (!showAll) {
+                chartOptions.categoryLegend = showAll;
+                if (!dataPoint.$instances) {
+                    dataPoint.$instances = {};
+                }
+                if (!dataPoint.$instances["0"]) {
+                    dataPoint.$instances["0"] = { fill: { solid: { color: oneFill } } };
+                }
+                delete dataPoint.showAll;
+                delete dataPoint.oneFill;
+            }
+
+            // oneFill is not used
+            if (oneFill && showAll) {
+                delete dataPoint.oneFill;
+            }
+        }
+    }
 }

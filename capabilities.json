@@ -1,6 +1,11 @@
 {
     "dataRoles": [
         {
+            "name": "Series",
+            "kind": "Grouping",
+            "displayName": "Series"
+        },
+        {
             "name": "Groups",
             "kind": "Grouping",
             "displayName": "Category"
@@ -25,9 +30,13 @@
         {
             "conditions": [
                 {
+                    "Series": {
+                        "min": 0,
+                        "max": 1
+                    },
                     "Groups": {
                         "min": 0,
-                        "max": 2
+                        "max": 1
                     },
                     "Values": {
                         "min": 0,
@@ -37,16 +46,33 @@
             ],
             "matrix": {
                 "rows": {
-                    "for": {
-                        "in": "Groups"
-                    },
-                    "dataReductionAlgorithm": { "top": { "count": 100 } }
+                    "select": [
+                        {
+                            "bind": {
+                                "to": "Series"
+                            }
+                        },
+                        {
+                            "bind": {
+                                "to": "Groups"
+                            }
+                        }
+                    ],
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 100
+                        }
+                    }
                 },
                 "columns": {
                     "for": {
                         "in": "Samples"
                     },
-                    "dataReductionAlgorithm": { "top": { "count": 30000 } }
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 30000
+                        }
+                    }
                 },
                 "values": {
                     "select": [
@@ -56,7 +82,11 @@
                             }
                         }
                     ],
-                    "dataReductionAlgorithm": { "top": { "count": 30000 } }
+                    "dataReductionAlgorithm": {
+                        "top": {
+                            "count": 30000
+                        }
+                    }
                 }
             }
         }
@@ -138,13 +168,18 @@
                     "placeHolderText": "Auto",
                     "type": { "numeric": true }
                 },
+                "categoryLegend": {
+                    "displayName": "Category as legend",
+                    "description": "Use the categorie values as legend",
+                    "type": { "bool": true }
+                },
                 "outliers": {
                     "displayName": "Outliers",
                     "description": "Show outliers",
                     "type": { "bool": true }
                 },
                 "margin": {
-                    "displayName": "Chart margin",
+                    "displayName": "Chart margin (outer)",
                     "description": "The margin between the different boxes.\nOnly used when no datalabels are shown",
                     "type": {
                         "enumeration": [
@@ -159,6 +194,128 @@
                             {
                                 "value": "2",
                                 "displayName": "Large"
+                            }
+                        ]
+                    }
+                },
+                "internalMargin": {
+                    "displayName": "Chart margin (inner)",
+                    "description": "The margin between the boxes in different series.\nOnly used with a series value",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Small"
+                            },
+                            {
+                                "value": "1",
+                                "displayName": "Medium"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "Large"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "legend": {
+            "displayName": "Legend",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "position": {
+                    "displayName": "Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Top + Left",
+                                "value": "0"
+                            },
+                            {
+                                "displayName": "Top + Center",
+                                "value": "1"
+                            },
+                            {
+                                "displayName": "Top + Right",
+                                "value": "2"
+                            },
+                            {
+                                "displayName": "Bottom + Left",
+                                "value": "3"
+                            },
+                            {
+                                "displayName": "Bottom + Center",
+                                "value": "4"
+                            },
+                            {
+                                "displayName": "Bottom + Right",
+                                "value": "5"
+                            }
+                        ]
+                    }
+                },
+                "fontColor": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontSize": {
+                    "displayName": "Text size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "fontStyle": {
+                    "displayName": "Font style",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "0"
+                            },
+                            {
+                                "displayName": "Italic",
+                                "value": "1"
+                            }
+                        ]
+                    }
+                },
+                "fontWeight": {
+                    "displayName": "Font weight",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "400"
+                            },
+                            {
+                                "displayName": "Semi bold",
+                                "value": "600"
+                            },
+                            {
+                                "displayName": "Bold",
+                                "value": "800"
                             }
                         ]
                     }
@@ -524,6 +681,20 @@
                 "fill": {
                     "displayName": "Fill",
                     "type": { "fill": { "solid": { "color": true } } }
+                },
+                "persist": {
+                    "displayName": "Persist formatting",
+                    "description": "Stores the current color config",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "colorConfig": {
+                    "displayName": "Colors",
+                    "description": "JSON Array with prefix link colors: [{name, color}]",
+                    "type": {
+                        "text": true
+                    }
                 }
             }
         },
@@ -598,10 +769,29 @@
         "shapes": {
             "displayName": "Shapes",
             "properties": {
+                "showOutliers": {
+                    "displayName": "Outliers",
+                    "description": "Show outliers",
+                    "type": { "bool": true }
+                },
+                "outlierRadius": {
+                    "displayName": "Outlier radius",
+                    "description": "Radius of the outlier dot(s)",
+                    "type": {
+                        "numeric": true
+                    }
+                },
                 "showMean": {
                     "displayName": "Mean",
                     "description": "Display Mean dot",
                     "type": { "bool": true }
+                },
+                "dotRadius": {
+                    "displayName": "Mean radius",
+                    "description": "Radius of the mean dot",
+                    "type": {
+                        "numeric": true
+                    }
                 },
                 "showMedian": {
                     "displayName": "Median",
@@ -891,6 +1081,7 @@
     "sorting": {
         "default": {}
     },
+    "privileges": [],
     "supportsHighlight": true,
     "suppressDefaultTitle": true,
     "tooltips": {
