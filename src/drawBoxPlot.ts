@@ -27,7 +27,7 @@
 
 "use strict";
 
-import { BoxPlot, DataPoint, OutlierDataPoint } from "./data";
+import { BoxPlot, DataPoint, SingleDataPoint } from "./data";
 
 export function drawBoxPlot(d: DataPoint): string {
     if (d.horizontal)
@@ -46,7 +46,7 @@ export function drawBoxPlotMedian(d: DataPoint): string {
     return `M${d.start},${d.median}L${d.end},${d.median}`;
 }
 
-export function drawBoxPlotOutlier(d: OutlierDataPoint): string {
+export function drawBoxPlotPoint(d: SingleDataPoint): string {
     if (d.horizontal)
         return `M${d.value},${d.middle}m-${d.r},0a${d.r},${d.r} 0 1,1 ${d.r * 2},0 a${d.r},${d.r} 0 1,1-${d.r * 2},0`;
     return `M${d.middle},${d.value}m-${d.r},0a${d.r},${d.r} 0 1,1 ${d.r * 2},0 a${d.r},${d.r} 0 1,1-${d.r * 2},0`;

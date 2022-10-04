@@ -28,24 +28,17 @@
 "use strict";
 import powerbi from "powerbi-visuals-api";
 import { getObject } from "powerbi-visuals-utils-dataviewutils/lib/dataViewObjects";
-import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
 import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
 import { max, min } from "d3-array";
 
 import DataView = powerbi.DataView;
-import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewHierarchyLevel = powerbi.DataViewHierarchyLevel;
 import DataViewMatrixNode = powerbi.DataViewMatrixNode;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
-import DataViewTableRow = powerbi.DataViewTableRow;
-import DataViewValueColumn = powerbi.DataViewValueColumn;
 import ISandboxExtendedColorPalette = powerbi.extensibility.ISandboxExtendedColorPalette;
 import ISelectionId = powerbi.visuals.ISelectionId;
-import ISelectionIdBuilder = powerbi.visuals.ISelectionIdBuilder;
 import IViewPort = powerbi.IViewport;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
-import PrimitiveValue = powerbi.PrimitiveValue;
-import Selector = powerbi.data.Selector;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import { PerfTimer } from "./perfTimer";
@@ -59,10 +52,11 @@ import {
     BoxWhiskerChartData,
     Legend,
     LookupColor,
-    Outlier,
+    SinglePoint,
 } from "./data";
+import { referenceLineReadDataView } from "./refLines";
 
-const seriesRole = "Series";
+const seriesRole = "Legend";
 const categoryRole = "Groups";
 const sampleRole = "Samples";
 const valueRole = "Values";
@@ -124,9 +118,9 @@ export function converter(
         return;
     }
 
-    if (!settings.general.hasSeries && !(dataView && dataView.metadata && dataView.metadata.objects)) {
-        settings.chartOptions.categoryLegend = false;
-    }
+    // if (!settings.general.hasSeries && !(dataView && dataView.metadata && dataView.metadata.objects)) {
+    //     settings.chartOptions.categoryLegend = false;
+    // }
 
     settings.xAxis.defaultTitle = categoryColumn.displayName;
     settings.yAxis.defaultTitle = valueColumn.displayName;
@@ -300,12 +294,15 @@ export function converter(
         .filter((value, index, self) => self.indexOf(value) === index);
     const dataRange = [min, max];
 
+    const refLines = referenceLineReadDataView(dataView?.metadata.objects, colors);
+
     timer();
     return <BoxWhiskerChartData>{
         categories,
         dataRange,
         legend,
         series,
+        referenceLines: refLines,
         settings,
     };
 }
@@ -346,7 +343,9 @@ function calculateBoxPlots(
             const boxPlot: BoxPlot = <BoxPlot>{
                 key: -1,
                 name: category.value,
+                series: !oneSeries && series.name,
                 color: legendItem[0].color,
+                fillColor: settings.shapes.boxFill ? legendItem[0].color : null,
                 isHighlight: true,
                 selectionId,
                 legendselectionId: legendItem[0].selectionId,
@@ -373,7 +372,10 @@ function calculateBoxPlots(
             boxPlot.boxValues = boxValues;
             boxPlot.boxLabels = boxLabels;
             boxPlot.tooltip = getTooltip;
-            boxPlot.outliers = settings.shapes.showOutliers ? getOutliers(sortedValue, boxPlot) : [];
+
+            const { innerPoints, outliers } = getOutliers(sortedValue, boxPlot, settings);
+            boxPlot.innerPoints = innerPoints;
+            boxPlot.outliers = outliers;
 
             return boxPlot;
         });
@@ -420,14 +422,18 @@ function getSeries(
             boxPlots: [],
             selectionId: serieSelectionId,
         };
-        const legendValues = categoryLegend
-            ? [{ name: seriesName, selectionId: serieSelectionId }]
-            : row.children?.map((child: DataViewMatrixNode) => {
-                  return {
-                      name: <string>child.value?.toLocaleString(),
-                      selectionId: host.createSelectionIdBuilder().withMatrixNode(child, rowLevels).createSelectionId(),
-                  };
-              });
+        const legendValues =
+            categoryLegend && hasSeries
+                ? row.children?.map((child: DataViewMatrixNode) => {
+                      return {
+                          name: <string>child.value?.toLocaleString(),
+                          selectionId: host
+                              .createSelectionIdBuilder()
+                              .withMatrixNode(child, rowLevels)
+                              .createSelectionId(),
+                      };
+                  })
+                : [{ name: seriesName, selectionId: serieSelectionId }];
         legendValues?.forEach((value: { name: string; selectionId: ISelectionId }) => {
             if (!legend.some((s: Legend) => s.legend === value.name)) {
                 legend.push({
@@ -449,7 +455,7 @@ function getSeries(
 }
 
 function calculateBoxWhisker(
-    values: any[],
+    values: number[],
     sampleColumns: string[],
     settings: Settings
 ): { boxValues: BoxValues; boxLabels: BoxLabels; min: number; max: number } {
@@ -545,6 +551,10 @@ function calculateBoxWhisker(
 function getTooltip(this: BoxPlot, settings: Settings): VisualTooltipDataItem[] {
     return [
         {
+            displayName: "Series",
+            value: <string>this.series,
+        },
+        {
             displayName: "Category",
             value: this.name,
         },
@@ -566,42 +576,86 @@ function getTooltip(this: BoxPlot, settings: Settings): VisualTooltipDataItem[] 
         },
         {
             displayName: this.boxLabels.maxValueLabel,
-            value: settings.formatting.valuesFormatter.format(this.boxValues.max),
+            value: settings.formatting.toolTipFormatter.format(this.boxValues.max),
         },
         {
             displayName: "Quartile 3",
-            value: settings.formatting.valuesFormatter.format(this.boxValues.quartile3),
+            value: settings.formatting.toolTipFormatter.format(this.boxValues.quartile3),
         },
         {
             displayName: "Median",
-            value: settings.formatting.valuesFormatter.format(this.boxValues.median),
+            value: settings.formatting.toolTipFormatter.format(this.boxValues.median),
         },
         {
             displayName: "Mean",
-            value: settings.formatting.valuesFormatter.format(this.boxValues.mean),
+            value: settings.formatting.toolTipFormatter.format(this.boxValues.mean),
         },
         {
             displayName: "Quartile 1",
-            value: settings.formatting.valuesFormatter.format(this.boxValues.quartile1),
+            value: settings.formatting.toolTipFormatter.format(this.boxValues.quartile1),
         },
         {
             displayName: this.boxLabels.minValueLabel,
-            value: settings.formatting.valuesFormatter.format(this.boxValues.min),
+            value: settings.formatting.toolTipFormatter.format(this.boxValues.min),
         },
-    ];
+    ].filter((item) => !!item.value);
 }
 
-function getOutliers(sortedValue: number[], boxPlot: BoxPlot): Outlier[] {
-    return sortedValue
-        .filter((value: any) => value < boxPlot.boxValues.min || value > boxPlot.boxValues.max)
-        .map((value: any) => {
-            return {
-                key: -1,
-                color: boxPlot.color,
-                value,
-                isHighlight: boxPlot.isHighlight,
-            };
-        });
+function getPointTooltip(this: SinglePoint, settings: Settings): VisualTooltipDataItem[] {
+    return [
+        {
+            displayName: "Series",
+            value: <string>this.series,
+        },
+        {
+            displayName: "Category",
+            value: this.category,
+        },
+        {
+            displayName: "Type",
+            value: this.typ,
+        },
+        {
+            displayName: "Value",
+            value: settings.formatting.toolTipFormatter.format(this.value),
+        },
+    ].filter((item) => !!item.value);
+}
+
+function getOutliers(
+    sortedValue: number[],
+    boxPlot: BoxPlot,
+    settings: Settings
+): { innerPoints: SinglePoint[]; outliers: SinglePoint[] } {
+    const transForm = (value: number, typ: string, r: number, fill: boolean): SinglePoint => {
+        return {
+            key: -1,
+            color: boxPlot.color,
+            r,
+            typ,
+            fill,
+            value,
+            category: boxPlot.name,
+            series: boxPlot.series,
+            isHighlight: boxPlot.isHighlight,
+            singlePointtooltip: getPointTooltip,
+        };
+    };
+
+    const innerPoints: SinglePoint[] = settings.shapes.showPoints
+        ? sortedValue
+              .filter((value: number) => value >= boxPlot.boxValues.min && value <= boxPlot.boxValues.max)
+              .map((value: number) => transForm(value, "Point", settings.shapes.pointRadius, settings.shapes.pointFill))
+        : [];
+    const outliers: SinglePoint[] = settings.shapes.showOutliers
+        ? sortedValue
+              .filter((value: number) => value < boxPlot.boxValues.min || value > boxPlot.boxValues.max)
+              .map((value: number) =>
+                  transForm(value, "Outlier", settings.shapes.outlierRadius, settings.shapes.outlierFill)
+              )
+        : [];
+
+    return { innerPoints, outliers };
 }
 
 export function checkValidDataview(dataView?: DataView) {

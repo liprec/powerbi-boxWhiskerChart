@@ -63,7 +63,7 @@ function calculateRects(
         };
     }
 
-    textProperties.text = data as string;
+    textProperties.text = (data || "X") as string;
 
     const rect = show ? measureSvgTextRect(textProperties) : emptyRect;
 
@@ -117,14 +117,16 @@ export function calculateAxis(data: BoxWhiskerChartData, settings: Settings): vo
             categoryTextWidth;
             break;
     }
-    categoryTextHeight += categoryTitleTextHeight;
-    categoryTextWidth += categoryTitleTextWidth;
-    valueTextHeight += valueTitleTextHeight;
-    valueTextWidth += valueTitleTextWidth;
+    // categoryTextHeight += categoryTitleTextHeight;
+    // categoryTextWidth += categoryTitleTextWidth;
+    // valueTextHeight += valueTitleTextHeight;
+    // valueTextWidth += valueTitleTextWidth;
 
     settings.general.axisDimensions = {
         categoryAxisLabel: { height: categoryTextHeight, width: categoryTextWidth },
+        categoryAxisTitle: { height: categoryTitleTextHeight, width: categoryTitleTextWidth },
         valueAxisLabel: { height: valueTextHeight, width: valueTextWidth },
+        valueAxisTitle: { height: valueTitleTextHeight, width: valueTitleTextWidth },
     };
 
     timer();

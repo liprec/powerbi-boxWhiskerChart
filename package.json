@@ -44,7 +44,7 @@
         "eslint-plugin-lodash": "^7.4.0",
         "eslint-plugin-prettier": "^4.2.1",
         "eslint-plugin-security": "^1.5.0",
-        "powerbi-visuals-api": "4.7",
+        "powerbi-visuals-api": "4.7.0",
         "powerbi-visuals-tools": "^4.0.5",
         "prettier": "^2.7.1",
         "ts-node": "^10.9.1",

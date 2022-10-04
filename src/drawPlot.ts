@@ -28,10 +28,12 @@
 "use strict";
 import { select } from "d3";
 import { BaseType, Selection } from "d3-selection";
+import { CssConstants } from "powerbi-visuals-utils-svgutils";
 
-import { BoxPlot, BoxPlotSeries, BoxWhiskerChartData, DataPoint, Outlier, OutlierDataPoint } from "./data";
-import { drawBoxPlot, drawBoxPlotMean, drawBoxPlotMedian, drawBoxPlotOutlier } from "./drawBoxPlot";
-import { ChartOrientation } from "./enums";
+import { BoxPlot, BoxPlotSeries, BoxWhiskerChartData, DataPoint, SinglePoint, SingleDataPoint } from "./data";
+import { drawBoxPlot, drawBoxPlotMean, drawBoxPlotMedian, drawBoxPlotPoint } from "./drawBoxPlot";
+import { TraceEvents } from "./enums";
+import { PerfTimer } from "./perfTimer";
 import { Selectors } from "./selectors";
 import { Settings } from "./settings";
 
@@ -41,6 +43,8 @@ export function drawPlot(
     settings: Settings,
     clickEvent: (event: MouseEvent, boxPlot: BoxPlot) => void
 ): void {
+    const timer = PerfTimer.START(TraceEvents.drawPlot, true);
+
     selection
         .selectAll(Selectors.SingleSeries.selectorName)
         .data(data.series, (series: BoxPlotSeries) => series.key)
@@ -60,15 +64,22 @@ export function drawPlot(
                     .append("g")
                     .classed(Selectors.BoxPlot.className, true)
                     .each(function (boxPlot: BoxPlot) {
-                        select(this)
+                        const innerPoints = select(this).append("g").classed(Selectors.InnerPoints.className, true);
+                        insertSinglePoints(
+                            innerPoints,
+                            Selectors.InnerPoint,
+                            (boxPlot: BoxPlot) => boxPlot.innerPoints
+                        );
+                        const mainBox = select(this).append("g").classed(Selectors.MainBox.className, true);
+                        mainBox
                             .append("path")
                             .classed(Selectors.Box.className, true)
                             .attr("d", drawBoxPlot(<DataPoint>boxPlot.dataPoint))
-                            .attr("fill", boxPlot.color)
+                            .attr("fill", boxPlot.fillColor)
                             .style("stroke", boxPlot.color)
                             .style("stroke-width", 2)
                             .style("opacity", boxPlot.isHighlight ? 1 : 0.3);
-                        select(this)
+                        mainBox
                             .append("path")
                             .classed(Selectors.Median.className, true)
                             .attr("d", drawBoxPlotMedian(<DataPoint>boxPlot.dataPoint))
@@ -76,7 +87,7 @@ export function drawPlot(
                             .style("stroke", settings.dataPoint.medianColor)
                             .style("stroke-width", 2)
                             .style("opacity", settings.shapes.showMedian ? (boxPlot.isHighlight ? 1 : 0.3) : 0);
-                        select(this)
+                        mainBox
                             .append("path")
                             .classed(Selectors.Mean.className, true)
                             .attr("d", drawBoxPlotMean(<DataPoint>boxPlot.dataPoint))
@@ -84,37 +95,8 @@ export function drawPlot(
                             .style("stroke", settings.dataPoint.meanColor)
                             .style("stroke-width", 2)
                             .style("opacity", settings.shapes.showMean ? (boxPlot.isHighlight ? 1 : 0.3) : 0);
-                        select(this).append("path").classed(Selectors.Outliers.className, true);
-                        select(this)
-                            .selectAll(Selectors.Outlier.selectorName)
-                            .data(
-                                (boxPlot: BoxPlot) => boxPlot.outliers,
-                                (outlier: Outlier) => outlier.key
-                            )
-                            .join(
-                                (enter) =>
-                                    enter
-                                        .append("path")
-                                        .classed(Selectors.Outlier.className, true)
-                                        .attr("d", (outlier: Outlier) =>
-                                            drawBoxPlotOutlier(<OutlierDataPoint>outlier.dataPoint)
-                                        )
-                                        .attr("fill", (outlier: Outlier) => outlier.color)
-                                        .style("stroke", (outlier: Outlier) => outlier.color)
-                                        .style("stroke-width", 1)
-                                        .style("opacity", (outlier: Outlier) => (outlier.isHighlight ? 1 : 0.3)),
-                                (update) =>
-                                    update
-                                        .select(Selectors.Outlier.selectorName)
-                                        .attr("d", (outlier: Outlier) =>
-                                            drawBoxPlotOutlier(<OutlierDataPoint>outlier.dataPoint)
-                                        )
-                                        .attr("fill", (outlier: Outlier) => outlier.color)
-                                        .style("stroke", (outlier: Outlier) => outlier.color)
-                                        .style("stroke-width", 1)
-                                        .style("opacity", (outlier: Outlier) => (outlier.isHighlight ? 1 : 0.3)),
-                                (exit) => exit.remove()
-                            );
+                        const outliers = select(this).append("g").classed(Selectors.Outliers.className, true);
+                        insertSinglePoints(outliers, Selectors.Outlier, (boxPlot: BoxPlot) => boxPlot.outliers);
                         alignOutliers(
                             select(this).selectAll(Selectors.Outlier.selectorName),
                             settings.shapes.outlierRadius,
@@ -127,7 +109,7 @@ export function drawPlot(
                     select(this)
                         .select(Selectors.Box.selectorName)
                         .attr("d", drawBoxPlot(<DataPoint>boxPlot.dataPoint))
-                        .attr("fill", boxPlot.color)
+                        .attr("fill", boxPlot.fillColor)
                         .style("stroke", boxPlot.color)
                         .style("stroke-width", 2)
                         .style("opacity", boxPlot.isHighlight ? 1 : 0.3);
@@ -148,7 +130,40 @@ export function drawPlot(
                 }),
             (exit) => exit.remove()
         );
+
+    timer();
 }
+
+function insertSinglePoints(
+    selection: Selection<BaseType, unknown, BaseType, unknown>,
+    selector: CssConstants.ClassAndSelector,
+    data: (boxPlot: BoxPlot) => SinglePoint[]
+): void {
+    selection
+        .selectAll(selector.selectorName)
+        .data(data, (point: SinglePoint) => point.key)
+        .join(
+            (enter) =>
+                enter
+                    .append("path")
+                    .classed(selector.className, true)
+                    .attr("d", (point: SinglePoint) => drawBoxPlotPoint(<SingleDataPoint>point.dataPoint))
+                    .attr("fill", (point: SinglePoint) => (point.fill ? point.color : null))
+                    .style("stroke", (point: SinglePoint) => point.color)
+                    .style("stroke-width", 1)
+                    .style("opacity", (point: SinglePoint) => (point.isHighlight ? 1 : 0.3)),
+            (update) =>
+                update
+                    .select(selector.selectorName)
+                    .attr("d", (point: SinglePoint) => drawBoxPlotPoint(<SingleDataPoint>point.dataPoint))
+                    .attr("fill", (point: SinglePoint) => (point.fill ? point.color : null))
+                    .style("stroke", (point: SinglePoint) => point.color)
+                    .style("stroke-width", 1)
+                    .style("opacity", (point: SinglePoint) => (point.isHighlight ? 1 : 0.3)),
+            (exit) => exit.remove()
+        );
+}
+
 function alignOutliers(selection: Selection<BaseType, unknown, BaseType, unknown>, r: number, horizontal: boolean) {
     let move = 1;
     while (move > 0) {

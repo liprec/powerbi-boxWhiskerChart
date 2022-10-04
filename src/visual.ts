@@ -58,7 +58,7 @@ import VisualUpdateType = powerbi.VisualUpdateType;
 
 import { PerfTimer } from "./perfTimer";
 import { TraceEvents, WhiskerType } from "./enums";
-import { BoxPlot, BoxWhiskerChartData, Legend } from "./data";
+import { BoxPlot, BoxWhiskerChartData, Legend, SinglePoint } from "./data";
 import { Settings } from "./settings";
 import { syncSelectionState } from "./syncSelectionState";
 import { Selectors } from "./selectors";
@@ -67,11 +67,12 @@ import { calculateAxis } from "./calculateAxis";
 import { calculateData } from "./calculateData";
 import { calculatePlot } from "./calculatePlot";
 import { calculateScale } from "./calculateScale";
-// import { drawAxis } from "./drawAxis";
+import { drawAxis } from "./drawAxis";
 // import { drawGridLines } from "./drawGridLines";
 import { drawLegend } from "./drawLegend";
 import { drawPlot } from "./drawPlot";
 import { BaseType } from "d3";
+import { referenceLineEnumerateObjectInstances } from "./refLines";
 
 export class BoxWhiskerChart implements IVisual {
     private target: HTMLElement;
@@ -154,7 +155,7 @@ export class BoxWhiskerChart implements IVisual {
 
         this.axisCategory = this.axis.append("g").classed(Selectors.AxisCategory.className, true);
         this.axisValue = this.axis.append("g").classed(Selectors.AxisValue.className, true);
-        this.axisCategoryLabel = this.axis.append("g").classed(Selectors.AxisCategoryLabel.className, true);
+        this.axisCategoryLabel = this.axisCategory.append("text").classed(Selectors.AxisCategoryLabel.className, true);
         this.axisValueLabel = this.axis.append("g").classed(Selectors.AxisValueLabel.className, true);
 
         this.legendBorder = this.legendArea.append("rect").classed(Selectors.LegendBorder.className, true);
@@ -224,6 +225,9 @@ export class BoxWhiskerChart implements IVisual {
                 ],
             });
         }
+
+        drawAxis(this.axis, this.data, this.settings, (event: MouseEvent) => {});
+
         drawPlot(this.series, this.data, this.settings, (event: MouseEvent, boxPlot: BoxPlot) => {
             const isShiftPressed: boolean = event.shiftKey;
             if (!boxPlot.selectionId) return;
@@ -237,6 +241,24 @@ export class BoxWhiskerChart implements IVisual {
             if (!legend.selectionId) return;
             this.processClickEvent(event, legend.selectionId);
         });
+
+        this.tooltipServiceWrapper.addTooltip(
+            this.plotArea.selectAll(Selectors.MainBox.selectorName),
+            (boxPlot: BoxPlot) => (boxPlot.tooltip ? boxPlot.tooltip(this.settings) : <any>null),
+            (boxPlot: BoxPlot) => (boxPlot.selectionId ? <ISelectionId>boxPlot.selectionId : [])
+        );
+
+        this.tooltipServiceWrapper.addTooltip(
+            this.plotArea.selectAll(Selectors.InnerPoint.selectorName),
+            (point: SinglePoint) => (point.singlePointtooltip ? point.singlePointtooltip(this.settings) : <any>null),
+            (point: SinglePoint) => (point.selectionId ? <ISelectionId>point.selectionId : [])
+        );
+
+        this.tooltipServiceWrapper.addTooltip(
+            this.plotArea.selectAll(Selectors.Outlier.selectorName),
+            (point: SinglePoint) => (point.singlePointtooltip ? point.singlePointtooltip(this.settings) : <any>null),
+            (point: SinglePoint) => (point.selectionId ? <ISelectionId>point.selectionId : [])
+        );
 
         this.events.renderingFinished(options);
         timer();
@@ -260,7 +282,7 @@ export class BoxWhiskerChart implements IVisual {
     public enumerateObjectInstances(
         options: EnumerateVisualObjectInstancesOptions
     ): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
-        const instanceEnumeration: VisualObjectInstanceEnumeration = Settings.enumerateObjectInstances(
+        let instanceEnumeration: VisualObjectInstanceEnumeration = Settings.enumerateObjectInstances(
             this.settings || Settings.getDefault(),
             options
         );
@@ -318,8 +340,19 @@ export class BoxWhiskerChart implements IVisual {
                     this.removeEnumerateObject(instanceEnumeration, "showOutliers");
                     this.removeEnumerateObject(instanceEnumeration, "outlierRadius");
                 }
+                if (!this.settings.shapes.showPoints) {
+                    this.removeEnumerateObject(instanceEnumeration, "pointRadius");
+                    this.removeEnumerateObject(instanceEnumeration, "pointFill");
+                }
+                if (!this.settings.shapes.showOutliers) {
+                    this.removeEnumerateObject(instanceEnumeration, "outlierRadius");
+                    this.removeEnumerateObject(instanceEnumeration, "outlierFill");
+                }
                 if (!this.settings.shapes.showMean) this.removeEnumerateObject(instanceEnumeration, "dotRadius");
                 break;
+            // case "y1AxisReferenceLine":
+            //     instances = referenceLineEnumerateObjectInstances(this.data.referenceLines, this.colorPalette);
+            //     break;
         }
 
         this.addInstancesToEnumeration(instanceEnumeration, instances, beginning);

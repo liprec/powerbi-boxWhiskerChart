@@ -29,11 +29,17 @@
 import powerbi from "powerbi-visuals-api";
 import { ScaleContinuousNumeric, ScaleBand } from "d3-scale";
 
-import { ReferenceLine } from "./enums";
 import { Settings } from "./settings";
 
 import ISelectionId = powerbi.visuals.ISelectionId;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
+import {
+    ReferenceLineHPosition,
+    ReferenceLineLabelType,
+    ReferenceLinePosition,
+    ReferenceLineStyle,
+    ReferenceLineVPosition,
+} from "./enums";
 
 export interface BoxLabels {
     sampleColumns: string[];
@@ -77,13 +83,14 @@ export interface BoxPlot {
     color: string;
     dataLabels: DataLabel[];
     dataPoint?: DataPoint;
-    fillColor: string;
+    fillColor: string | null;
     isHighlight: boolean;
     label?: string;
     legendselectionId?: ISelectionId;
     name: string;
-    outliers: Outlier[];
-    parent?: string;
+    innerPoints: SinglePoint[];
+    outliers: SinglePoint[];
+    series?: string;
     selectionId: ISelectionId;
     seriesSelectionId?: ISelectionId;
     tooltip?: (this: BoxPlot, settings: Settings) => VisualTooltipDataItem[];
@@ -99,6 +106,7 @@ export interface DataPoint {
     max: number;
     median: number;
     mean: number;
+    values?: number[];
     r: number;
     horizontal: boolean;
 }
@@ -115,17 +123,22 @@ export interface LegendDimensions {
     bottomHeight?: number;
 }
 
-export interface Outlier {
+export interface SinglePoint {
     key: number;
     color: string;
     value: number;
-    dataPoint?: OutlierDataPoint;
+    r: number;
+    typ: string;
+    fill: boolean;
+    category: string;
+    series?: string;
+    dataPoint?: SingleDataPoint;
     isHighlight: boolean;
     selectionId?: ISelectionId;
-    tooltip?: () => VisualTooltipDataItem[];
+    singlePointtooltip?: (this: SinglePoint, settings: Settings) => VisualTooltipDataItem[];
 }
 
-export interface OutlierDataPoint {
+export interface SingleDataPoint {
     value: number;
     middle: number;
     r: number;
@@ -139,23 +152,24 @@ export interface DataLabel {
 
 export interface ReferenceLine {
     displayName: string;
-    hPosition: ReferenceLine.HPosition;
+    hPosition: ReferenceLineHPosition;
     labelColor: string;
     labelDisplayUnits: number;
     labelFontFamily: string;
     labelFontSize: number;
     labelPrecision: number;
-    labelType: ReferenceLine.LabelType;
+    labelType: ReferenceLineLabelType;
     lineColor: string;
-    position: ReferenceLine.Position;
+    position: ReferenceLinePosition;
     show: boolean;
     showLabel: boolean;
-    style: ReferenceLine.Style;
+    selector: powerbi.data.Selector;
+    style: ReferenceLineStyle;
     tooltip?: () => VisualTooltipDataItem[];
     transparency: number;
     type: string; // tslint:disable-line: no-reserved-keywords
     value: number;
-    vPosition: ReferenceLine.VPosition;
+    vPosition: ReferenceLineVPosition;
     x: number;
     y: number;
 }
@@ -169,11 +183,14 @@ export interface Scales {
     categoryScale: ScaleBand<string>;
     subCategoryScale: ScaleBand<string>;
     valueScale: ScaleContinuousNumeric<number, number>;
+    valueOptions: ValueAxisOptions;
 }
 
 export interface AxisDimensions {
     categoryAxisLabel: Dimensions;
+    categoryAxisTitle: Dimensions;
     valueAxisLabel: Dimensions;
+    valueAxisTitle: Dimensions;
 }
 
 export interface Dimensions {

@@ -68,9 +68,14 @@ export class Selectors {
 
     public static Axis: ClassAndSelector = createClassAndSelector("axis");
     public static AxisCategory: ClassAndSelector = createClassAndSelector("axisCategory");
-    public static AxisValue: ClassAndSelector = createClassAndSelector("axisValue");
+    public static AxisCategoryTick: ClassAndSelector = createClassAndSelector("axisCategoryTick");
+    public static AxisCategoryTickLabel: ClassAndSelector = createClassAndSelector("axisCategoryTickLabel");
     public static AxisCategoryLabel: ClassAndSelector = createClassAndSelector("axisCategoryLabel");
+    public static AxisValue: ClassAndSelector = createClassAndSelector("axisValue");
+    public static AxisValueTick: ClassAndSelector = createClassAndSelector("axisValueTick");
+    public static AxisValueTickLabel: ClassAndSelector = createClassAndSelector("axisValueTickLabel");
     public static AxisValueLabel: ClassAndSelector = createClassAndSelector("axisValueLabel");
+
     public static Grid: ClassAndSelector = createClassAndSelector("grid");
 
     public static Chart: ClassAndSelector = createClassAndSelector("chart");
@@ -81,12 +86,15 @@ export class Selectors {
     public static Series: ClassAndSelector = createClassAndSelector("series");
     public static SingleSeries: ClassAndSelector = createClassAndSelector("singleSeries");
     public static BoxPlot: ClassAndSelector = createClassAndSelector("boxPlot");
-    public static Outliers: ClassAndSelector = createClassAndSelector("outliers");
+    public static MainBox: ClassAndSelector = createClassAndSelector("mainBox");
     public static HighLight: ClassAndSelector = createClassAndSelector("highlight");
     public static Box: ClassAndSelector = createClassAndSelector("box");
     public static BoxHighlight: ClassAndSelector = createClassAndSelector("boxHighlight");
     public static Median: ClassAndSelector = createClassAndSelector("median");
     public static Mean: ClassAndSelector = createClassAndSelector("mean");
+    public static InnerPoints: ClassAndSelector = createClassAndSelector("innerPoints");
+    public static InnerPoint: ClassAndSelector = createClassAndSelector("innerPoint");
+    public static Outliers: ClassAndSelector = createClassAndSelector("outliers");
     public static Outlier: ClassAndSelector = createClassAndSelector("outlierDot");
     public static DataLabel: ClassAndSelector = createClassAndSelector("dataLabel");
     public static ReferenceLinesBack: ClassAndSelector = createClassAndSelector("referenceLinesBack");

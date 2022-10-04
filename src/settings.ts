@@ -67,6 +67,8 @@ export class Settings extends DataViewObjectsParser {
     public gridLines: GridLinesSettings = new GridLinesSettings();
     public labels: LabelsSettings = new LabelsSettings();
     public dataLoad: DataLoadSettings = new DataLoadSettings();
+
+    public y1AxisReferenceLine: Y1AxisReferenceLineSettings = new Y1AxisReferenceLineSettings();
 }
 
 class GeneralSettings {
@@ -88,27 +90,35 @@ class GeneralSettings {
             x1:
                 this.x +
                 (this.orientation === ChartOrientation.Vertical
-                    ? <number>this.axisDimensions.valueAxisLabel.width
-                    : <number>this.axisDimensions.categoryAxisLabel.width),
+                    ? <number>this.axisDimensions.valueAxisLabel.width +
+                      <number>this.axisDimensions.valueAxisTitle.width
+                    : <number>this.axisDimensions.categoryAxisLabel.width +
+                      <number>this.axisDimensions.categoryAxisTitle.width),
             x2:
                 this.width -
                 this.padding -
                 (this.orientation === ChartOrientation.Vertical
                     ? 0
-                    : <number>this.axisDimensions.valueAxisLabel.width / 2),
+                    : (<number>this.axisDimensions.valueAxisLabel.width +
+                          <number>this.axisDimensions.valueAxisTitle.width) /
+                      2),
             y1:
                 this.y +
                 (this.legendDimensions?.topHeight || 0) +
                 (this.orientation === ChartOrientation.Vertical
-                    ? <number>this.axisDimensions.valueAxisLabel.height / 2
+                    ? (<number>this.axisDimensions.valueAxisLabel.height +
+                          <number>this.axisDimensions.valueAxisTitle.height) /
+                      2
                     : 0),
             y2:
                 this.y +
                 this.height -
                 (this.legendDimensions?.bottomHeight || 0) -
                 (this.orientation === ChartOrientation.Vertical
-                    ? <number>this.axisDimensions.categoryAxisLabel.height
-                    : <number>this.axisDimensions.valueAxisLabel.height),
+                    ? <number>this.axisDimensions.categoryAxisLabel.height +
+                      <number>this.axisDimensions.categoryAxisTitle.height
+                    : <number>this.axisDimensions.valueAxisLabel.height +
+                      <number>this.axisDimensions.valueAxisTitle.height),
         };
     }
 
@@ -150,7 +160,7 @@ class ChartOptionsSettings {
     public whisker: WhiskerType = WhiskerType.MinMax;
     public lower: number | null = null;
     public higher: number | null = null;
-    public categoryLegend: boolean = true;
+    public categoryLegend: boolean = false;
     public margin: MarginType = MarginType.Medium;
     public internalMargin: MarginType = MarginType.Medium;
 }
@@ -193,6 +203,7 @@ class XAxisSettings {
     public fontFamily: string = fontFamily;
     public fontStyle: number = FontStyle.Normal;
     public fontWeight: number = FontWeight.Normal;
+    public labelAlignment: string = "center";
     public orientation: LabelOrientation = LabelOrientation.Horizontal;
     public showTitle: boolean = false;
     public title: string | null = null;
@@ -369,8 +380,13 @@ class LabelsSettings {
 }
 
 class ShapeSettings {
+    public boxFill: boolean = true;
+    public showPoints: boolean = false;
+    public pointRadius: number = 4;
+    public pointFill: boolean = true;
     public showOutliers: boolean = false;
     public outlierRadius: number = 4;
+    public outlierFill: boolean = true;
     public showMean: boolean = true;
     public dotRadius: number = 4;
     public showMedian: boolean = true;
@@ -397,6 +413,12 @@ class DataLoadSettings {
     public warningColor: string = "#FF7900";
     public warningText: string = "Not all datapoints could be loaded";
     public backgroundColor: string = "#FFF";
+}
+
+class Y1AxisReferenceLineSettings {
+    public show: boolean = true;
+    public displayName: string | null = null;
+    public value: number | null = null;
 }
 
 export function parseSettings(dataView: DataView): Settings {

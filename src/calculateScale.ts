@@ -57,7 +57,7 @@ export function calculateScale(data: BoxWhiskerChartData, settings: Settings): v
     const timer = PerfTimer.START(TraceEvents.calculateScale, true);
 
     const plotDimensions = settings.general.plotDimensions;
-    const axisOptions: ValueAxisOptions = calculateAxisOptions(
+    const valueOptions: ValueAxisOptions = calculateAxisOptions(
         calculateValues(data, min),
         calculateValues(data, max),
         settings.yAxis.start === null ? undefined : settings.yAxis.start,
@@ -66,22 +66,22 @@ export function calculateScale(data: BoxWhiskerChartData, settings: Settings): v
 
     // Correct value Axis start value (linear)
     if (settings.yAxis.start !== null && settings.yAxis.scaleType === ScaleType.Linear) {
-        if (settings.yAxis.start !== axisOptions.min) {
-            settings.yAxis.start = axisOptions.min;
+        if (settings.yAxis.start !== valueOptions.min) {
+            settings.yAxis.start = valueOptions.min;
         }
     }
 
     // Correct value Axis start value (log)
     if (settings.yAxis.scaleType === ScaleType.Log) {
-        if (axisOptions.min <= 0) {
-            axisOptions.min = settings.yAxis.start = settings.yAxis.start || 1;
+        if (valueOptions.min <= 0) {
+            valueOptions.min = settings.yAxis.start = settings.yAxis.start || 1;
         }
     }
 
     // Correct value Axis end value
     if (settings.yAxis.end !== null) {
-        if (settings.yAxis.end !== axisOptions.max) {
-            settings.yAxis.end = axisOptions.max;
+        if (settings.yAxis.end !== valueOptions.max) {
+            settings.yAxis.end = valueOptions.max;
         }
     }
 
@@ -115,11 +115,11 @@ export function calculateScale(data: BoxWhiskerChartData, settings: Settings): v
 
     switch (settings.yAxis.scaleType) {
         case ScaleType.Log:
-            valueScale = scaleLog().domain([axisOptions.min, axisOptions.max]);
+            valueScale = scaleLog().domain([valueOptions.min, valueOptions.max]);
             break;
         case ScaleType.Linear:
         default:
-            valueScale = scaleLinear().domain([axisOptions.min, axisOptions.max]);
+            valueScale = scaleLinear().domain([valueOptions.min, valueOptions.max]);
             break;
     }
 
@@ -140,6 +140,7 @@ export function calculateScale(data: BoxWhiskerChartData, settings: Settings): v
         categoryScale: categoryScale.round(true),
         subCategoryScale: subCategoryScale.round(true),
         valueScale,
+        valueOptions,
     };
 
     timer();

@@ -1,9 +1,9 @@
 {
     "dataRoles": [
         {
-            "name": "Series",
+            "name": "Legend",
             "kind": "Grouping",
-            "displayName": "Series"
+            "displayName": "Legend"
         },
         {
             "name": "Groups",
@@ -19,18 +19,13 @@
             "name": "Values",
             "kind": "Measure",
             "displayName": "Values"
-        },
-        {
-            "displayName": "Tooltips",
-            "name": "Tooltips",
-            "kind": "Measure"
         }
     ],
     "dataViewMappings": [
         {
             "conditions": [
                 {
-                    "Series": {
+                    "Legend": {
                         "min": 0,
                         "max": 1
                     },
@@ -49,7 +44,7 @@
                     "select": [
                         {
                             "bind": {
-                                "to": "Series"
+                                "to": "Legend"
                             }
                         },
                         {
@@ -379,23 +374,13 @@
                         ]
                     }
                 },
-                "labelDisplayUnits": {
-                    "displayName": "Display units",
-                    "description": "Selects the unit (millions, billions, etc.)",
+                "labelAlignment": {
+                    "displayName": "Alignment",
                     "type": {
                         "formatting": {
-                            "labelDisplayUnits": true
+                            "alignment": true
                         }
                     }
-                },
-                "labelPrecision": {
-                    "displayName": "Value decimal places",
-                    "description": "Select the number of decimal places to display",
-                    "placeHolderText": "Auto",
-                    "type": {
-                        "numeric": true
-                    },
-                    "suppressFormatPainterCopy": true
                 },
                 "orientation": {
                     "displayName": "Label orientation",
@@ -769,6 +754,25 @@
         "shapes": {
             "displayName": "Shapes",
             "properties": {
+                "boxFill": {
+                    "displayName": "Fill box",
+                    "type": { "bool": true }
+                },
+                "showPoints": {
+                    "displayName": "Show inner points",
+                    "type": { "bool": true }
+                },
+                "pointRadius": {
+                    "displayName": "Inner points radius",
+                    "description": "Radius of the internal point dot(s)",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "pointFill": {
+                    "displayName": "Fill inner points",
+                    "type": { "bool": true }
+                },
                 "showOutliers": {
                     "displayName": "Outliers",
                     "description": "Show outliers",
@@ -780,6 +784,10 @@
                     "type": {
                         "numeric": true
                     }
+                },
+                "outlierFill": {
+                    "displayName": "Fill outliers",
+                    "type": { "bool": true }
                 },
                 "showMean": {
                     "displayName": "Mean",

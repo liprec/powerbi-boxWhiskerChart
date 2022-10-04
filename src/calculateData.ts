@@ -27,7 +27,7 @@
 
 "use strict";
 
-import { BoxPlot, BoxPlotSeries, BoxWhiskerChartData, DataPoint, Outlier } from "./data";
+import { BoxPlot, BoxPlotSeries, BoxWhiskerChartData, DataPoint, SinglePoint } from "./data";
 import { ChartOrientation, TraceEvents } from "./enums";
 import { PerfTimer } from "./perfTimer";
 import { Settings } from "./settings";
@@ -36,6 +36,22 @@ export function calculateData(data: BoxWhiskerChartData, settings: Settings): vo
     const timer = PerfTimer.START(TraceEvents.calculateData, true);
 
     const subCategoryBandwidth = settings.general.scales.subCategoryScale.bandwidth();
+
+    const forEachSinglePoint = (point: SinglePoint, boxPlot: BoxPlot) => {
+        point.dataPoint = {
+            value: settings.general.scales.valueScale(point.value),
+            middle: <number>boxPlot.dataPoint?.middle,
+            r: point.r,
+            horizontal: <boolean>boxPlot.dataPoint?.horizontal,
+        };
+        point.key =
+            <number>point.dataPoint?.value +
+            <number>point.dataPoint?.middle +
+            <number>point.dataPoint?.r +
+            (point.dataPoint?.horizontal ? 1 : 0) +
+            (point.fill ? 1 : 0) +
+            hexToColorInt(point.color);
+    };
 
     data.series.forEach((series: BoxPlotSeries) => {
         series.boxPlots.forEach((boxPlot: BoxPlot) => {
@@ -59,24 +75,13 @@ export function calculateData(data: BoxWhiskerChartData, settings: Settings): vo
                     max: settings.general.scales.valueScale(boxPlot.boxValues.max),
                     median: settings.general.scales.valueScale(boxPlot.boxValues.median),
                     mean: settings.general.scales.valueScale(boxPlot.boxValues.mean),
+
                     r: settings.shapes.dotRadius,
                     horizontal: settings.general.orientation === ChartOrientation.Horizontal,
                 };
 
-                boxPlot.outliers.forEach((outlier: Outlier) => {
-                    outlier.dataPoint = {
-                        value: settings.general.scales.valueScale(outlier.value),
-                        middle: <number>boxPlot.dataPoint?.middle,
-                        r: settings.shapes.outlierRadius,
-                        horizontal: <boolean>boxPlot.dataPoint?.horizontal,
-                    };
-                    outlier.key =
-                        <number>outlier.dataPoint?.value +
-                        <number>outlier.dataPoint?.middle +
-                        <number>outlier.dataPoint?.r +
-                        (outlier.dataPoint?.horizontal ? 1 : 0) +
-                        hexToColorInt(outlier.color);
-                });
+                boxPlot.innerPoints.forEach((point: SinglePoint) => forEachSinglePoint(point, boxPlot));
+                boxPlot.outliers.forEach((point: SinglePoint) => forEachSinglePoint(point, boxPlot));
             }
         });
         series.key = series.boxPlots
@@ -94,6 +99,7 @@ export function calculateData(data: BoxWhiskerChartData, settings: Settings): vo
                     (boxPlot.dataPoint?.horizontal ? 1 : 0) +
                     (boxPlot.isHighlight ? index + 1 : 0) +
                     hexToColorInt(boxPlot.color) +
+                    hexToColorInt(boxPlot.fillColor) +
                     settings.shapes.dotRadius +
                     (settings.shapes.showMean ? 1 : 0) +
                     (settings.shapes.showMedian ? 1 : 0) +
@@ -101,6 +107,7 @@ export function calculateData(data: BoxWhiskerChartData, settings: Settings): vo
                     hexToColorInt(settings.dataPoint.medianColor) +
                     settings.chartOptions.margin +
                     settings.chartOptions.internalMargin +
+                    boxPlot.innerPoints.reduce((a, b) => a + b.key, 0) +
                     boxPlot.outliers.reduce((a, b) => a + b.key, 0);
                 return boxPlot.key;
             })
@@ -110,7 +117,8 @@ export function calculateData(data: BoxWhiskerChartData, settings: Settings): vo
     timer();
 }
 
-function hexToColorInt(rrggbb: string): number {
+function hexToColorInt(rrggbb: string | null): number {
+    if (rrggbb === null) return 0;
     const offset = rrggbb.charAt(0) === "#" ? 1 : 0;
     const bbggrr = rrggbb.substring(4 + offset, 2) + rrggbb.substring(2 + offset, 2) + rrggbb.substring(0 + offset, 2);
     return parseInt(bbggrr, 16);

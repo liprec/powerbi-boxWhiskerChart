@@ -81,29 +81,27 @@ export enum LegendPosition {
     BottomRight,
 }
 
-export module ReferenceLine {
-    export enum Style {
-        dashed,
-        solid,
-        dotted,
-    }
-    export enum Position {
-        front,
-        back,
-    }
-    export enum LabelType {
-        value,
-        name,
-        valueName,
-    }
-    export enum HPosition {
-        left,
-        right,
-    }
-    export enum VPosition {
-        above,
-        under,
-    }
+export enum ReferenceLineStyle {
+    dashed,
+    solid,
+    dotted,
+}
+export enum ReferenceLinePosition {
+    front,
+    back,
+}
+export enum ReferenceLineLabelType {
+    value,
+    name,
+    valueName,
+}
+export enum ReferenceLineHPosition {
+    left,
+    right,
+}
+export enum ReferenceLineVPosition {
+    above,
+    under,
 }
 
 export enum TraceEvents {
@@ -114,4 +112,6 @@ export enum TraceEvents {
     calculatePlot = "BoxWhiskerChart: calculatePlot() method",
     calculateScale = "BoxWhiskerChart: calculateScale() method",
     calculateAxis = "BoxWhiskerChart: calculateAxis() method",
+    drawPlot = "BoxWhiskerChart: drawPlot() method",
+    drawAxis = "BoxWhiskerChart: drawAxis() method",
 }
