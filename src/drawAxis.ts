@@ -31,7 +31,7 @@ import { BaseType, Selection, select } from "d3-selection";
 
 import { Selectors } from "./selectors";
 import { Settings } from "./settings";
-import { ChartOrientation, LabelOrientation, TraceEvents } from "./enums";
+import { ChartOrientation, Orientation, TraceEvents } from "./enums";
 import { BoxWhiskerChartData, Legend } from "./data";
 import { ScaleBand, ScaleContinuousNumeric } from "d3-scale";
 import { PerfTimer } from "./perfTimer";
@@ -45,6 +45,7 @@ export function drawAxis(
     const timer = PerfTimer.START(TraceEvents.drawAxis, true);
 
     const isHorizontal = settings.chartOptions.orientation === ChartOrientation.Horizontal;
+    const isXTitleHorizontal = settings.xAxis.titleOrientation === Orientation.Horizontal;
 
     let lastPosition = 0;
 
@@ -71,50 +72,81 @@ export function drawAxis(
                     .append("g")
                     .classed(Selectors.AxisCategoryTick.className, true)
                     .each(function (category, index) {
-                        const x = calculateStep(
+                        const step = calculateStep(
                             settings.general.scales.categoryScale,
                             settings.xAxis.labelAlignment,
-                            index
+                            index,
+                            isHorizontal
                         );
-                        const tick = select(this).attr("transform", `translate(${x},0)`);
+                        const tick = select(this).attr(
+                            "transform",
+                            `translate(${isHorizontal ? 0 : step},${isHorizontal ? step : 0})`
+                        );
                         tick.append("text").classed(Selectors.AxisCategoryTickLabel.className, true).text(category);
-                        positionLabels(tick, settings.xAxis.orientation, settings.xAxis.labelAlignment);
+                        positionLabels(tick, settings.xAxis.orientation, settings.xAxis.labelAlignment, isHorizontal);
                     }),
             (update) =>
                 update.each(function (category, index) {
-                    const x = calculateStep(
+                    const step = calculateStep(
                         settings.general.scales.categoryScale,
                         settings.xAxis.labelAlignment,
-                        index
+                        index,
+                        isHorizontal
                     );
-                    const tick = select(this).attr("transform", `translate(${x},0)`);
+                    const tick = select(this).attr(
+                        "transform",
+                        `translate(${isHorizontal ? 0 : step},${isHorizontal ? step : 0})`
+                    );
                     tick.selectAll(Selectors.AxisCategoryTickLabel.className).text(category);
-                    positionLabels(tick, settings.xAxis.orientation, settings.xAxis.labelAlignment);
+                    positionLabels(tick, settings.xAxis.orientation, settings.xAxis.labelAlignment, isHorizontal);
                 }),
             (exit) => exit.remove()
         );
 
+    categorySelection.selectAll(Selectors.AxisCategoryTick.selectorName).each(function (label: string) {
+        if (!isHorizontal) return;
+        select(this).select("text").text(label);
+        let size = (<SVGGElement>this).getBoundingClientRect();
+        let text = label;
+        while (size.width > (settings.xAxis.maxArea / 100) * settings.general.width) {
+            text = text.slice(0, -1);
+            select(this)
+                .select("text")
+                .text(text + "...");
+            size = (<SVGGElement>this).getBoundingClientRect();
+        }
+    });
+
+    const xy = calculateAlignmentTitle(
+        settings.general.scales.categoryScale,
+        isXTitleHorizontal ? "left" : settings.xAxis.titleAlignment
+    );
     categorySelection
         .select(Selectors.AxisCategoryLabel.selectorName)
         .attr(
             "transform",
-            `translate(${calculateAlignmentTitle(
-                settings.general.scales.categoryScale,
-                settings.xAxis.titleAlignment
-            )},0)`
+            `translate(${isHorizontal ? 0 : xy},${isHorizontal ? xy : 0}) ${
+                isHorizontal && !isXTitleHorizontal ? "rotate(-90)" : ""
+            }`
         )
         .attr("fill", settings.xAxis.titleFontColor)
         .attr(
             "dy",
-            <number>settings.general.axisDimensions.categoryAxisLabel.height +
-                <number>settings.general.axisDimensions.categoryAxisLabel.height * 0.8
+            isHorizontal
+                ? isXTitleHorizontal
+                    ? -10
+                    : -(<number>settings.general.axisDimensions.categoryAxisLabel.width)
+                : <number>settings.general.axisDimensions.categoryAxisLabel.height +
+                      <number>settings.general.axisDimensions.categoryAxisLabel.height * 0.8
         )
+        .attr("dx", isXTitleHorizontal ? -10 : null)
         .style("font-family", settings.xAxis.titleFontFamily)
         .style("font-size", settings.xAxis.TitleFontSize)
         .style("font-weight", settings.xAxis.titleFontWeight)
         .style("font-style", settings.xAxis.titleFontStyle)
         .style("opacity", settings.xAxis.showTitle ? 1 : 0)
-        .style("text-anchor", getTextAnchor(settings.xAxis.titleAlignment))
+        .style("text-anchor", getTextAnchor(isXTitleHorizontal ? "right" : settings.xAxis.titleAlignment, isHorizontal))
+        .style("alignment-baseline", isXTitleHorizontal ? "baseline" : "")
         .text(settings.xAxis.title || settings.xAxis.defaultTitle);
 
     // let xAxis = isHorizontal
@@ -142,7 +174,7 @@ export function drawAxis(
     //     .on("click", clickEvent)
     //     .each(function () {
     //         switch (settings.xAxis.orientation) {
-    //             case LabelOrientation.Vertical:
+    //             case Orientation.Vertical:
     //                 select(this)
     //                     .select("text")
     //                     .attr("dy", "0em")
@@ -150,7 +182,7 @@ export function drawAxis(
     //                     .style("transform", "rotate(-90deg)")
     //                     .style("text-anchor", "end");
     //                 break;
-    //             case LabelOrientation.Diagonal:
+    //             case Orientation.Diagonal:
     //                 select(this)
     //                     .select("text")
     //                     .attr("dy", "0.355em")
@@ -158,7 +190,7 @@ export function drawAxis(
     //                     .style("transform", "rotate(-45deg)")
     //                     .style("text-anchor", "end");
     //                 break;
-    //             case LabelOrientation.Horizontal:
+    //             case Orientation.Horizontal:
     //             default:
     //                 select(this)
     //                     .select("text")
@@ -212,11 +244,12 @@ export function drawAxis(
 function calculateStep(
     scale: ScaleBand<string>, // | ScaleContinuousNumeric<number, number>,
     alignment: string,
-    index: number
+    index: number,
+    isHorizontal: boolean
 ): number {
     const step = <number>scale(<string>scale.domain().shift()) + scale.step() * index;
 
-    switch (alignment) {
+    switch (isHorizontal ? "center" : alignment) {
         case "left":
             return step;
         case "right":
@@ -247,12 +280,12 @@ function calculateAlignmentTitle(
     }
 }
 
-function getTextAnchor(alignment: string): string {
+function getTextAnchor(alignment: string, isHorizontal: boolean = false): string {
     switch (alignment) {
         case "left":
-            return "start";
+            return isHorizontal ? "end" : "start";
         case "right":
-            return "end";
+            return isHorizontal ? "start" : "end";
         case "center":
         default:
             return "middle";
@@ -285,11 +318,12 @@ function getdXY(alignment: string): string | null {
 
 function positionLabels(
     selection: Selection<BaseType, unknown, BaseType, unknown>,
-    orientation: LabelOrientation,
-    alignment: string
+    orientation: Orientation,
+    alignment: string,
+    isHorizontal: boolean
 ) {
-    switch (orientation) {
-        case LabelOrientation.Vertical:
+    switch (isHorizontal ? Orientation.Horizontal : orientation) {
+        case Orientation.Vertical:
             selection
                 .select("text")
                 .attr("dy", null)
@@ -298,7 +332,7 @@ function positionLabels(
                 .style("alignment-baseline", getAlignmentBaseline(alignment))
                 .style("text-anchor", "end");
             break;
-        case LabelOrientation.Diagonal:
+        case Orientation.Diagonal:
             selection
                 .select("text")
                 .attr("dy", getdXY(alignment))
@@ -307,15 +341,15 @@ function positionLabels(
                 .style("alignment-baseline", "hanging")
                 .style("text-anchor", "end");
             break;
-        case LabelOrientation.Horizontal:
+        case Orientation.Horizontal:
         default:
             selection
                 .select("text")
-                .attr("dy", "0.8em")
+                .attr("dy", isHorizontal ? "0.36em" : "0.8em")
                 .attr("dx", null)
                 .style("transform", null)
                 .style("alignment-baseline", "baseline")
-                .style("text-anchor", getTextAnchor(alignment));
+                .style("text-anchor", getTextAnchor(isHorizontal ? "right" : alignment));
             break;
     }
 }

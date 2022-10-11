@@ -45,7 +45,7 @@ import {
     QuartileType,
     WhiskerType,
     MarginType,
-    LabelOrientation,
+    Orientation,
     FontWeight,
     FontStyle,
     LegendPosition,
@@ -83,17 +83,21 @@ class GeneralSettings {
     public locale: string = "1033";
     public scales: Scales;
     public orientation: ChartOrientation = ChartOrientation.Vertical;
+    public axisTitleOrientation: Orientation = Orientation.Vertical;
     public hasSeries: boolean = false;
 
     public get plotDimensions(): PlotDimensions {
         return {
             x1:
                 this.x +
+                (this.axisTitleOrientation === Orientation.Vertical
+                    ? this.orientation === ChartOrientation.Vertical
+                        ? <number>this.axisDimensions.valueAxisTitle.width
+                        : <number>this.axisDimensions.categoryAxisTitle.width
+                    : 0) +
                 (this.orientation === ChartOrientation.Vertical
-                    ? <number>this.axisDimensions.valueAxisLabel.width +
-                      <number>this.axisDimensions.valueAxisTitle.width
-                    : <number>this.axisDimensions.categoryAxisLabel.width +
-                      <number>this.axisDimensions.categoryAxisTitle.width),
+                    ? <number>this.axisDimensions.valueAxisLabel.width
+                    : <number>this.axisDimensions.categoryAxisLabel.width),
             x2:
                 this.width -
                 this.padding -
@@ -105,6 +109,11 @@ class GeneralSettings {
             y1:
                 this.y +
                 (this.legendDimensions?.topHeight || 0) +
+                (this.axisTitleOrientation === Orientation.Horizontal
+                    ? this.orientation === ChartOrientation.Vertical
+                        ? <number>this.axisDimensions.valueAxisTitle.height
+                        : <number>this.axisDimensions.categoryAxisTitle.height
+                    : 0) +
                 (this.orientation === ChartOrientation.Vertical
                     ? (<number>this.axisDimensions.valueAxisLabel.height +
                           <number>this.axisDimensions.valueAxisTitle.height) /
@@ -204,7 +213,8 @@ class XAxisSettings {
     public fontStyle: number = FontStyle.Normal;
     public fontWeight: number = FontWeight.Normal;
     public labelAlignment: string = "center";
-    public orientation: LabelOrientation = LabelOrientation.Horizontal;
+    public orientation: Orientation = Orientation.Horizontal;
+    public maxArea: number = 25;
     public showTitle: boolean = false;
     public title: string | null = null;
     public defaultTitle: string | null = null;
@@ -214,6 +224,7 @@ class XAxisSettings {
     public titleFontStyle: number = FontStyle.Normal;
     public titleFontWeight: number = FontWeight.Normal;
     public titleAlignment: string = "center";
+    public titleOrientation: Orientation = Orientation.Vertical;
 
     public get FontStyle(): string {
         switch (this.fontStyle) {
@@ -293,6 +304,7 @@ class YAxisSettings {
     public titleFontStyle: number = FontStyle.Normal;
     public titleFontWeight: number = FontWeight.Normal;
     public titleAlignment: string = "center";
+    public titleOrientation: Orientation = Orientation.Vertical;
 
     public get FontStyle(): string {
         switch (this.fontStyle) {
@@ -439,6 +451,13 @@ export function parseSettings(dataView: DataView): Settings {
     if (settings.chartOptions.lower && settings.chartOptions.lower < 0) {
         settings.chartOptions.lower = 0;
     }
+    // Correct % maxArea
+    if (settings.xAxis.maxArea > 50) {
+        settings.xAxis.maxArea = 50;
+    }
+    // if (settings.xAxis.maxArea < 15) {
+    //     settings.xAxis.maxArea = 15;
+    // }
     // Reset out of bound percisions
     if (settings.yAxis.labelPrecision && settings.yAxis.labelPrecision > 30) {
         settings.yAxis.labelPrecision = 30;

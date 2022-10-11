@@ -50,7 +50,7 @@ export enum MarginType {
     Large,
 }
 
-export enum LabelOrientation {
+export enum Orientation {
     Horizontal,
     Diagonal,
     Vertical,

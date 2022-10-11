@@ -38,7 +38,6 @@ import { LegendPosition, TraceEvents } from "./enums";
 import { PerfTimer } from "./perfTimer";
 
 export function calculatePlot(data: BoxWhiskerChartData, settings: Settings): void {
-    //}: Settings {
     const timer = PerfTimer.START(TraceEvents.calculatePlot, true);
 
     if (settings.legend.show) {

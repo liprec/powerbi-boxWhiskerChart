@@ -402,6 +402,14 @@
                         ]
                     }
                 },
+                "maxArea": {
+                    "displayName": "Max area (%)",
+                    "description": "The maximum area (in %) that the labels can take up",
+                    "placeHolderText": "25",
+                    "type": {
+                        "numeric": true
+                    }
+                },
                 "showTitle": {
                     "displayName": "Show Title",
                     "type": { "bool": true }
@@ -467,6 +475,22 @@
                         "formatting": {
                             "alignment": true
                         }
+                    }
+                },
+                "titleOrientation": {
+                    "displayName": "Title orientation",
+                    "description": "Set the orientation of the title",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0",
+                                "displayName": "Horizontal"
+                            },
+                            {
+                                "value": "2",
+                                "displayName": "Vertical"
+                            }
+                        ]
                     }
                 }
             }

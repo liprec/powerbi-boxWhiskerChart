@@ -27,7 +27,7 @@
 
 "use strict";
 
-import { scaleBand, scaleTime, min, max, scaleLinear, scaleLog } from "d3";
+import { scaleBand, min, max, scaleLinear, scaleLog } from "d3";
 
 import { BoxWhiskerChartData, ValueAxisOptions, BoxPlot, BoxPlotSeries } from "./data";
 import { Settings } from "./settings";

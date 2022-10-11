@@ -42,7 +42,7 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 import { PerfTimer } from "./perfTimer";
-import { QuartileType, TraceEvents, WhiskerType } from "./enums";
+import { ChartOrientation, Orientation, QuartileType, TraceEvents, WhiskerType } from "./enums";
 import { parseSettings, Settings } from "./settings";
 import {
     BoxLabels,
@@ -287,6 +287,15 @@ export function converter(
     settings.general.height = viewPort.height - 2 * settings.general.padding;
 
     settings.general.orientation = settings.chartOptions.orientation;
+    settings.general.axisTitleOrientation =
+        settings.general.orientation === ChartOrientation.Horizontal
+            ? settings.xAxis.titleOrientation
+            : settings.yAxis.titleOrientation;
+
+    if (settings.general.orientation === ChartOrientation.Horizontal) {
+        settings.xAxis.labelAlignment = "center";
+        settings.xAxis.orientation = Orientation.Horizontal;
+    }
 
     const categories = series
         .map((series: BoxPlotSeries) => series.boxPlots.map((boxPlot: BoxPlot) => boxPlot.name))

@@ -57,7 +57,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import VisualUpdateType = powerbi.VisualUpdateType;
 
 import { PerfTimer } from "./perfTimer";
-import { TraceEvents, WhiskerType } from "./enums";
+import { ChartOrientation, Orientation, TraceEvents, WhiskerType } from "./enums";
 import { BoxPlot, BoxWhiskerChartData, Legend, SinglePoint } from "./data";
 import { Settings } from "./settings";
 import { syncSelectionState } from "./syncSelectionState";
@@ -305,6 +305,17 @@ export class BoxWhiskerChart implements IVisual {
                 if (!this.settings.general.hasSeries) this.removeEnumerateObject(instanceEnumeration, "internalMargin");
                 break;
             case "xAxis":
+                if (this.settings.chartOptions.orientation === ChartOrientation.Horizontal) {
+                    this.removeEnumerateObject(instanceEnumeration, "labelAlignment");
+                    this.removeEnumerateObject(instanceEnumeration, "orientation");
+                }
+                if (this.settings.chartOptions.orientation === ChartOrientation.Vertical) {
+                    this.removeEnumerateObject(instanceEnumeration, "maxArea");
+                    this.removeEnumerateObject(instanceEnumeration, "titleOrientation");
+                }
+                if (this.settings.xAxis.titleOrientation === Orientation.Horizontal) {
+                    this.removeEnumerateObject(instanceEnumeration, "titleAlignment");
+                }
                 if (!this.settings.xAxis.showTitle) {
                     this.removeEnumerateObject(instanceEnumeration, "title");
                     this.removeEnumerateObject(instanceEnumeration, "titleFontColor");
@@ -313,9 +324,14 @@ export class BoxWhiskerChart implements IVisual {
                     this.removeEnumerateObject(instanceEnumeration, "titleFontStyle");
                     this.removeEnumerateObject(instanceEnumeration, "titleFontWeight");
                     this.removeEnumerateObject(instanceEnumeration, "titleAlignment");
+                    this.removeEnumerateObject(instanceEnumeration, "titleOrientation");
                 }
                 break;
             case "yAxis":
+                if (this.settings.chartOptions.orientation === ChartOrientation.Vertical) {
+                    this.removeEnumerateObject(instanceEnumeration, "labelAlignment");
+                    this.removeEnumerateObject(instanceEnumeration, "orientation");
+                }
                 if (!this.settings.yAxis.showTitle) {
                     this.removeEnumerateObject(instanceEnumeration, "title");
                     this.removeEnumerateObject(instanceEnumeration, "titleFontColor");

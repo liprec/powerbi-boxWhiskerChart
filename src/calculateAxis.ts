@@ -28,7 +28,7 @@
 "use strict";
 
 import { interfaces, textMeasurementService, valueFormatter } from "powerbi-visuals-utils-formattingutils";
-import { max } from "d3";
+import { max, min } from "d3";
 
 import measureSvgTextRect = textMeasurementService.measureSvgTextRect;
 import TextProperties = interfaces.TextProperties;
@@ -36,7 +36,7 @@ import IValueFormatter = valueFormatter.IValueFormatter;
 
 import { BoxWhiskerChartData, BoxPlot, BoxPlotSeries } from "./data";
 import { Settings } from "./settings";
-import { LabelOrientation, TraceEvents } from "./enums";
+import { ChartOrientation, Orientation, TraceEvents } from "./enums";
 import { PerfTimer } from "./perfTimer";
 
 function calculateRects(
@@ -72,6 +72,7 @@ function calculateRects(
 
 export function calculateAxis(data: BoxWhiskerChartData, settings: Settings): void {
     const timer = PerfTimer.START(TraceEvents.calculateAxis, true);
+    const isHorizontal = settings.chartOptions.orientation === ChartOrientation.Horizontal;
 
     let { height: valueTextHeight, width: valueTextWidth } = calculateRects(
         data.dataRange,
@@ -100,27 +101,25 @@ export function calculateAxis(data: BoxWhiskerChartData, settings: Settings): vo
     );
 
     switch (settings.xAxis.orientation) {
-        case LabelOrientation.Diagonal:
+        case Orientation.Diagonal:
             const sin = Math.sin(Math.PI / 4);
             const cos = Math.cos(Math.PI / 4);
             categoryTextWidth = sin * categoryTextWidth + sin * categoryTextHeight;
             categoryTextHeight = cos * categoryTextWidth + cos * categoryTextHeight;
             break;
-        case LabelOrientation.Vertical:
+        case Orientation.Vertical:
             const tWidth = categoryTextWidth;
             categoryTextWidth = categoryTextHeight + 20;
             categoryTextHeight = tWidth + 20;
             break;
-        case LabelOrientation.Horizontal:
+        case Orientation.Horizontal:
         default:
             categoryTextHeight;
-            categoryTextWidth;
+            categoryTextWidth = isHorizontal
+                ? <number>min([categoryTextWidth, (settings.xAxis.maxArea / 100) * settings.general.width])
+                : categoryTextWidth;
             break;
     }
-    // categoryTextHeight += categoryTitleTextHeight;
-    // categoryTextWidth += categoryTitleTextWidth;
-    // valueTextHeight += valueTitleTextHeight;
-    // valueTextWidth += valueTitleTextWidth;
 
     settings.general.axisDimensions = {
         categoryAxisLabel: { height: categoryTextHeight, width: categoryTextWidth },
